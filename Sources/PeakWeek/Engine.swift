@@ -352,18 +352,27 @@ enum Engine {
         return library.resolve(slot)?.name ?? "Exercise"
     }
 
-    static func slotLoad(_ slot: Slot, maxes: Maxes, unit: Unit, library: ExerciseLibrary) -> Double? {
+    static func slotLoad(_ slot: Slot, maxes: Maxes, unit: Unit, library: ExerciseLibrary,
+                         settings: ClientSettings? = nil) -> Double? {
         guard slot.custom == nil, let pct = slot.pct,
               let ex = library.resolve(slot), let mod = ex.mod else { return nil }
-        let base = maxes.value(for: slot.pool)
+        var base = maxes.value(for: slot.pool)
         guard base > 0 else { return nil }
-        return roundLoad(base * (pct / 100) * mod, unit: unit)
+        var effectivePct = pct
+        if let s = settings {
+            let lift = s.lift(slot.pool)
+            if let tm = lift.trainingMaxPct { base *= tm / 100 }
+            if let off = lift.intensityOffset { effectivePct += off }
+        }
+        return roundLoad(base * (effectivePct / 100) * mod, unit: unit)
     }
 
-    static func attempts(max: Double, unit: Unit) -> (opener: Double, second: Double, third: Double) {
-        (roundLoad(max * 0.91, unit: unit),
-         roundLoad(max * 0.97, unit: unit),
-         roundLoad(max * 1.015, unit: unit))
+    static func attempts(max: Double, unit: Unit,
+                         profile: AttemptProfile? = nil) -> (opener: Double, second: Double, third: Double) {
+        let p = (profile ?? AttemptProfile()).effective
+        return (roundLoad(max * p.opener / 100, unit: unit),
+                roundLoad(max * p.second / 100, unit: unit),
+                roundLoad(max * p.third / 100, unit: unit))
     }
 
     // MARK: plain-text week export
@@ -371,7 +380,12 @@ enum Engine {
     static func weekToText(client: Client, program: Program, week: Week,
                            library: ExerciseLibrary) -> String {
         var L: [String] = []
-        L.append("\(client.name.uppercased()) — WEEK \(week.num) of \(program.weeks.count) — \(week.phase.label.uppercased())")
+        var header = "\(client.name.uppercased()) — WEEK \(week.num) of \(program.weeks.count) — \(week.phase.label.uppercased())"
+        if program.startPhase == .full || program.startPhase == .real {
+            let out = program.weeks.count - week.num
+            header += out == 0 ? " — MEET WEEK IS HERE" : " — \(out) WK\(out == 1 ? "" : "S") OUT"
+        }
+        L.append(header)
         L.append("Coach: block periodization · loads rise week to week — trust the percentages, cap sets at the listed RPE.")
         L.append("")
         for day in week.days {
@@ -380,7 +394,8 @@ enum Engine {
             for (i, s) in day.slots.enumerated() {
                 var line = "  \(i + 1). \(slotName(s, library: library)) — \(s.sets)x\(s.reps)"
                 if let pct = s.pct { line += " @ \(Int(pct))%" }
-                if let load = slotLoad(s, maxes: client.maxes, unit: client.unit, library: library) {
+                if let load = slotLoad(s, maxes: client.maxes, unit: client.unit, library: library,
+                                       settings: client.settings) {
                     line += " → \(loadString(load, unit: client.unit))"
                 }
                 let rpeStr = s.rpe == s.rpe.rounded() ? String(Int(s.rpe)) : String(s.rpe)
@@ -394,7 +409,7 @@ enum Engine {
         if week.phase == .meet {
             L.append("MEET DAY ATTEMPTS")
             for (label, m) in [("Squat", client.maxes.squat), ("Bench", client.maxes.bench), ("Deadlift", client.maxes.deadlift)] {
-                let a = attempts(max: m, unit: client.unit)
+                let a = attempts(max: m, unit: client.unit, profile: client.settings.attempts)
                 L.append("  \(label): open \(Int(a.opener)) / second \(Int(a.second)) / third \(Int(a.third)) \(client.unit.rawValue)")
             }
             L.append("")

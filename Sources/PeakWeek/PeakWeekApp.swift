@@ -12,6 +12,11 @@ struct PeakWeekApp: App {
                 .frame(minWidth: 1000, minHeight: 680)
         }
         .windowStyle(.titleBar)
+
+        Settings {
+            SettingsView()
+                .environmentObject(store)
+        }
     }
 }
 

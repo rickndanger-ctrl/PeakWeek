@@ -114,7 +114,9 @@ final class EngineTests: XCTestCase {
         let kg = Engine.attempts(max: 250, unit: .kg)
         XCTAssertEqual(kg.opener, 227.5)
         XCTAssertEqual(kg.second, 242.5)
-        XCTAssertEqual(kg.third, 252.5)
+        // 250 × 101.5% = 253.75 exactly — a perfect tie between plates, rounds up.
+        // (The old *1.015 float representation rounded this edge case down.)
+        XCTAssertEqual(kg.third, 255)
     }
 
     // MARK: - Day templates

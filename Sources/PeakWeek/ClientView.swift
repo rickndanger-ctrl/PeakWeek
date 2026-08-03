@@ -61,9 +61,19 @@ struct ClientView: View {
 
     private var setupPanel: some View {
         VStack(alignment: .leading, spacing: 14) {
-            TextField("Client name", text: $client.name)
-                .font(.system(size: 26, weight: .black))
-                .textFieldStyle(.plain)
+            HStack(alignment: .firstTextBaseline, spacing: 14) {
+                TextField("Client name", text: $client.name)
+                    .font(.system(size: 26, weight: .black))
+                    .textFieldStyle(.plain)
+                if let meet = client.meetDate {
+                    let days = Calendar.current.dateComponents([.day], from: Date(), to: meet).day ?? 0
+                    let wks = Int((Double(days) / 7.0).rounded(.up))
+                    Text(days < 0 ? "MEET PASSED — \(meet.formatted(date: .abbreviated, time: .omitted))"
+                         : "MEET IN \(wks) WK\(wks == 1 ? "" : "S") — \(meet.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.system(size: 12, weight: .black)).kerning(1)
+                        .foregroundStyle(days < 0 ? Theme.smoke : Theme.plateRed)
+                }
+            }
 
             Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 12) {
                 GridRow {
@@ -72,10 +82,37 @@ struct ClientView: View {
                             ForEach(Unit.allCases) { u in Text(u.rawValue).tag(u) }
                         }
                         .pickerStyle(.segmented).labelsHidden().frame(width: 110)
+                        .onChange(of: client.unit) { newUnit in
+                            // True conversion, not a relabel. Round to half units.
+                            let f = newUnit == .kg ? 0.45359237 : 1 / 0.45359237
+                            func conv(_ x: Double) -> Double { ((x * f) * 2).rounded() / 2 }
+                            client.maxes = Maxes(squat: conv(client.maxes.squat),
+                                                 bench: conv(client.maxes.bench),
+                                                 deadlift: conv(client.maxes.deadlift))
+                        }
                     }
                     labeled("Squat 1RM") { maxField($client.maxes.squat) }
                     labeled("Bench 1RM") { maxField($client.maxes.bench) }
                     labeled("Deadlift 1RM") { maxField($client.maxes.deadlift) }
+                    labeled("Meet date") {
+                        HStack(spacing: 4) {
+                            DatePicker("", selection: Binding(
+                                get: { client.meetDate ?? DeliverySchedule.weekStart(
+                                    startDate: client.startDate ?? Date(),
+                                    weekNum: (client.program?.weeks.count ?? client.setupWeeks) + 1)
+                                    .addingTimeInterval(-2 * 86400) },   // default: Sat after final week
+                                set: { client.meetDate = $0 }
+                            ), displayedComponents: .date)
+                            .labelsHidden().frame(width: 130)
+                            if client.meetDate != nil {
+                                Button { client.meetDate = nil } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                }
+                                .buttonStyle(.borderless).foregroundStyle(.secondary)
+                                .help("Clear meet date")
+                            }
+                        }
+                    }
                 }
                 GridRow {
                     labeled("Training phase") {
@@ -123,9 +160,200 @@ struct ClientView: View {
 
             Divider().overlay(Theme.line)
             deliveryPanel
+            Divider().overlay(Theme.line)
+            coachingOptions
         }
         .padding(20)
         .background(Theme.iron2, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: coaching options
+
+    @State private var optionsExpanded = false
+
+    private var excludedInProgram: Bool {
+        guard let excluded = client.settings.excludedExerciseIDs, !excluded.isEmpty,
+              let program = client.program else { return false }
+        return program.weeks.contains { w in
+            w.days.contains { d in
+                d.slots.contains { $0.exerciseID.map(excluded.contains) == true }
+            }
+        }
+    }
+
+    private var coachingOptions: some View {
+        DisclosureGroup(isExpanded: $optionsExpanded) {
+            VStack(alignment: .leading, spacing: 16) {
+                attemptsPanel
+                perLiftPanel
+                exclusionsPanel
+                notesPanel
+            }
+            .padding(.top, 12)
+        } label: {
+            HStack(spacing: 10) {
+                Text("COACHING OPTIONS")
+                    .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+                if client.settings.isCustomized {
+                    Circle().fill(Theme.plateYellow).frame(width: 6, height: 6)
+                        .help("This client has customized settings")
+                }
+                if excludedInProgram {
+                    Text("excluded exercises still in program — regenerate to apply")
+                        .font(.caption2).foregroundStyle(Theme.plateYellow)
+                }
+            }
+        }
+    }
+
+    private var attemptsBinding: Binding<AttemptProfile> {
+        Binding(
+            get: { client.settings.attempts ?? AttemptProfile() },
+            set: { client.settings.attempts = $0 }
+        )
+    }
+
+    private var attemptsPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("MEET ATTEMPTS").font(.caption2).kerning(1).foregroundStyle(.secondary)
+            HStack(spacing: 14) {
+                Picker("", selection: attemptsBinding.risk) {
+                    ForEach(AttemptProfile.Risk.allCases) { r in Text(r.label).tag(r) }
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 280)
+                let eff = (client.settings.attempts ?? AttemptProfile()).effective
+                Text("open \(pct(eff.opener)) · second \(pct(eff.second)) · third \(pct(eff.third))")
+                    .font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 10) {
+                overrideField("Opener %", attemptsBinding.opener, placeholder: "91")
+                overrideField("Second %", attemptsBinding.second, placeholder: "97")
+                overrideField("Third %", attemptsBinding.third, placeholder: "101.5")
+                Text("Leave blank to follow the risk preset.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func pct(_ v: Double) -> String {
+        v == v.rounded() ? "\(Int(v))%" : String(format: "%.1f%%", v)
+    }
+
+    private func overrideField(_ label: String, _ value: Binding<Double?>, placeholder: String) -> some View {
+        HStack(spacing: 4) {
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+            TextField(placeholder, text: Binding(
+                get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
+                set: { value.wrappedValue = Double($0).map { min(115, max(80, $0)) } }
+            ))
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.caption, design: .monospaced))
+            .frame(width: 52)
+        }
+    }
+
+    private func liftBinding(_ pool: LiftPool) -> Binding<LiftSettings> {
+        Binding(
+            get: { client.settings.lift(pool) },
+            set: { new in
+                var map = client.settings.perLift ?? [:]
+                map[pool.rawValue] = new
+                client.settings.perLift = map
+            }
+        )
+    }
+
+    private var perLiftPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("PER-LIFT PROGRAMMING").font(.caption2).kerning(1).foregroundStyle(.secondary)
+            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
+                GridRow {
+                    Text("").font(.caption2)
+                    Text("TRAINING MAX %").font(.system(size: 9)).kerning(0.5).foregroundStyle(.secondary)
+                    Text("INTENSITY OFFSET ±%").font(.system(size: 9)).kerning(0.5).foregroundStyle(.secondary)
+                }
+                ForEach([LiftPool.squat, .bench, .deadlift]) { pool in
+                    GridRow {
+                        Text(pool.groupLabel).font(.system(size: 11, weight: .bold))
+                        optionalNumField(liftBinding(pool).trainingMaxPct, placeholder: "100", range: 80...105)
+                        optionalNumField(liftBinding(pool).intensityOffset, placeholder: "0", range: -10...10)
+                    }
+                }
+            }
+            Text("Training max scales every load for that lift. Offset shifts each prescribed % (e.g. −2.5 for a deadlift that runs hot). Loads update instantly.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func optionalNumField(_ value: Binding<Double?>, placeholder: String,
+                                  range: ClosedRange<Double>) -> some View {
+        TextField(placeholder, text: Binding(
+            get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
+            set: { s in
+                value.wrappedValue = Double(s).map { min(range.upperBound, max(range.lowerBound, $0)) }
+            }
+        ))
+        .textFieldStyle(.roundedBorder)
+        .font(.system(.caption, design: .monospaced))
+        .multilineTextAlignment(.center)
+        .frame(width: 64)
+    }
+
+    private var exclusionsPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("EXCLUDED EXERCISES (INJURY / EQUIPMENT)")
+                .font(.caption2).kerning(1).foregroundStyle(.secondary)
+            let excluded = client.settings.excludedExerciseIDs ?? []
+            HStack(spacing: 8) {
+                ForEach(Array(excluded), id: \.self) { id in
+                    if let ex = store.data.exerciseLibrary.exercise(id: id) {
+                        HStack(spacing: 4) {
+                            Text(ex.name).font(.caption)
+                            Button {
+                                client.settings.excludedExerciseIDs?.remove(id)
+                            } label: { Image(systemName: "xmark").font(.system(size: 8)) }
+                            .buttonStyle(.borderless)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Theme.iron3)
+                    }
+                }
+                Menu {
+                    ForEach(LiftPool.allCases) { pool in
+                        ForEach(store.data.exerciseLibrary[pool].filter {
+                            !$0.archived && !excluded.contains($0.id)
+                        }) { ex in
+                            Button("\(pool.groupLabel) — \(ex.name)") {
+                                var set = client.settings.excludedExerciseIDs ?? []
+                                set.insert(ex.id)
+                                client.settings.excludedExerciseIDs = set
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Exclude…", systemImage: "plus")
+                        .font(.caption)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+            }
+            Text("Excluded exercises are swapped out at generation and hidden nowhere else — regenerate after changing.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var notesPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CLIENT NOTES (FEDERATION, EQUIPMENT, CUES)")
+                .font(.caption2).kerning(1).foregroundStyle(.secondary)
+            TextField("e.g. USAPL raw · low-bar, close grip · cue: spread the floor",
+                      text: Binding(
+                        get: { client.settings.notes ?? "" },
+                        set: { client.settings.notes = $0.isEmpty ? nil : $0 }
+                      ), axis: .vertical)
+                .lineLimit(2...4)
+                .textFieldStyle(.roundedBorder)
+        }
     }
 
     // MARK: delivery preferences
@@ -233,7 +461,8 @@ struct ClientView: View {
         client.program = Engine.buildProgram(startPhase: client.setupPhase,
                                              totalWeeks: clampedWeeks,
                                              fiveDay: client.fiveDay,
-                                             library: store.data.exerciseLibrary)
+                                             library: store.data.exerciseLibrary,
+                                             excluded: client.settings.excludedExerciseIDs ?? [])
         if client.startDate == nil {
             // Default anchor: next Monday.
             client.startDate = DeliverySchedule.mondayOfWeek(

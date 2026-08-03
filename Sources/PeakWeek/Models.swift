@@ -173,15 +173,18 @@ struct Client: Codable, Identifiable, Hashable {
     var fiveDay: Bool = false
     var program: Program? = nil
     var startDate: Date? = nil            // Monday of program week 1
+    var meetDate: Date? = nil             // optional: drives weeks-out display
     var delivery: DeliveryPrefs = DeliveryPrefs()
+    var settings: ClientSettings = ClientSettings()
 
     init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
          setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
-         program: Program? = nil, startDate: Date? = nil,
-         delivery: DeliveryPrefs = DeliveryPrefs()) {
+         program: Program? = nil, startDate: Date? = nil, meetDate: Date? = nil,
+         delivery: DeliveryPrefs = DeliveryPrefs(), settings: ClientSettings = ClientSettings()) {
         self.id = id; self.name = name; self.unit = unit; self.maxes = maxes
         self.setupPhase = setupPhase; self.setupWeeks = setupWeeks; self.fiveDay = fiveDay
-        self.program = program; self.startDate = startDate; self.delivery = delivery
+        self.program = program; self.startDate = startDate; self.meetDate = meetDate
+        self.delivery = delivery; self.settings = settings
     }
 
     // Tolerant decoding: fields added after v1 fall back to defaults so old
@@ -197,7 +200,9 @@ struct Client: Codable, Identifiable, Hashable {
         fiveDay = try c.decodeIfPresent(Bool.self, forKey: .fiveDay) ?? false
         program = try c.decodeIfPresent(Program.self, forKey: .program)
         startDate = try c.decodeIfPresent(Date.self, forKey: .startDate)
+        meetDate = try c.decodeIfPresent(Date.self, forKey: .meetDate)
         delivery = try c.decodeIfPresent(DeliveryPrefs.self, forKey: .delivery) ?? DeliveryPrefs()
+        settings = try c.decodeIfPresent(ClientSettings.self, forKey: .settings) ?? ClientSettings()
     }
 }
 

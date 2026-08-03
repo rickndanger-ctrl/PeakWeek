@@ -120,6 +120,10 @@ struct WeekView: View {
         case .deload: s = "Recovery week"
         default: s = "Block week \(week.weekInBlock) of \(week.blockLen)"
         }
+        if program.startPhase == .full || program.startPhase == .real {
+            let out = program.weeks.count - week.num
+            if out > 0 { s += " · \(out) wk\(out == 1 ? "" : "s") out" }
+        }
         if !week.note.isEmpty { s += " · has coach notes" }
         return s
     }
@@ -267,7 +271,8 @@ struct SlotRow: View {
                     .frame(width: 44)
                 Text("%").foregroundStyle(.secondary)
                 if let load = Engine.slotLoad(slot, maxes: client.maxes, unit: client.unit,
-                                              library: store.data.exerciseLibrary) {
+                                              library: store.data.exerciseLibrary,
+                                              settings: client.settings) {
                     Text("→ \(Engine.loadString(load, unit: client.unit))")
                         .font(.system(.caption, design: .monospaced)).bold()
                         .foregroundStyle(Theme.plateYellow)
@@ -409,12 +414,24 @@ struct MeetCard: View {
     }
 
     private func attemptBox(_ label: String, _ max: Double) -> some View {
-        let a = Engine.attempts(max: max, unit: client.unit)
+        let profile = client.settings.attempts ?? AttemptProfile()
+        let eff = profile.effective
+        let a = Engine.attempts(max: max, unit: client.unit, profile: profile)
+        func p(_ v: Double) -> String {
+            v == v.rounded() ? "\(Int(v))" : String(format: "%.1f", v)
+        }
         return VStack(alignment: .leading, spacing: 6) {
-            Text(label.uppercased()).font(.system(size: 13, weight: .black))
-            row("Opener ~91%", a.opener, color: Theme.chalk)
-            row("Second ~97%", a.second, color: Theme.chalk)
-            row("Third ~101.5%", a.third, color: Theme.plateRed)
+            HStack {
+                Text(label.uppercased()).font(.system(size: 13, weight: .black))
+                if profile.risk != .standard {
+                    Text(profile.risk.label.uppercased())
+                        .font(.system(size: 8, weight: .black)).kerning(0.5)
+                        .foregroundStyle(Theme.plateYellow)
+                }
+            }
+            row("Opener ~\(p(eff.opener))%", a.opener, color: Theme.chalk)
+            row("Second ~\(p(eff.second))%", a.second, color: Theme.chalk)
+            row("Third ~\(p(eff.third))%", a.third, color: Theme.plateRed)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
