@@ -54,5 +54,22 @@ Data persists as JSON at `~/Library/Application Support/PeakWeek/data.json`
 - Delivery never double-sends (send log is the source of truth) and catch-up after
   downtime sends only the latest due week
 
+## Extension points (Rick plans more training options)
+When adding a new training style/option, the seams are:
+- **New program shapes**: `StartPhase` enum (Models.swift) + `Engine.buildProgramLegacy`
+  block allocation + `Engine.dayTemplates` per-phase templates. Follow the pattern:
+  templates speak (pool, seed-index); `resolveSlots` maps to library UUIDs.
+- **New phase-loading schemes** (e.g. RPE-anchored presets, DUP): spec'd in
+  docs/product-spec.md §A2/P1-2 — ship as OPT-IN presets, factory defaults frozen
+  by GoldenTests.testAbsolutePhasePins + testLibraryBuilderIdenticalToLegacyEverywhere.
+- **Per-client knobs**: ClientSettings.swift (attempt profiles, per-lift settings) —
+  additive optional fields with decodeIfPresent, always.
+- **Program structure edits**: Program.renumberAndRegroup + Store.adjustSendRecords
+  keep numbering/blocks/delivery coherent — reuse them for any structural feature.
+- Coach policies already encoded: deloads only between trans→real, never
+  back-to-back; custom exercises auto-save to library as accessories.
+After every feature: swift test green → copy the release build to
+/Applications/PeakWeek.app (Dock launches that copy) → git push.
+
 ## Product docs
-`docs/product-spec.md` (prioritized roadmap; P0 shipped) + four research reports.
+`docs/product-spec.md` (prioritized roadmap; P0 shipped, P1/P2 next) + four research reports.
