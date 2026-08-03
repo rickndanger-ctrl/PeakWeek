@@ -397,9 +397,11 @@ enum Engine {
                 let load = slotLoad(s, maxes: client.maxes, unit: client.unit, library: library,
                                     settings: client.settings)
                 if let pct = s.pct {
-                    // Show the % the lifter actually trains at (incl. any per-lift offset).
-                    let off = load != nil ? (client.settings.lift(s.pool).intensityOffset ?? 0) : 0
-                    let eff = pct + off
+                    // Show the % the lifter actually trains at (incl. any per-lift
+                    // offset, clamped IDENTICALLY to slotLoad so the printed % and
+                    // printed weight always agree).
+                    let rawOff = load != nil ? (client.settings.lift(s.pool).intensityOffset ?? 0) : 0
+                    let eff = pct + min(15, max(-15, rawOff))
                     line += eff == eff.rounded() ? " @ \(Int(eff))%" : String(format: " @ %.1f%%", eff)
                 }
                 if let load {

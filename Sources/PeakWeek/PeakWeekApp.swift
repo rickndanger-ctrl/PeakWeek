@@ -56,17 +56,22 @@ struct ContentView: View {
     @State private var showDeliveries = false
 
     var body: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            if let id = selectedID, let binding = store.binding(for: id) {
-                ClientView(client: binding, onDelete: {
-                    store.deleteClient(id)
-                    selectedID = nil
-                })
-                .id(id)
-            } else {
-                placeholder
+        VStack(spacing: 0) {
+            if store.loadFailed {
+                frozenBanner
+            }
+            NavigationSplitView {
+                sidebar
+            } detail: {
+                if let id = selectedID, let binding = store.binding(for: id) {
+                    ClientView(client: binding, onDelete: {
+                        store.deleteClient(id)
+                        selectedID = nil
+                    })
+                    .id(id)
+                } else {
+                    placeholder
+                }
             }
         }
         .background(Theme.iron)
@@ -160,6 +165,30 @@ struct ContentView: View {
                 } label: { Label("Data", systemImage: "externaldrive") }
             }
         }
+    }
+
+    /// Shown whenever the write freeze is active — nothing typed while this is
+    /// visible will be saved, and the coach must know that.
+    private var frozenBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.octagon.fill")
+            Text("SAVING IS DISABLED — the data file couldn't be read. Anything you enter now will NOT be kept.")
+                .font(.system(size: 12, weight: .bold))
+            Spacer()
+            Button("Restore Automatic Backup") {
+                restoreMessage = store.restoreAutomaticBackup()
+                    ? "Automatic backup restored." : "No readable automatic backup found."
+            }
+            .buttonStyle(SquareOutlineButtonStyle())
+            Button("Restore from file…") {
+                restoreMessage = store.importBackup()
+                    ? "Backup restored." : "Restore cancelled or file not valid."
+            }
+            .buttonStyle(SquareOutlineButtonStyle())
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(Theme.plateRed)
+        .foregroundStyle(.white)
     }
 
     private var placeholder: some View {

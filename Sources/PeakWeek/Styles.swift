@@ -68,6 +68,17 @@ struct OptionalNumberField: View {
             .onChange(of: value) { newValue in
                 if !focused { text = Self.format(newValue) }
             }
+            .onChange(of: text) { newText in
+                // Live-sync valid values while typing (WITHOUT reformatting the
+                // text, so decimals type normally). Buttons on macOS don't steal
+                // focus, so waiting for blur alone could let "Copy week" read a
+                // stale value.
+                guard focused else { return }
+                let t = newText.trimmingCharacters(in: .whitespaces)
+                    .replacingOccurrences(of: ",", with: ".")
+                if t.isEmpty { value = nil }
+                else if let d = Double(t) { value = d }
+            }
             .onChange(of: focused) { isFocused in
                 if !isFocused { commit() }
             }

@@ -260,14 +260,23 @@ final class AppStore: ObservableObject {
     }
 
     /// Coach approved a queued send from the review sheet.
+    /// A record queued under a program that has since been regenerated is NOT
+    /// sent (its content no longer exists) — it's retired instead.
     func approveQueued(_ recordID: UUID) {
         guard let idx = data.sendLog.firstIndex(where: { $0.id == recordID }),
               case .queued = data.sendLog[idx].status,
               let client = data.clients.first(where: { $0.id == data.sendLog[idx].clientID })
         else { return }
+        let currentStamp = client.program?.createdAt
+        guard data.sendLog[idx].programStamp == nil || data.sendLog[idx].programStamp == currentStamp else {
+            data.sendLog[idx].status = .skipped("program changed since this was queued")
+            data.sendLog[idx].date = Date()
+            return
+        }
         let outcome = performSend(client: client, weekNum: data.sendLog[idx].weekNum)
         data.sendLog[idx].status = outcome.status
         data.sendLog[idx].date = outcome.date
+        data.sendLog[idx].programStamp = outcome.programStamp
     }
 
     func dismissQueued(_ recordID: UUID) {
@@ -283,9 +292,29 @@ final class AppStore: ObservableObject {
               case .failed = data.sendLog[idx].status,
               let client = data.clients.first(where: { $0.id == data.sendLog[idx].clientID })
         else { return }
+        let currentStamp = client.program?.createdAt
+        guard data.sendLog[idx].programStamp == nil || data.sendLog[idx].programStamp == currentStamp else {
+            data.sendLog[idx].status = .skipped("program changed since this failed")
+            data.sendLog[idx].date = Date()
+            return
+        }
         let outcome = performSend(client: client, weekNum: data.sendLog[idx].weekNum)
         data.sendLog[idx].status = outcome.status
         data.sendLog[idx].date = outcome.date
+        data.sendLog[idx].programStamp = outcome.programStamp
+    }
+
+    /// Called when a client's program is regenerated: anything still awaiting
+    /// review for the OLD program is retired so it can't be approved into a
+    /// stale or duplicate send.
+    func retireStaleQueued(clientID: UUID, currentStamp: Date?) {
+        for i in data.sendLog.indices where data.sendLog[i].clientID == clientID {
+            if case .queued = data.sendLog[i].status,
+               data.sendLog[i].programStamp != currentStamp {
+                data.sendLog[i].status = .skipped("program regenerated")
+                data.sendLog[i].date = Date()
+            }
+        }
     }
 
     var queuedSends: [SendRecord] {

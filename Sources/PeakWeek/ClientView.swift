@@ -270,8 +270,9 @@ struct ClientView: View {
                 ForEach([LiftPool.squat, .bench, .deadlift]) { pool in
                     GridRow {
                         Text(pool.groupLabel).font(.system(size: 11, weight: .bold))
-                        optionalNumField(liftBinding(pool).trainingMaxPct, placeholder: "100", range: 80...105)
-                        optionalNumField(liftBinding(pool).intensityOffset, placeholder: "0", range: -10...10)
+                        // Engine clamps at use: TM 50–110, offset ±15.
+                        optionalNumField(liftBinding(pool).trainingMaxPct, placeholder: "100")
+                        optionalNumField(liftBinding(pool).intensityOffset, placeholder: "0")
                     }
                 }
             }
@@ -280,10 +281,8 @@ struct ClientView: View {
         }
     }
 
-    private func optionalNumField(_ value: Binding<Double?>, placeholder: String,
-                                  range: ClosedRange<Double>) -> some View {
-        // Commits on submit/blur — decimals and minus signs type normally.
-        // The engine clamps per-lift values at use.
+    private func optionalNumField(_ value: Binding<Double?>, placeholder: String) -> some View {
+        // Decimals and minus signs type normally; the engine clamps at use.
         OptionalNumberField(placeholder: placeholder, value: value, width: 64)
     }
 
@@ -459,6 +458,8 @@ struct ClientView: View {
                                              fiveDay: client.fiveDay,
                                              library: store.data.exerciseLibrary,
                                              excluded: client.settings.excludedExerciseIDs ?? [])
+        // Old-program queue entries must not survive into the new program.
+        store.retireStaleQueued(clientID: client.id, currentStamp: client.program?.createdAt)
         if client.startDate == nil {
             // Default anchor: next Monday.
             client.startDate = Self.nextMonday()

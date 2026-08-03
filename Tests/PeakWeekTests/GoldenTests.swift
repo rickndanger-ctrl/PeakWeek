@@ -67,6 +67,64 @@ final class GoldenTests: XCTestCase {
         }
     }
 
+    // MARK: - absolute phase pins
+    // Mutation testing proved legacy-vs-library equality can't catch a changed
+    // percentage table (both sides share it). These pins lock the actual
+    // numbers of every non-acc phase. 16-wk full prep: acc 1-6, deload 7,
+    // trans 8-12, realization 13-15 (3/2/1 out), meet 16.
+
+    func testAbsolutePhasePins() {
+        let client = Client(name: "Pin", unit: .lb,
+                            maxes: Maxes(squat: 405, bench: 275, deadlift: 495))
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: 16, fiveDay: false, library: lib)
+        XCTAssertEqual(p.blocks.map(\.weeks), [6, 1, 5, 3, 1])
+        func text(_ weekIdx: Int) -> String {
+            Engine.weekToText(client: client, program: p, week: p.weeks[weekIdx], library: lib)
+        }
+
+        // Deload (wk7): 62% across the lifts, RPE 6.
+        let deload = text(6)
+        XCTAssertTrue(deload.contains("Competition Squat — 3x5 @ 62% → 250 lb · RPE 6"), deload)
+        XCTAssertTrue(deload.contains("Competition Bench — 3x5 @ 62% → 170 lb · RPE 6"), deload)
+        XCTAssertTrue(deload.contains("Competition Deadlift — 2x4 @ 62% → 305 lb · RPE 6"), deload)
+
+        // Transmutation first week (t=0): 77/76/78 tops, RPE 7.5-8.
+        let transFirst = text(7)
+        XCTAssertTrue(transFirst.contains("Competition Squat — 4x4 @ 77% → 310 lb · RPE 7.5"), transFirst)
+        XCTAssertTrue(transFirst.contains("Competition Bench — 4x4 @ 76% → 210 lb · RPE 7.5"), transFirst)
+        XCTAssertTrue(transFirst.contains("Competition Deadlift — 4x3 @ 78% → 385 lb · RPE 8"), transFirst)
+
+        // Transmutation last week (t=1): 86/85/87 tops.
+        let transLast = text(11)
+        XCTAssertTrue(transLast.contains("Competition Squat — 4x4 @ 86% → 350 lb · RPE 7.5"), transLast)
+        XCTAssertTrue(transLast.contains("Competition Bench — 4x4 @ 85% → 235 lb · RPE 7.5"), transLast)
+        XCTAssertTrue(transLast.contains("Competition Deadlift — 4x3 @ 87% → 430 lb · RPE 8"), transLast)
+
+        // Realization 3 out: 87/86/88 triples/doubles.
+        let real3 = text(12)
+        XCTAssertTrue(real3.contains("Competition Squat — 3x3 @ 87% → 350 lb · RPE 8"), real3)
+        XCTAssertTrue(real3.contains("Competition Bench — 3x3 @ 86% → 235 lb · RPE 8"), real3)
+        XCTAssertTrue(real3.contains("Competition Deadlift — 3x2 @ 88% → 435 lb · RPE 8"), real3)
+
+        // Realization 2 out: heavy doubles + LAST HEAVY DEADLIFT @92.
+        let real2 = text(13)
+        XCTAssertTrue(real2.contains("Competition Squat — 2x2 @ 90% → 365 lb · RPE 8.5"), real2)
+        XCTAssertTrue(real2.contains("LAST HEAVY DEADLIFT"), real2)
+        XCTAssertTrue(real2.contains("Competition Deadlift — 1x1 @ 92% → 455 lb · RPE 8.5"), real2)
+
+        // Realization 1 out: openers @92.
+        let real1 = text(14)
+        XCTAssertTrue(real1.contains("OPENER"), real1)
+        // 405 × .92 = 372.6 → 375 (the 91% ATTEMPT opener is 370 — different number!)
+        XCTAssertTrue(real1.contains("Competition Squat — 1x1 @ 92% → 375 lb · RPE 8"), real1)
+        XCTAssertTrue(real1.contains("Competition Bench — 1x1 @ 92% → 255 lb · RPE 8"), real1)
+
+        // Meet week: 60/60/55 technique primer only.
+        let meet = text(15)
+        XCTAssertTrue(meet.contains("Competition Squat — 2x2 @ 60% → 245 lb · RPE 5"), meet)
+        XCTAssertTrue(meet.contains("Competition Deadlift — 1x2 @ 55% → 270 lb · RPE 5"), meet)
+    }
+
     // MARK: - unit conversion round-trip
 
     func testUnitConversionRoundTripsExactly() {
