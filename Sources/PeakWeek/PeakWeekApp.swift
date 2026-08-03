@@ -84,7 +84,7 @@ struct ContentView: View {
             set: { if !$0 { restoreMessage = nil } }
         )) { Button("OK", role: .cancel) {} }
         .alert("Peak Week couldn't read its data file",
-               isPresented: $store.loadFailed) {
+               isPresented: $store.showLoadFailedAlert) {
             Button("Restore Automatic Backup") {
                 restoreMessage = store.restoreAutomaticBackup()
                     ? "Automatic backup restored."
@@ -124,9 +124,19 @@ struct ContentView: View {
             ToolbarItemGroup {
                 Button { showNewClient = true } label: { Label("New Client", systemImage: "plus") }
                 Button { showDeliveries = true } label: {
+                    // .badge() doesn't render on macOS toolbar buttons — draw our own.
                     Label("Deliveries", systemImage: "paperplane")
+                        .overlay(alignment: .topTrailing) {
+                            if !store.queuedSends.isEmpty {
+                                Text("\(store.queuedSends.count)")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 3).padding(.vertical, 1)
+                                    .background(Theme.plateRed)
+                                    .offset(x: 8, y: -6)
+                            }
+                        }
                 }
-                .badge(store.queuedSends.count)
                 .help(store.queuedSends.isEmpty
                       ? "Delivery log"
                       : "\(store.queuedSends.count) plan(s) waiting for your approval")

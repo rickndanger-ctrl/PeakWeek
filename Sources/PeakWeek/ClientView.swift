@@ -83,12 +83,9 @@ struct ClientView: View {
                         }
                         .pickerStyle(.segmented).labelsHidden().frame(width: 110)
                         .onChange(of: client.unit) { newUnit in
-                            // True conversion, not a relabel. Round to half units.
-                            let f = newUnit == .kg ? 0.45359237 : 1 / 0.45359237
-                            func conv(_ x: Double) -> Double { ((x * f) * 2).rounded() / 2 }
-                            client.maxes = Maxes(squat: conv(client.maxes.squat),
-                                                 bench: conv(client.maxes.bench),
-                                                 deadlift: conv(client.maxes.deadlift))
+                            // True, exact conversion — round-trips are lossless.
+                            let old: Unit = newUnit == .kg ? .lb : .kg
+                            client.maxes = client.maxes.converted(from: old, to: newUnit)
                         }
                     }
                     labeled("Squat 1RM") { maxField($client.maxes.squat) }
@@ -245,15 +242,8 @@ struct ClientView: View {
     private func overrideField(_ label: String, _ value: Binding<Double?>, placeholder: String) -> some View {
         HStack(spacing: 4) {
             Text(label).font(.caption2).foregroundStyle(.secondary)
-            // No clamping while typing (that mangles input mid-edit) — the
-            // engine clamps overrides 80–115 at use.
-            TextField(placeholder, text: Binding(
-                get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
-                set: { value.wrappedValue = Double($0) }
-            ))
-            .squareFieldStyle()
-            .font(.system(.caption, design: .monospaced))
-            .frame(width: 52)
+            // Commits on submit/blur; the engine clamps overrides 80–115 at use.
+            OptionalNumberField(placeholder: placeholder, value: value, width: 52)
         }
     }
 
@@ -292,15 +282,9 @@ struct ClientView: View {
 
     private func optionalNumField(_ value: Binding<Double?>, placeholder: String,
                                   range: ClosedRange<Double>) -> some View {
-        // No clamping while typing — the engine clamps per-lift values at use.
-        TextField(placeholder, text: Binding(
-            get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
-            set: { s in value.wrappedValue = Double(s) }
-        ))
-        .squareFieldStyle()
-        .font(.system(.caption, design: .monospaced))
-        .multilineTextAlignment(.center)
-        .frame(width: 64)
+        // Commits on submit/blur — decimals and minus signs type normally.
+        // The engine clamps per-lift values at use.
+        OptionalNumberField(placeholder: placeholder, value: value, width: 64)
     }
 
     private var exclusionsPanel: some View {
@@ -454,7 +438,9 @@ struct ClientView: View {
     }
 
     private func maxField(_ value: Binding<Double>) -> some View {
-        TextField("", value: value, format: .number)
+        // Show at most 1 decimal; stored value keeps full precision so unit
+        // conversions round-trip exactly.
+        TextField("", value: value, format: .number.precision(.fractionLength(0...1)))
             .squareFieldStyle()
             .font(.system(.body, design: .monospaced))
             .frame(width: 90)

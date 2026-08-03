@@ -11,7 +11,12 @@ final class AppStore: ObservableObject {
 
     /// True when data.json exists but could not be decoded. While set, saving is
     /// REFUSED — the app must never overwrite a file it couldn't read.
-    @Published var loadFailed = false
+    /// Cleared ONLY by a successful restore — never by UI dismissal.
+    @Published private(set) var loadFailed = false
+
+    /// Drives the recovery alert. Separate from `loadFailed` so dismissing the
+    /// alert (or a failed restore attempt) can never unfreeze writes.
+    @Published var showLoadFailedAlert = false
 
     private var loading = false
     private var deliveryTimer: Timer?
@@ -50,14 +55,22 @@ final class AppStore: ObservableObject {
     func load() {
         loading = true
         defer { loading = false }
-        guard let raw = try? Data(contentsOf: Self.dataURL) else { return }  // no file yet: fresh start
+        guard FileManager.default.fileExists(atPath: Self.dataURL.path) else { return } // fresh start
+        guard let raw = try? Data(contentsOf: Self.dataURL) else {
+            // File EXISTS but can't even be read (I/O/permissions) — that is a
+            // failure, not a fresh start. Freeze writes.
+            loadFailed = true
+            showLoadFailedAlert = true
+            return
+        }
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = .iso8601
         if let decoded = try? dec.decode(AppData.self, from: raw) {
             data = decoded
         } else {
-            // File exists but can't be read — freeze writes and let the UI offer recovery.
+            // File exists but can't be decoded — freeze writes and let the UI offer recovery.
             loadFailed = true
+            showLoadFailedAlert = true
         }
     }
 
@@ -80,10 +93,16 @@ final class AppStore: ObservableObject {
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         guard let raw = try? enc.encode(data) else { return }
         let fm = FileManager.default
-        // Rotate a one-generation safety copy before every write.
-        if fm.fileExists(atPath: Self.dataURL.path) {
-            try? fm.removeItem(at: Self.backupURL)
-            try? fm.copyItem(at: Self.dataURL, to: Self.backupURL)
+        // Rotate a one-generation safety copy before every write — but ONLY if
+        // the current on-disk file actually decodes. A corrupt data.json must
+        // never overwrite a good .bak.
+        if let existing = try? Data(contentsOf: Self.dataURL) {
+            let dec = JSONDecoder()
+            dec.dateDecodingStrategy = .iso8601
+            if (try? dec.decode(AppData.self, from: existing)) != nil {
+                try? fm.removeItem(at: Self.backupURL)
+                try? fm.copyItem(at: Self.dataURL, to: Self.backupURL)
+            }
         }
         try? raw.write(to: Self.dataURL, options: .atomic)
     }
@@ -276,6 +295,13 @@ final class AppStore: ObservableObject {
     // MARK: backup / restore
 
     func exportBackup() {
+        guard !loadFailed else {
+            let alert = NSAlert()
+            alert.messageText = "Can't back up right now"
+            alert.informativeText = "The data file couldn't be read, so a backup would be empty. Restore first."
+            alert.runModal()
+            return
+        }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
         let stamp = ISO8601DateFormatter().string(from: Date()).prefix(10)

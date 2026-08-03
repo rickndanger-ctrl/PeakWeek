@@ -161,6 +161,16 @@ struct Maxes: Codable, Hashable {
         default: return 0
         }
     }
+
+    static let lbPerKg = 2.204622621848776
+
+    /// Exact unit conversion (no rounding — display formats; loads round at
+    /// prescription time). Round-tripping lb→kg→lb returns the original values.
+    func converted(from old: Unit, to new: Unit) -> Maxes {
+        guard old != new else { return self }
+        let f = new == .kg ? 1 / Self.lbPerKg : Self.lbPerKg
+        return Maxes(squat: squat * f, bench: bench * f, deadlift: deadlift * f)
+    }
 }
 
 struct Client: Codable, Identifiable, Hashable {

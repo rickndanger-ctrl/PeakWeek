@@ -1,0 +1,3453 @@
+{
+  "clients" : [
+    {
+      "fiveDay" : false,
+      "id" : "269123CD-F486-414E-87E0-09769EBDB7AC",
+      "maxes" : {
+        "bench" : 275,
+        "deadlift" : 495,
+        "squat" : 405
+      },
+      "name" : "Legacy Lifter",
+      "program" : {
+        "blocks" : [
+          {
+            "phase" : "acc",
+            "weeks" : 4
+          },
+          {
+            "phase" : "deload",
+            "weeks" : 1
+          },
+          {
+            "phase" : "trans",
+            "weeks" : 4
+          },
+          {
+            "phase" : "real",
+            "weeks" : 2
+          },
+          {
+            "phase" : "meet",
+            "weeks" : 1
+          }
+        ],
+        "createdAt" : "2026-08-03T07:18:10Z",
+        "fiveDay" : true,
+        "startPhase" : "full",
+        "totalWeeks" : 12,
+        "weeks" : [
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "E0A79E1E-73DB-4408-973C-08D4E015A2F6",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "D98D9006-BE35-459C-A606-905D0E32A4C3",
+                    "pct" : 67,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "349B961D-C168-4189-83FB-43EDC4E8580F",
+                    "pct" : 60,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "47CC90BA-4610-4A86-87D8-A2A29F4A1914",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "138EA1FD-32C2-404E-A581-7D39D714908B",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "2C34A1BD-D4D1-4801-AD2A-4D3A23CD7473",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "83C696BC-156E-4A3B-814E-EAAF1826B635",
+                    "pct" : 65,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "0A488767-6545-4BC7-9D7F-AE2EAE0B49F7",
+                    "pct" : 60,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "2A76DF03-946D-4A7A-A61E-B71FC784FCFE",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "57BB161C-D73B-4EEE-9217-67C42AAEEBAA",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "FD78B6B6-C338-414A-9201-155FB783B082",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "8A6F72BF-330A-4911-9BA1-0AC258A26898",
+                    "pct" : 67,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "66274113-92F9-4161-AFB4-891E0352CE83",
+                    "pct" : 55,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "46905D6E-81C7-4C7B-BF40-0C4D1D195B56",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "055550C0-038B-4E24-9EE3-B5A222E6AD6F",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "BF376D46-5837-4648-B211-090D35FC224C",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "C3951C8C-F7BD-4224-9C28-F36BCCEE0710",
+                    "pct" : 58,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "2669235D-2C87-4646-973B-720EF8D34DB6",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "62D6A7C9-1B61-47EF-B449-9F2E458F7A7F",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "40F884AC-8322-4B8D-A9CA-9020A4381EA1",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "434B9C63-F4C4-47CB-BED0-7F41A415DC8E",
+                "slots" : [
+                  {
+                    "exIdx" : 2,
+                    "id" : "281E93FC-DC08-4771-8EF8-891A2EC3DF5C",
+                    "pct" : 58,
+                    "pool" : "squat",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "B3756BF9-01FC-4330-85F7-28C5FF64FA44",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "C97937B8-9C27-437B-8528-443A8AA34909",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 5,
+                    "id" : "5A9A7D55-9D2A-4EAA-B4D0-8B397FE99966",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2 & Weak Points"
+              }
+            ],
+            "id" : "D4438E87-4C90-4421-81DD-F26FECC9689F",
+            "note" : "",
+            "num" : 1,
+            "phase" : "acc",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "6ED1A5DE-3AFE-40E2-BB13-322A18F6B1AB",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "8B4B0841-DD67-48D2-AB30-3B1177DCD8D3",
+                    "pct" : 70,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "694C85E2-55A4-445A-B44B-8760FE94C4A0",
+                    "pct" : 62,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "E495F21D-6080-4F91-974E-30E8C3165B8B",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "F9D3416C-E87E-493F-9B99-E65BFA85711B",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "8BE331FC-7611-44F0-B4B4-711FAE45B24E",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "77F0F2D8-C9A9-474C-9703-439A194337BE",
+                    "pct" : 67,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "CC95F23C-6022-4CBD-AC60-9268A2CD5289",
+                    "pct" : 62,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "81A0C4EB-106A-439E-8645-B79525B2F775",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "E98FB965-A945-4999-8C8D-E97677AE3483",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "16E5A57B-37BC-46F9-AB07-EEB3461F6654",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "5C423A37-133A-45DA-983C-A3425DC5E270",
+                    "pct" : 69,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "A245FB09-2B0D-4D37-824A-69551190EF31",
+                    "pct" : 57,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "07DA7504-0D14-41A4-84FF-111F4D4AB3C2",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "FB62CA57-1F17-436A-8F3B-0F6F32A68B26",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "1FB0B36C-2D7F-419C-8F20-3DE96ED2C53D",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "2DDB951E-06EA-48E6-B89A-7AE0126248F3",
+                    "pct" : 60,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "0DA07220-E936-41B1-9F9F-40C8F0FD0E95",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "7D971943-53C3-4BB2-A7FF-FD0D55FACD29",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "98623F18-C785-467D-A378-0D5367C66EA8",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "F57E90E5-B00A-4CB1-9165-5318C096CDF4",
+                "slots" : [
+                  {
+                    "exIdx" : 2,
+                    "id" : "FA855FD5-B369-4D47-A085-2B117737F4CD",
+                    "pct" : 60,
+                    "pool" : "squat",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "440041DE-CE8D-4F6D-8B63-835C3EDF961A",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "6103C0F6-3568-43AA-9165-8D91509313B0",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 5,
+                    "id" : "C08E8012-B106-4F04-81B4-998A87194094",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2 & Weak Points"
+              }
+            ],
+            "id" : "348078A1-0494-4F72-9CF4-B1C62D38024E",
+            "note" : "",
+            "num" : 2,
+            "phase" : "acc",
+            "weekInBlock" : 2
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "BB212108-CAFF-4A69-B6E2-4D7CF44922CF",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "285D7047-28E1-4C3F-A1BC-19BCD9709CD8",
+                    "pct" : 72,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "16F02437-B75D-44BB-AF85-996E7C702F3C",
+                    "pct" : 64,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "1C8158E1-8F5B-4440-BD85-4B1DD2B0F4FF",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "1D886A0B-B621-4B37-9992-16A4BBA216EA",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "95BCBC4C-22BE-40F0-BDC7-336E0F658FC2",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "E1311034-EE93-47F7-8C91-6760E9EDA590",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "B6C71BAF-C5D5-4C20-9BF5-3BC4E1DFBB42",
+                    "pct" : 63,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "1763011E-A2A0-480E-816B-B33DAA6674F9",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "010D1EB2-54DE-4735-8D16-998F9B820145",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "F145B739-D790-4D08-91A7-68AAB5129C4D",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "91DE33C7-085E-4825-B3ED-A9C0F88129B1",
+                    "pct" : 72,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "114C903F-CF81-4666-A673-764DB74721C8",
+                    "pct" : 58,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "803EA507-46F7-4208-B4B8-5F48A589A6AA",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "FDCAEA5E-CD0B-442B-BF30-D3D5874C1F2E",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "7C2DA3E2-519D-4BB7-9A54-821781C21A21",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "3E18CDBA-3159-4048-9EE3-3B9F08CC3D24",
+                    "pct" : 62,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "6F6D6C8A-9E5A-40EA-8C06-FDA274406421",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "221650AF-DB30-40E8-BF24-D8B328FE70E5",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "8EA1D8EA-DB8C-4358-BD16-1C5DE0A10A70",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "F9C3FBEB-9FB4-46B6-9A73-7CDB5B274470",
+                "slots" : [
+                  {
+                    "exIdx" : 2,
+                    "id" : "2310DF22-D0FE-4B42-A975-4F1ECCBD8C27",
+                    "pct" : 62,
+                    "pool" : "squat",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "238CAC76-D36E-4CFA-9901-72B00276A96C",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "A3FDFAE9-4DBD-4018-846E-7BAEC10F936D",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 5,
+                    "id" : "0F2026CC-9F8D-4717-8E41-A765EB48103F",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2 & Weak Points"
+              }
+            ],
+            "id" : "7CFFBE1E-8F2D-4A67-8361-9162631D708A",
+            "note" : "",
+            "num" : 3,
+            "phase" : "acc",
+            "weekInBlock" : 3
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "E6527777-79A2-41A1-958E-E4155D955408",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "A154074B-736C-49EE-A1D4-8700122B8CD6",
+                    "pct" : 75,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "C7F7DE2C-9D02-4333-8FFD-FE50BFAB4DAE",
+                    "pct" : 66,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "5D91DC65-F56D-4E7C-A6A6-BBAA3545805F",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "0484E696-377B-4235-9CF4-B88EC089767F",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "9583465F-3EE7-4F6B-A6A0-6A334E7998FF",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "85E025E4-9ACB-464E-B114-E17D589DC474",
+                    "pct" : 72,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "C20DB6A3-B531-4EEF-976B-B45623AA0DEB",
+                    "pct" : 65,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "D2BD6ABE-236A-465E-9A77-1D1841EA260F",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "188ECE02-B270-4E43-AFD9-A5F637F98D64",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "A8648993-472B-43B4-8493-F984DFCFC5E9",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "F7177D6A-1DCE-4679-9848-7075D206EF11",
+                    "pct" : 74,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "C313F07A-B094-4696-B01E-373A7E44CA7A",
+                    "pct" : 60,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "126A12F9-3DAF-40CF-800D-F345F229A1CD",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "AD027D4F-9048-49B2-817D-ECE4C1A34FC1",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "BC45F942-AA19-47FA-BE52-64C53FFAD7FD",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "48E361CE-4568-45B2-ADD5-11F3AEC57CF1",
+                    "pct" : 64,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "E76114C7-610E-480D-9D8F-72B3E4C4CDBC",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "7F343340-D2C0-4991-8C53-B9B7CB79D734",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "BF221853-35C6-4A36-BBC9-7F90CEE0A5B1",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "F6F8AE83-1774-40D4-ACEC-66948A03AEDA",
+                "slots" : [
+                  {
+                    "exIdx" : 2,
+                    "id" : "02E6335D-7234-4462-9445-30CE22826CA6",
+                    "pct" : 64,
+                    "pool" : "squat",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "7D97E377-C1D2-4EC0-AF50-1400E0384FA4",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "0250584D-F8DA-4DA3-A3E0-9C98838F4874",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 5,
+                    "id" : "0237F5F6-3B20-4093-88D1-999E0D0AC601",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2 & Weak Points"
+              }
+            ],
+            "id" : "7DB04B9F-1597-4EE0-B015-6A79937F9C4F",
+            "note" : "",
+            "num" : 4,
+            "phase" : "acc",
+            "weekInBlock" : 4
+          },
+          {
+            "blockLen" : 1,
+            "days" : [
+              {
+                "id" : "78182F4D-E3A1-4FC2-88E0-A5AFC13CF98B",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "849DC687-454A-4E0C-B08B-95DAA5A27F8F",
+                    "pct" : 62,
+                    "pool" : "squat",
+                    "reps" : 5,
+                    "rpe" : 6,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "AC85B747-A07B-42CB-9B5F-064F0C90A712",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "47D8777C-1437-4E67-9E82-3F343B044CBE",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "32C11957-9A2A-4ECD-BA95-74A8E32F5470",
+                    "pct" : 62,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 6,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "FE8E0F76-7889-4A9A-872B-28F254043B0B",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "7ED318CF-19DE-4243-9B9F-0D5F71D62407",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "DCE309BF-F282-48FA-9F33-B57B76B49AFC",
+                    "pct" : 62,
+                    "pool" : "deadlift",
+                    "reps" : 4,
+                    "rpe" : 6,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "AC550573-583B-44B4-AF0D-CEDC7DA0402A",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "8D1E5197-2D75-4C76-9085-750FA2753FE3",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "A24DF23B-2E75-4C19-8306-14113C8E2D3C",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "4C9C41E1-92B4-4FD6-BB3C-900DB09A0ACD",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 4 — Optional"
+              }
+            ],
+            "id" : "7AD32AD2-1963-4E41-9119-674068F273B9",
+            "note" : "",
+            "num" : 5,
+            "phase" : "deload",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "A57C46F5-4672-4C39-A120-F701F22F0BC8",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "9CDB8DED-F183-4628-84D9-47B1C8AE10A9",
+                    "pct" : 77,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "F4EA349F-4FE6-4BFB-A112-1D24139F33FA",
+                    "pct" : 70,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "97639628-70B3-4C96-92EE-22827BA879D6",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "DAD49DFD-D7F0-4632-8304-6AE5AF60E3F3",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "567B4B0D-6361-4114-843D-F08B2B159EDD",
+                    "pct" : 76,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "E9668FAB-498A-4149-9E1E-B7A98BD5676A",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "FF7D07D2-7F12-40C6-B46E-D64F5AC95883",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "DEF3BBFE-A8E8-4A20-B410-99ECBF35A668",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "227231B8-B5DD-40BC-8624-4AA800FC97D8",
+                    "pct" : 78,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "BF4EAA4A-76A5-4D96-9579-5AB193FD5A9B",
+                    "pct" : 72,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "B0ABFF5C-C719-4B6D-AAA5-7ED1B5CCA298",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "6B2971DF-4B2A-4BA5-8797-09FAD6D2DE19",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "7D9BED88-E84A-4057-84AB-DB4783F02382",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "A2E91402-DDE9-4D3A-85BC-1783E61CA3B9",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "DD171098-F9C9-4969-A2FD-0AB37EB946B8",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "60B273ED-D6A3-4049-A47B-797ED976E1A9",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "DE95A52C-297C-4A58-81D4-5A0510FB9569",
+                    "pct" : 68,
+                    "pool" : "squat",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "AD246CB7-C7A5-44EA-96B4-30EC9FFFABCF",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "C0889533-0476-4198-A262-41B93A3C6DBA",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2"
+              }
+            ],
+            "id" : "BE6AB675-8FE5-405C-8789-2974E09BB44C",
+            "note" : "",
+            "num" : 6,
+            "phase" : "trans",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "B82C6A17-B5C9-48A7-82DD-04165B8CEAD5",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "8DF7C547-D8C1-4931-ABEB-4954CDD70F54",
+                    "pct" : 80,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "84C5F8A7-9EA6-4BA7-9AFD-B8BB5A84345D",
+                    "pct" : 72,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "E543CACB-6ECE-48AF-9DF2-55D157A107B4",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "59BFB222-02D7-473A-8861-1FA8F9A6CAAD",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "C4A2E3C8-3208-45AE-8B22-9DF7E347C63F",
+                    "pct" : 79,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "0EC79339-8A0B-43BE-8CFA-3861783BB7FF",
+                    "pct" : 72,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "1B02A91B-3D18-4AD0-A11C-9FC496257D11",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "2DDA1C3E-AFD1-47B8-AB64-80DC4450540E",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "251F4C9B-6391-4595-A6F6-C93348DF1690",
+                    "pct" : 81,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "C9B3B27B-812D-4CC4-AC5D-A4905B449160",
+                    "pct" : 74,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "97542657-FD2A-46FF-BA50-896B5F768383",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "DE40C336-6E7F-4EBF-9530-EF648022114C",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "02E095AE-25C6-4498-B147-45EE64E2B918",
+                    "pct" : 72,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "AEA423F3-15DA-4CC4-AF33-41BCA0D045D2",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "2E26E095-6196-41B6-BEEF-022A172B596C",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "3F74743A-1F2C-4984-9C5E-880428488B42",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "F047789F-FEB7-493F-A9DC-12C799FD1362",
+                    "pct" : 70,
+                    "pool" : "squat",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "616EE6A9-A476-4AB5-A45C-08D0E22DD5E1",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "193913AC-6FCF-4C3F-A15C-C10BAE990784",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2"
+              }
+            ],
+            "id" : "44F2683B-B22C-48BB-9AFA-51093F40EA46",
+            "note" : "",
+            "num" : 7,
+            "phase" : "trans",
+            "weekInBlock" : 2
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "0034AE12-D384-4EA1-9CA6-81891FE9828E",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "56E37F07-EC9A-4B80-BD39-5CFDB61FD625",
+                    "pct" : 83,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "7344677A-7EEE-448F-BA6C-8D357BFD9468",
+                    "pct" : 74,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "B5EDE112-2168-4C01-A0F7-59125920C63E",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "C4980E11-DA18-47CB-8932-75845375743B",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "3A3E8CA8-19D4-42B3-8D68-686ED80495E4",
+                    "pct" : 82,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "AE2D33E7-0416-4E85-A50B-8047275C6F98",
+                    "pct" : 74,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "D25E7A03-7C1A-4D26-886E-F0387EA35F4D",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "87D8F874-C779-4FE6-956B-0FC3C9C43595",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "ACF85029-90F7-40E9-841B-E870267ABF63",
+                    "pct" : 84,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "8B19E0C0-2839-4236-8BAF-35BF0274B5D7",
+                    "pct" : 76,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "01F04B4E-396B-4B3B-8AAE-CEE49375AABE",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "5B8DF006-BFB4-4AB9-92DD-6ED2018E66F0",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "2328AB1F-8B9C-42DA-8FF2-64532BD092E6",
+                    "pct" : 74,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "D407CEDB-7D01-4006-BC61-071B2F36C6EB",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "8A411BC5-4996-471F-986A-973C5382D3DB",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "2AFE747A-9561-4B20-BF7F-407109C0A2A5",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "0D6D4305-89EE-4C0A-BD9E-BAD562A57C78",
+                    "pct" : 72,
+                    "pool" : "squat",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "EE9C95AB-0941-42BC-A351-354EA1478510",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "E45ED529-3CC5-4FEE-85F9-1F2478394B17",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2"
+              }
+            ],
+            "id" : "48E11E6D-81AD-4ED1-A9EC-4ED58F5C0E2A",
+            "note" : "",
+            "num" : 8,
+            "phase" : "trans",
+            "weekInBlock" : 3
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "CA2B510B-5466-420E-B544-6E00468731AC",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "734288A1-F7AE-4E01-8FCB-71FA7C7D9FD9",
+                    "pct" : 86,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "E2A98285-2EBD-4F02-941F-0B732264856C",
+                    "pct" : 76,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "5C66F19B-2C2A-4CC7-9F12-1DFED62D43E8",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "E1403AEC-B182-4601-AA14-EBC81FF33535",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "C7B665D4-6DEF-41CC-B0C8-5C7F90C7F7B7",
+                    "pct" : 85,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "FD23DA7A-AE75-48FB-95D9-7DA816B0F9C6",
+                    "pct" : 76,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "BCD913C7-F285-4148-9A96-7C8453620F4A",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "0BF5FFEB-DCA5-42DE-93CA-68B2B9CEA813",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "93C01008-3C91-468C-9930-94733A3930B9",
+                    "pct" : 87,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "059853A7-3F09-48FD-9AE2-ACABDA0782BF",
+                    "pct" : 78,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "F409ABB8-3D14-4C7D-B654-C76EEBA3E71C",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "8A0CEEE3-DE3C-4AC5-B573-461477F24A64",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "89FB8DA7-7CE8-41A4-92F6-5ADE89397315",
+                    "pct" : 76,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "EC72B3BE-3A0A-492C-B831-D3AF46794866",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "7AFC2F1A-6B12-4609-9C7B-D2B527498375",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              },
+              {
+                "id" : "E1224A47-F729-413B-A81A-D15BD30329C3",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "E6460BDF-3005-4BD9-AD1B-F3A6528C709B",
+                    "pct" : 74,
+                    "pool" : "squat",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "7362E029-7EED-4E70-8E7F-66A0FFFA6215",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "0D0C2F93-1BCC-4FD6-86DE-74B3C7A02ACC",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 5 — Squat 2"
+              }
+            ],
+            "id" : "9B9B46FC-F638-4B40-AECA-DBAAFD6DF080",
+            "note" : "",
+            "num" : 9,
+            "phase" : "trans",
+            "weekInBlock" : 4
+          },
+          {
+            "blockLen" : 3,
+            "days" : [
+              {
+                "id" : "3077EDBE-1653-4DD8-8B04-7D1A182FDA92",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "10FB7F37-5C65-4B86-8288-C2804F6741F7",
+                    "pct" : 90,
+                    "pool" : "squat",
+                    "reps" : 2,
+                    "rpe" : 8.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "44CCCCB1-2D35-4504-A8B0-02C6C57689AC",
+                    "pct" : 82,
+                    "pool" : "squat",
+                    "reps" : 2,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "825856B4-2205-4B87-B92D-3EAE7F3E61AD",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 1 — Squat (heavy double)"
+              },
+              {
+                "id" : "07913353-0C00-4D4D-9A09-55DCAFB8C10B",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "4ADF697E-6195-47A1-9E91-2F29606922C4",
+                    "pct" : 89,
+                    "pool" : "bench",
+                    "reps" : 2,
+                    "rpe" : 8.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "212C8221-CF3E-4D48-820E-CAE8F15F2B64",
+                    "pct" : 80,
+                    "pool" : "bench",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "AE71A6B0-26A3-4E4E-8518-D7E6B4253EB3",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 2 — Bench (heavy double)"
+              },
+              {
+                "id" : "4FC7D908-7070-43B6-9030-99CFCCFCAA0E",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "28B1D921-2AD1-4D14-9718-62AD2610F60D",
+                    "pct" : 92,
+                    "pool" : "deadlift",
+                    "reps" : 1,
+                    "rpe" : 8.5,
+                    "sets" : 1
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "C001C1FD-BD5E-4B10-8C0A-5B7E3EC25430",
+                    "pct" : 84,
+                    "pool" : "deadlift",
+                    "reps" : 2,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 3 — LAST HEAVY DEADLIFT (10–14 days out)"
+              },
+              {
+                "id" : "D815D6E1-D305-483C-B8E3-0CC3A025CB76",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "783208C8-085C-4FE3-ACDF-61F6E1CB2B49",
+                    "pct" : 75,
+                    "pool" : "bench",
+                    "reps" : 3,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "E3172146-5305-47DF-B8D2-1B017F945016",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 7,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 4 — Bench technique"
+              }
+            ],
+            "id" : "05D809FB-24A2-46C7-8201-CABF9D1A4EA7",
+            "note" : "",
+            "num" : 10,
+            "phase" : "real",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 3,
+            "days" : [
+              {
+                "id" : "2D12E2E2-B689-492E-9A13-9C762CF4C758",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "5F46BC3C-3641-41FA-9894-917CDD587285",
+                    "pct" : 92,
+                    "pool" : "squat",
+                    "reps" : 1,
+                    "rpe" : 8,
+                    "sets" : 1
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "2CE76C95-A056-4749-A725-8D6FF5B67A9C",
+                    "pct" : 80,
+                    "pool" : "squat",
+                    "reps" : 2,
+                    "rpe" : 7,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 1 — Squat OPENER (single @ ~92%)"
+              },
+              {
+                "id" : "E3BC7438-2DC7-483B-97E2-25D473ABCAB6",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "985534A9-B742-47B6-9F44-9469BFDEA185",
+                    "pct" : 92,
+                    "pool" : "bench",
+                    "reps" : 1,
+                    "rpe" : 8,
+                    "sets" : 1
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "A6753468-CF1A-48FA-9D2C-52A46EEF6E83",
+                    "pct" : 80,
+                    "pool" : "bench",
+                    "reps" : 2,
+                    "rpe" : 7,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 2 — Bench OPENER (single @ ~92%)"
+              },
+              {
+                "id" : "A8F04946-0595-4F17-BFC4-1B541EAD22E4",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "5E88CD5A-C7AC-461F-BB97-40641C4523C7",
+                    "pct" : 78,
+                    "pool" : "deadlift",
+                    "reps" : 1,
+                    "rpe" : 6.5,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift speed work"
+              },
+              {
+                "id" : "963A1D35-9BBF-4A21-9CFF-1E21707D59BD",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "916D2F2C-3960-4CA5-B746-39D1653E0D3C",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 3,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 4 — Light bench touch-up"
+              }
+            ],
+            "id" : "B6C166AA-A3DC-49D0-91D7-B562B4CEDE47",
+            "note" : "",
+            "num" : 11,
+            "phase" : "real",
+            "weekInBlock" : 2
+          },
+          {
+            "blockLen" : 3,
+            "days" : [
+              {
+                "id" : "C36C4108-4EAC-44C5-BBA2-74F9DC86CEB8",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "D0AE4255-F9E3-4A7F-8BF2-BED57FBD4D48",
+                    "pct" : 60,
+                    "pool" : "squat",
+                    "reps" : 2,
+                    "rpe" : 5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "1D953BAE-E373-4C8C-83D8-07F51C2A7C52",
+                    "pct" : 60,
+                    "pool" : "bench",
+                    "reps" : 2,
+                    "rpe" : 5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "88971332-B158-4EFE-8DD3-8EA08535858E",
+                    "pct" : 55,
+                    "pool" : "deadlift",
+                    "reps" : 2,
+                    "rpe" : 5,
+                    "sets" : 1
+                  }
+                ],
+                "title" : "Mon\/Tue — Technique primer"
+              },
+              {
+                "id" : "72C64037-9E56-4925-A1B1-768B10A2FB01",
+                "slots" : [
+
+                ],
+                "title" : "Wed–Fri — Rest, hydrate, sleep"
+              }
+            ],
+            "id" : "7D95FEF8-EDFE-4211-B246-7B8F37DF0122",
+            "note" : "",
+            "num" : 12,
+            "phase" : "meet",
+            "weekInBlock" : 3
+          }
+        ]
+      },
+      "setupPhase" : "full",
+      "setupWeeks" : 12,
+      "unit" : "lb"
+    },
+    {
+      "fiveDay" : false,
+      "id" : "A50A4754-8F4F-4B08-932B-BBFD36668775",
+      "maxes" : {
+        "bench" : 95,
+        "deadlift" : 200,
+        "squat" : 170
+      },
+      "name" : "Kilo Kate",
+      "program" : {
+        "blocks" : [
+          {
+            "phase" : "acc",
+            "weeks" : 5
+          },
+          {
+            "phase" : "deload",
+            "weeks" : 1
+          },
+          {
+            "phase" : "trans",
+            "weeks" : 4
+          }
+        ],
+        "createdAt" : "2026-08-03T07:18:10Z",
+        "fiveDay" : false,
+        "startPhase" : "offseason",
+        "totalWeeks" : 10,
+        "weeks" : [
+          {
+            "blockLen" : 5,
+            "days" : [
+              {
+                "id" : "C00EFB20-D118-467F-B654-0FFE4AFDB28B",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "781317A2-2DBF-4970-A6C4-E45560508520",
+                    "pct" : 67,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "6118F66B-0A57-4282-B261-AA8AA2FECC7D",
+                    "pct" : 60,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "50B48230-FCEF-4404-817E-AD0ADDAAD096",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "272A7598-BC69-4422-8D7D-2BB9833A1519",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "0C1EAD01-12EA-4944-9C13-AAF5E1DDA622",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "8F2F8376-1F3D-4574-8C40-D5A38EA1D136",
+                    "pct" : 65,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "17D35B49-B01F-4E77-9E95-C8FE07AB31C5",
+                    "pct" : 60,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "49A5F3B5-7B79-4DF7-AC5C-1DF1656636CC",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "ABBB99EC-377C-4AA7-A079-5E7C8FC89D60",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "00837BD6-1D96-4E3A-9B29-ECEB61A5CB40",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "8E75B69F-B383-43B6-B305-FFA71DE0F666",
+                    "pct" : 67,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "D4892830-4805-43CC-86B6-85513F683E40",
+                    "pct" : 55,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "979445D1-DC3A-4F2C-A45F-855ED7C7C134",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "3DE47891-377B-4984-9635-BA37CBF4A293",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "E3FC98C5-742F-44CE-BFE2-FB87CBA31425",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "AF13B487-324F-4A65-88D8-967EA955056B",
+                    "pct" : 58,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "DCA88D97-8B72-442B-BD68-1816C1C6250C",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "7C10CD96-63D1-4815-825E-8146110A77F5",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "1B29CE42-571C-4166-ABA3-5056C84685BB",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "66323547-3CFF-479C-85EB-7E2541F944B6",
+            "note" : "",
+            "num" : 1,
+            "phase" : "acc",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 5,
+            "days" : [
+              {
+                "id" : "08907038-9DA3-48B0-8427-C8EB2485D1D5",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "96C7F658-721D-4B76-AA48-1461FF296AC2",
+                    "pct" : 69,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "AEFA2EB3-FC57-4912-AC76-B3F64C251E66",
+                    "pct" : 62,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "73D6384F-7E9E-4107-810C-26D5E69FFA6C",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "F61BC119-ED9F-46CE-AAE9-F1B82C6556F8",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "7405BD0C-47F2-4828-B4A1-54F93B17EA90",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "82B66ACB-F990-4146-8654-880166E7C99B",
+                    "pct" : 67,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "4713B1E3-2718-4337-BA9D-D1BFAA73E8A5",
+                    "pct" : 61,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "08666F98-8A4B-4F45-9075-7B8682109CFE",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "C98A7ECA-4A73-44FA-A04E-63244F6B38AE",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "8AECBF0D-AF6E-4005-8394-C32A7C51293D",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "2321CD43-028A-4999-8639-D5A88E42DB39",
+                    "pct" : 69,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "363F490A-7B97-4C3F-873C-21134C829A0F",
+                    "pct" : 56,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "18B45727-DC45-422B-970B-9FD1E87045D6",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "2DAFDAAA-272F-4FA1-93E3-A297BB280841",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "484F17C3-23C7-4947-8D29-B0B3B2771242",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "205B3210-E895-4085-9E0E-58E56BEF940B",
+                    "pct" : 60,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "F37F33FF-9FF4-4E1B-85E2-ADAABC0F0F52",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "B26A9C59-A1D4-40CE-868C-2635233D5883",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "4B64FE9A-7139-4B3E-BFFE-80A0F3638C14",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "1F4507B3-F731-461F-A203-4461C26C6EF0",
+            "note" : "",
+            "num" : 2,
+            "phase" : "acc",
+            "weekInBlock" : 2
+          },
+          {
+            "blockLen" : 5,
+            "days" : [
+              {
+                "id" : "483F5E51-4A9D-4948-B47D-B9CA7F23B310",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "2244FE20-7770-4D68-8371-F2A231364884",
+                    "pct" : 71,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "BCEE043F-EAB9-4EF0-8EE4-75C5D42703A8",
+                    "pct" : 63,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "745CA35F-0D23-413F-963C-0431A776DBAA",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "18C7B7A4-7B83-430E-9EC3-1A8BE7B7EAB4",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "E257DC16-2C3E-4F40-977F-A5D6C7470D3F",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "BC27855B-69C8-4EC4-A273-07704FEF78D1",
+                    "pct" : 69,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "1F304A25-DBD0-4419-86A7-17726E795A77",
+                    "pct" : 63,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "3A6462FD-FF0C-40CB-A26F-66E7C92FB4BE",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "50C95C90-7503-4921-B70B-B43A7034DB6D",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "EA307CEC-5C88-4B4B-8F6C-0E2C4368C780",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "73BE33E4-4ED4-4183-B002-171C68056FE4",
+                    "pct" : 71,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "C2776A65-8BEE-4756-823A-A3F50C2020B5",
+                    "pct" : 58,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "7FC336B2-E8C2-45E4-A0BD-B98CB41CFE52",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "0C3AA289-5B6B-4837-9CD6-B826B735EE98",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "16B0F8C8-B2FC-44B7-81E5-184C4C9B8D01",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "19BEBE5A-92B0-431F-B3A1-8E66C4D44EF9",
+                    "pct" : 61,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "B4A3317C-94E5-4EBE-A495-C95A742928E3",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "B6BD85C5-FB45-429F-A749-BB0293248D2D",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "2AE13AFB-DF9A-4D37-A2DE-26DACC9CD42A",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "1C0335D1-04D1-4464-9276-D1F5459AC240",
+            "note" : "",
+            "num" : 3,
+            "phase" : "acc",
+            "weekInBlock" : 3
+          },
+          {
+            "blockLen" : 5,
+            "days" : [
+              {
+                "id" : "40D28D27-70C9-44ED-B5A9-8E8A75AD8AFD",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "ECA62429-CDDB-4CC0-AA77-C025C122C1DA",
+                    "pct" : 73,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "3872CBBD-872C-45EC-9C1D-04A0D7628EAF",
+                    "pct" : 65,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "74F86489-1C33-4068-8309-8750C72BCF09",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "96D4E454-39DE-464B-AEDB-F6C2CEFF7515",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "20A7B344-8B45-4CC0-A1BC-6AA7C966C0AE",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "565ECB15-CE59-4081-8A38-763317670C1C",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "F8BE919E-C8EF-4439-8034-EB142C0FFB82",
+                    "pct" : 64,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "30152ABA-2117-4023-82E5-5CDA3E168B39",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "25F97562-4CEB-4614-9F5A-D77A1F82B930",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "5FB53806-B0E1-45C3-B94D-0CC1CF408CC1",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "454C7F08-A236-4BFB-BD83-D731F78A5691",
+                    "pct" : 72,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "0FC2DDAF-A0F0-4726-8830-D8882A5775F8",
+                    "pct" : 59,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "769327FD-16BE-40CA-94BD-97EC4B0D57E3",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "0C16175F-EA30-4260-92C9-B62A5EB08C89",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "425EAFF4-0F77-47E4-AAC1-8C7CD0D7FA4E",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "12695B67-7A6B-46F0-8DFE-01D3B33A32A8",
+                    "pct" : 63,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "323EA645-244F-4B88-9D81-51CF1DD17722",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "6C3F3525-DB29-44B7-BD0E-522EAFC9C047",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "02FE6E0B-8E99-476C-9202-6F5831FDAA3D",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "AE0AFFA8-6864-4772-ABCE-4A5661B2FAEB",
+            "note" : "",
+            "num" : 4,
+            "phase" : "acc",
+            "weekInBlock" : 4
+          },
+          {
+            "blockLen" : 5,
+            "days" : [
+              {
+                "id" : "8E12586E-8721-4430-89B8-EA9D74673E8C",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "C722CF8D-8688-4017-9EF5-E297F5903739",
+                    "pct" : 75,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "41722192-2475-4390-AA3A-CBC0EA11B11A",
+                    "pct" : 66,
+                    "pool" : "squat",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "88979917-5CAB-4E17-A51A-6E5228CEBB2D",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "FE5C80EB-E39B-4A13-B174-339850CF95CB",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "936E4D9D-943E-4C2E-8D21-7099639871E4",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "8780734E-F65F-437E-8AB8-7EE10921465F",
+                    "pct" : 72,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "875049AA-C6BB-4D65-9DAC-3AF6E9CCB18E",
+                    "pct" : 65,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "08DCA769-09FA-4523-9BCA-137F6F15DCAC",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "E157C9A6-7B4D-4949-975E-5FAFB1126A90",
+                    "pool" : "back",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "C9CDCE4F-1CAA-4EF8-8A94-58CCDD8F495F",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "C917F5B8-1525-47D6-83E7-2DA70D9744B5",
+                    "pct" : 74,
+                    "pool" : "deadlift",
+                    "reps" : 6,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "8A8D2846-3C7A-4583-BA82-AADDDE0613DA",
+                    "pct" : 60,
+                    "pool" : "deadlift",
+                    "reps" : 8,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "483D533F-365A-4ED3-898C-560338E311C0",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "A8083892-B2E0-4C3A-B374-B7D043573D03",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "616F7384-5617-4506-AB91-C85EB3733B35",
+                "slots" : [
+                  {
+                    "exIdx" : 3,
+                    "id" : "E6868436-E7E2-4F42-805A-6E042E878624",
+                    "pct" : 64,
+                    "pool" : "bench",
+                    "reps" : 8,
+                    "rpe" : 7,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "761C1806-C6B1-4ED7-9E0F-955D803FA3A5",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "2C63B032-850E-42BE-9F8F-6D3352025ABD",
+                    "pool" : "press",
+                    "reps" : 12,
+                    "rpe" : 8.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "2E73909B-A0B3-4ED5-A8EE-819C2B042657",
+                    "pool" : "quads",
+                    "reps" : 12,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "44EDBB3A-F21E-4E68-BD1C-69B5232B014E",
+            "note" : "",
+            "num" : 5,
+            "phase" : "acc",
+            "weekInBlock" : 5
+          },
+          {
+            "blockLen" : 1,
+            "days" : [
+              {
+                "id" : "C7D99EB9-0FC3-4B6D-971F-BD15072F79A1",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "BE26BFFF-8CC7-4684-B3C8-EDC4281FB4B9",
+                    "pct" : 62,
+                    "pool" : "squat",
+                    "reps" : 5,
+                    "rpe" : 6,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "D0B1A8D2-5A58-495B-8615-E6C7ADF61919",
+                    "pool" : "quads",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "1007D2A4-388D-49E5-B555-4E1FD1EB8A33",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "45D6286A-1A8F-416C-9219-84248F01F70C",
+                    "pct" : 62,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 6,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "AC48021C-1266-4640-AE01-09380E7E31F3",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "7786E055-A528-460A-8F1C-56D6DF631985",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "096687C0-C540-4B75-B00F-FE4C79E3CF05",
+                    "pct" : 62,
+                    "pool" : "deadlift",
+                    "reps" : 4,
+                    "rpe" : 6,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "65AE365F-9D58-4F9F-B53D-15144B3DFD0A",
+                    "pool" : "hams",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "A8799E28-D608-493E-9614-75097B2862AE",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "2CB90267-8934-487F-9FE3-915D04E42981",
+                    "pool" : "press",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "F5568278-061D-441D-8D36-10C8FB40663B",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 6,
+                    "sets" : 2
+                  }
+                ],
+                "title" : "Day 4 — Optional"
+              }
+            ],
+            "id" : "6BDF22B0-6836-410B-9B65-5AC78BBBFEBE",
+            "note" : "",
+            "num" : 6,
+            "phase" : "deload",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "B7E1D908-F524-43C8-A92A-E26A9E1EEF72",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "B6D07BB0-26DA-4AF5-B02A-1AAE0B90C441",
+                    "pct" : 77,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "F76CFD1D-F859-414D-95D5-3536F3CAD316",
+                    "pct" : 70,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "8EE7A881-7EB1-4CB0-B717-27F785663C94",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "3C3EA5BA-1186-4BFC-99B5-450C92AD2B1B",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "3EB42398-27F0-46AC-8904-7F7AA7290A52",
+                    "pct" : 76,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "1D2BF574-CC09-420F-97D9-101054BF0949",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "B9218BB2-473E-4FEB-951B-30075906E4CB",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "419B2713-E26B-4B51-83FC-BA45E146FA6D",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "3B0D47F3-678D-4F6D-991F-F3E511DE8339",
+                    "pct" : 78,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "AC2CBFBD-FBC8-43B1-BD62-5DB34E002E3B",
+                    "pct" : 72,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "6AEF667B-56AF-4A7E-A495-BA75B28DD910",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "DE7C4203-09CF-4944-8451-011D2CE6CA86",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "F6127CFE-1B5D-4D3B-8FEF-07402686AF21",
+                    "pct" : 70,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "0384170D-E8A3-4DEA-AFB2-BBCF829D44D9",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "77382F86-0ECD-4C27-8D58-52C45BDFCE3C",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "1320E67D-0226-44AD-91A3-F7856D7D19FA",
+            "note" : "",
+            "num" : 7,
+            "phase" : "trans",
+            "weekInBlock" : 1
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "CD5CD52C-9EEA-4690-A5C8-F37B8A23D2BC",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "719AE998-5DB5-4A75-B9DC-7696BC7011DA",
+                    "pct" : 80,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "CA2BE4CA-54AE-4358-9BC1-ABA3459D080B",
+                    "pct" : 72,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "74B536F7-311C-4016-A233-99CD4B140ABB",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "49271CAF-0574-4297-A896-459FF31C6BC6",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "0A542EB3-80AC-4311-B537-A7B7E7D62465",
+                    "pct" : 79,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "65BEC221-17D2-44C5-8158-492E5E4B6AF9",
+                    "pct" : 72,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "4463B57C-E35E-4A90-AAB2-1F9615F3AFDE",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "CE9DB422-4E86-4D1D-B8A3-DBAD2AAE0A4C",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "5ACAA6C2-1B74-423E-B6D2-A0DAB1D38D20",
+                    "pct" : 81,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "AA1B8E47-74D9-4681-9764-919195E1382E",
+                    "pct" : 74,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "F310E15E-31CE-47A4-AD08-9A284B7182DB",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "345267DB-0C1A-44EE-8906-444018D3A09C",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "60D13668-4C9F-429D-9DBE-DDBB26374878",
+                    "pct" : 72,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "38036BA6-7F75-45A9-AA7B-D85F7AD0F173",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "1077594E-8AC5-40E9-A4F9-F22D2773E2B7",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "C1A95138-4CA7-4457-AF9A-8DF75A7E8A8F",
+            "note" : "",
+            "num" : 8,
+            "phase" : "trans",
+            "weekInBlock" : 2
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "4A65DBD3-0B01-4BB9-BB48-9AEA482C6E67",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "C7634226-4534-4434-9319-579588AFE5DB",
+                    "pct" : 83,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "8AE9AA47-7C6E-4EDE-B5C4-99D6CB836623",
+                    "pct" : 74,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "35774DF4-6630-49BB-9B58-182420E1B49B",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "614FDDF4-C478-47E7-8A2E-326D33896E5F",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "CA2E7182-AD1D-437A-B4E3-04A9294B86B1",
+                    "pct" : 82,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "70B5FC28-4934-4ED7-8367-E16A63C867C0",
+                    "pct" : 74,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "9ABE34B8-9BBC-42F3-BC5C-405F0F98B7E1",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "F878F0DF-3C7B-45D7-BD8D-1271876AA405",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "53542CEF-5561-4891-A09E-79B2D64765CA",
+                    "pct" : 84,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "59A38743-4231-4AE0-8BEE-FA2036BDF6CE",
+                    "pct" : 76,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "6EDABEDA-D4FD-46BE-9350-26BF36D93943",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "FCDF2FAC-7EC7-48D6-8AE3-619305A5D7DF",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "C3928C74-C8E1-44FC-AD19-625A126E938F",
+                    "pct" : 74,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "081A1ECD-7F92-48EE-958D-117841F8B52F",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "8288929B-978D-43F1-88BF-15A8EE7165D1",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "CE645026-EEC0-4C67-BA76-B54679C0E014",
+            "note" : "",
+            "num" : 9,
+            "phase" : "trans",
+            "weekInBlock" : 3
+          },
+          {
+            "blockLen" : 4,
+            "days" : [
+              {
+                "id" : "97D687F8-B817-4460-A80A-4A537F821362",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "3A77CE31-7A06-4E03-B47C-5EF36D401F49",
+                    "pct" : 86,
+                    "pool" : "squat",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "06CD6A1F-9941-4AB6-8CA4-0E43FD3E1AF3",
+                    "pct" : 76,
+                    "pool" : "squat",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 0,
+                    "id" : "2FDA7F07-CD10-4642-8512-A6E9F17B8517",
+                    "pool" : "hams",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 1 — Squat"
+              },
+              {
+                "id" : "F585013D-412F-457E-8AE6-657F9B5F71CC",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "785089B5-1196-4F1C-A6E9-A76ACD8E601E",
+                    "pct" : 85,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 2,
+                    "id" : "55F2645A-A1A2-43FC-B071-DF58963C09DB",
+                    "pct" : 76,
+                    "pool" : "bench",
+                    "reps" : 4,
+                    "rpe" : 7.5,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 4,
+                    "id" : "82AA5BA4-1302-4D41-9F3E-E590BAE09FE6",
+                    "pool" : "back",
+                    "reps" : 10,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 2 — Bench"
+              },
+              {
+                "id" : "FCDB707F-FF67-484B-A20B-02DFCF9ECD2B",
+                "slots" : [
+                  {
+                    "exIdx" : 0,
+                    "id" : "ED0A9312-2B21-40B8-938F-83BDC2CE014A",
+                    "pct" : 87,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 8,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "7214208A-6049-474E-A11E-2F2DB63BF535",
+                    "pct" : 78,
+                    "pool" : "deadlift",
+                    "reps" : 3,
+                    "rpe" : 7.5,
+                    "sets" : 2
+                  },
+                  {
+                    "exIdx" : 1,
+                    "id" : "2CCD5B17-D77F-4121-8D9E-59E1A6641498",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 3 — Deadlift"
+              },
+              {
+                "id" : "DD3B001E-5B15-44AB-B5E4-20157385FFD5",
+                "slots" : [
+                  {
+                    "exIdx" : 1,
+                    "id" : "1F0377DC-56FB-4906-A506-6DEAF69F0901",
+                    "pct" : 76,
+                    "pool" : "bench",
+                    "reps" : 5,
+                    "rpe" : 7.5,
+                    "sets" : 4
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "EE238D77-7B40-4FEF-9F68-E7C1794E95BE",
+                    "pool" : "press",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  },
+                  {
+                    "exIdx" : 3,
+                    "id" : "C3EAE36A-4335-419D-8529-12F5A1B1FCAC",
+                    "pool" : "back",
+                    "reps" : 8,
+                    "rpe" : 8,
+                    "sets" : 3
+                  }
+                ],
+                "title" : "Day 4 — Bench 2"
+              }
+            ],
+            "id" : "F8D46BA4-BC27-4FD2-8C05-266D6BC4D91B",
+            "note" : "",
+            "num" : 10,
+            "phase" : "trans",
+            "weekInBlock" : 4
+          }
+        ]
+      },
+      "setupPhase" : "offseason",
+      "setupWeeks" : 10,
+      "unit" : "kg"
+    },
+    {
+      "fiveDay" : false,
+      "id" : "E7683846-2CF5-4282-B497-600F92137256",
+      "maxes" : {
+        "bench" : 0,
+        "deadlift" : 0,
+        "squat" : 0
+      },
+      "name" : "No Program Norm",
+      "setupPhase" : "full",
+      "setupWeeks" : 12,
+      "unit" : "lb"
+    }
+  ]
+}

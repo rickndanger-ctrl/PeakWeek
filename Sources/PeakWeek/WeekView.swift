@@ -72,6 +72,9 @@ struct WeekView: View {
                 .padding(.horizontal, 14)
                 .fontWeight(.semibold)
 
+            // NOTE: ShareLink inside Menu is verified working on macOS 14+ (this
+            // machine). If a macOS 13 install ever misbehaves, hoist the two
+            // ShareLinks out of the Menu into inline header buttons.
             Menu {
                 ShareLink(item: weekText) {
                     Label("Send as text…", systemImage: "message")
@@ -173,21 +176,20 @@ struct DayCard: View {
                     day.slots.removeAll { $0.id == slot.id }
                 }
             }
-            if !day.slots.isEmpty {
-                Button {
-                    let lib = store.data.exerciseLibrary
-                    let first = lib[.back].first { !$0.archived }
-                    day.slots.append(Slot(pool: .back, exerciseID: first?.id,
-                                          custom: first == nil ? "" : nil,
-                                          sets: 3, reps: 10, pct: nil, rpe: 8))
-                } label: {
-                    Label("Add exercise", systemImage: "plus")
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(SquareOutlineButtonStyle())
-                .padding(.top, 4)
+            // Always available — a day emptied by removals must not dead-end.
+            Button {
+                let lib = store.data.exerciseLibrary
+                let first = lib[.back].first { !$0.archived }
+                day.slots.append(Slot(pool: .back, exerciseID: first?.id,
+                                      custom: first == nil ? "" : nil,
+                                      sets: 3, reps: 10, pct: nil, rpe: 8))
+            } label: {
+                Label("Add exercise", systemImage: "plus")
+                    .font(.caption)
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(SquareOutlineButtonStyle())
+            .padding(.top, 4)
         }
         .padding(12)
         .background(Theme.iron, in: Rectangle())
@@ -204,10 +206,10 @@ struct SlotRow: View {
     let onRemove: () -> Void
     @State private var showNewExercise = false
 
-    private var pctText: Binding<String> {
+    private var pctBinding: Binding<Double?> {
         Binding(
-            get: { slot.pct.map { String(Int($0)) } ?? "" },
-            set: { slot.pct = Double($0).map { min(110, max(0, $0)) } }
+            get: { slot.pct },
+            set: { slot.pct = $0.map { min(110, max(0, $0)) } }
         )
     }
 
@@ -264,11 +266,7 @@ struct SlotRow: View {
                 numField($slot.reps, width: 38)
                     .onChange(of: slot.reps) { v in slot.reps = min(99, max(1, v)) }
                 Text("@").foregroundStyle(.secondary)
-                TextField("—", text: pctText)
-                    .squareFieldStyle()
-                    .font(.system(.caption, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .frame(width: 44)
+                OptionalNumberField(placeholder: "—", value: pctBinding, width: 44)
                 Text("%").foregroundStyle(.secondary)
                 if let load = Engine.slotLoad(slot, maxes: client.maxes, unit: client.unit,
                                               library: store.data.exerciseLibrary,
@@ -302,8 +300,9 @@ struct SlotRow: View {
             set: { newValue in
                 switch newValue {
                 case "custom":
+                    // Keep pct so switching to custom and back never loses the
+                    // prescription (custom slots simply show no computed load).
                     slot.custom = ""
-                    slot.pct = nil
                 case "new":
                     showNewExercise = true
                 default:
