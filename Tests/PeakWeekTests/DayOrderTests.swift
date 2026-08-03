@@ -25,11 +25,32 @@ final class DayOrderTests: XCTestCase {
         XCTAssertEqual(touched, p.weeks.filter { $0.phase != .meet }.count)
         XCTAssertEqual(p.weeks[0].days[0].id, originalWeek1[2].id, "deadlift day leads")
         XCTAssertEqual(p.weeks[0].days[2].id, originalWeek1[0].id, "squat day now third")
-        XCTAssertTrue(p.weeks[0].days[0].title.contains("Deadlift"))
+        // Titles renumber to the NEW position — "Day 1" is the first day
+        // trained; the descriptive name travels with the day.
+        XCTAssertEqual(p.weeks[0].days[0].title, "Day 1 — Deadlift")
+        XCTAssertEqual(p.weeks[0].days[1].title, "Day 2 — Bench")
+        XCTAssertEqual(p.weeks[0].days[2].title, "Day 3 — Squat")
+        XCTAssertEqual(p.weeks[0].days[3].title, "Day 4 — Bench 2")
+        // Special realization titles keep their descriptive tail.
+        if let heavy = p.weeks.first(where: { w in
+            w.days.contains { $0.title.contains("LAST HEAVY DEADLIFT") }
+        }) {
+            let dl = heavy.days.first { $0.title.contains("LAST HEAVY DEADLIFT") }!
+            XCTAssertTrue(dl.title.hasPrefix("Day 1"),
+                          "DL-first order puts the last heavy pull on day 1: \(dl.title)")
+        }
 
         // Pure re-sequencing: same days, same slots, nothing edited.
         XCTAssertEqual(Set(p.weeks[0].days.map(\.id)), Set(originalWeek1.map(\.id)))
         XCTAssertEqual(p.weeks[0].days[0].slots, originalWeek1[2].slots)
+
+        // Ordering is ABSOLUTE: re-applying the SAME order is a no-op…
+        XCTAssertEqual(p.applyDayOrder([2, 1, 0, 3]), 0)
+        XCTAssertEqual(p.weeks[0].days[0].title, "Day 1 — Deadlift")
+        // …and factory order restores factory sequence (never compounds).
+        p.applyDayOrder([0, 1, 2, 3])
+        XCTAssertEqual(p.weeks[0].days.map(\.id), originalWeek1.map(\.id))
+        XCTAssertEqual(p.weeks[0].days[0].title, "Day 1 — Squat")
     }
 
     func testMeetWeekNeverReorders() {
@@ -58,7 +79,9 @@ final class DayOrderTests: XCTestCase {
         p.applyDayOrder(order)
         let acc = p.weeks.first { $0.phase == .acc }!
         XCTAssertEqual(acc.days.count, 5)
-        XCTAssertTrue(acc.days[0].title.contains("Day 5") || acc.days[0].title.contains("Squat 2"),
+        XCTAssertTrue(acc.days[0].title.hasPrefix("Day 1"),
+                      "leading day renumbers to Day 1: \(acc.days[0].title)")
+        XCTAssertTrue(acc.days[0].title.contains("Squat 2"),
                       "5th factory day now leads: \(acc.days[0].title)")
         // A 4-day realization week uses the induced sub-order (4 dropped):
         // [0,1,2,3] = unchanged.
@@ -76,6 +99,32 @@ final class DayOrderTests: XCTestCase {
         p.applyDayOrder([3, 2, 1, 0])
         let after = p.weeks.flatMap { $0.days.flatMap(\.slots) }.sorted { $0.id.uuidString < $1.id.uuidString }
         XCTAssertEqual(before, after)
+    }
+
+    func testStaleTitlesRepairedByReapplyingSameOrder() {
+        // A program saved by the pre-fix build: days moved, titles kept their
+        // factory numbers ("Day 3 — Deadlift" sitting first), and — because
+        // the file predates factoryIndex — no stored identity. Applying the
+        // SAME order must repair the numbering in place, inferring identity
+        // from the stale title numbers, WITHOUT permuting again.
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        for wi in p.weeks.indices where p.weeks[wi].phase != .meet {
+            let order = [2, 1, 0, 3].filter { $0 < p.weeks[wi].days.count }
+            guard order.count == p.weeks[wi].days.count else { continue }
+            p.weeks[wi].days = order.map { p.weeks[wi].days[$0] }   // old buggy move
+            for di in p.weeks[wi].days.indices {                    // legacy file: no identity
+                p.weeks[wi].days[di].factoryIndex = nil
+            }
+        }
+        XCTAssertTrue(p.weeks[0].days[0].title.hasPrefix("Day 3"), "stale state reproduced")
+        let dlID = p.weeks[0].days[0].id
+
+        let touched = p.applyDayOrder([2, 1, 0, 3])
+        XCTAssertGreaterThan(touched, 0, "stale titles read as a difference")
+        XCTAssertEqual(p.weeks[0].days[0].id, dlID, "deadlift day STAYS first — no double permute")
+        XCTAssertEqual(p.weeks[0].days[0].title, "Day 1 — Deadlift")
+        XCTAssertEqual(p.weeks[0].days[2].title, "Day 3 — Squat")
+        XCTAssertEqual(p.weeks[0].days[0].factoryIndex, 2, "inferred identity stamped for the future")
     }
 
     // MARK: - projection follows day order

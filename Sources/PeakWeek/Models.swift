@@ -144,6 +144,25 @@ struct DayPlan: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var title: String
     var slots: [Slot]
+    /// Which factory template position this day was born as (0 = squat day,
+    /// 1 = bench day, …). Stable across reordering — day-order preferences
+    /// are ABSOLUTE (keyed to this), never relative to the current sequence.
+    /// nil on pre-existing saved days; inferred from the title's "Day N"
+    /// number on first reorder, then stamped.
+    var factoryIndex: Int? = nil
+
+    init(id: UUID = UUID(), title: String, slots: [Slot], factoryIndex: Int? = nil) {
+        self.id = id; self.title = title; self.slots = slots
+        self.factoryIndex = factoryIndex
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        slots = try c.decodeIfPresent([Slot].self, forKey: .slots) ?? []
+        factoryIndex = try c.decodeIfPresent(Int.self, forKey: .factoryIndex)
+    }
 }
 
 struct Week: Codable, Identifiable, Hashable {
@@ -274,13 +293,55 @@ struct Program: Codable, Hashable {
             let n = weeks[wi].days.count
             let effective = order.filter { $0 < n }
             guard effective.count == n, n > 1 else { continue }
-            let reordered = effective.map { weeks[wi].days[$0] }
-            if reordered.map(\.id) != weeks[wi].days.map(\.id) {
+
+            // ABSOLUTE ordering: each day is looked up by its factory
+            // identity, so applying the same order twice is a no-op and
+            // switching orders never compounds. Legacy days (saved before
+            // factoryIndex existed) carry their identity in the system-
+            // written "Day N" title prefix — inferred once, then stamped.
+            var byFactory: [Int: DayPlan] = [:]
+            for (pos, day) in weeks[wi].days.enumerated() {
+                let fi = day.factoryIndex ?? Self.titleDayNumber(day.title).map { $0 - 1 } ?? pos
+                guard byFactory[fi] == nil else { byFactory = [:]; break }
+                byFactory[fi] = day
+            }
+            guard byFactory.count == n, Set(byFactory.keys) == Set(0..<n) else { continue }
+
+            // Re-sequence, stamp identity, and renumber the "Day N" prefix to
+            // the NEW position — "Day 1" always means the first day trained;
+            // the descriptive part (— Deadlift, — LAST HEAVY…) travels along.
+            let reordered = effective.enumerated().map { pos, fi -> DayPlan in
+                var day = byFactory[fi]!
+                day.factoryIndex = fi
+                day.title = day.title.replacingOccurrences(
+                    of: #"^Day \d+"#, with: "Day \(pos + 1)",
+                    options: .regularExpression)
+                return day
+            }
+            if reordered != weeks[wi].days {
                 weeks[wi].days = reordered
                 touched += 1
             }
         }
         return touched
+    }
+
+    /// Stamp each day's factory identity from its position. Called at BUILD
+    /// time only, when every week is still in factory order — never after a
+    /// reorder. Existing stamps are preserved.
+    mutating func stampFactoryDayIndices() {
+        for wi in weeks.indices {
+            for di in weeks[wi].days.indices where weeks[wi].days[di].factoryIndex == nil {
+                weeks[wi].days[di].factoryIndex = di
+            }
+        }
+    }
+
+    /// The N in a system-written "Day N — …" title, if present.
+    static func titleDayNumber(_ title: String) -> Int? {
+        guard let match = title.range(of: #"^Day \d+"#, options: .regularExpression)
+        else { return nil }
+        return Int(title[match].dropFirst(4))
     }
 
     // MARK: structural editing (deload insertion/removal)

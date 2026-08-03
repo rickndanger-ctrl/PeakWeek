@@ -1084,6 +1084,9 @@ struct ClientView: View {
                                          library: store.data.exerciseLibrary,
                                          excluded: client.settings.excludedExerciseIDs ?? [])
         guard program.insertDeload(week: week, at: boundary) else { return }
+        // The fresh deload arrives factory-ordered; fold it into the lifter's
+        // day order. Idempotent — weeks already in order are untouched.
+        if client.dayOrder != nil { program.applyDayOrder(effectiveDayOrder) }
         // Send records for weeks at/after the insertion point shift up by one —
         // and so does a configured first-send week.
         store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,

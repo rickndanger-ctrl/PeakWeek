@@ -617,6 +617,7 @@ enum Engine {
                                excluded: Set<UUID> = []) -> Week {
         var week = Week(num: 0, phase: .deload, weekInBlock: 1, blockLen: 1,
                         days: dayTemplates(phase: .deload, t: 0, weeksOut: nil, fiveDay: fiveDay))
+        for di in week.days.indices { week.days[di].factoryIndex = di }
         resolveSlots(in: &week, library: library, excluded: excluded)
         return week
     }
@@ -716,8 +717,10 @@ enum Engine {
 
         // With a custom block plan the true total is the plan's sum, not the arg.
         let actualTotal = rawBlocks.reduce(0) { $0 + $1.weeks }
-        return Program(startPhase: startPhase, totalWeeks: actualTotal, fiveDay: fiveDay,
-                       createdAt: Date(), blocks: blocks, weeks: weeks)
+        var program = Program(startPhase: startPhase, totalWeeks: actualTotal, fiveDay: fiveDay,
+                              createdAt: Date(), blocks: blocks, weeks: weeks)
+        program.stampFactoryDayIndices()   // day-order preferences key off these
+        return program
     }
 
     /// Hypertrophy off-season: meso-spine-driven builder (no meet week).
@@ -742,6 +745,7 @@ enum Engine {
         var program = Program(startPhase: .hypertrophy, totalWeeks: spine.count, fiveDay: fiveDay,
                               createdAt: Date(), blocks: [], weeks: weeks)
         program.renumberAndRegroup()   // block runs + in-block coordinates
+        program.stampFactoryDayIndices()
         return program
     }
 
