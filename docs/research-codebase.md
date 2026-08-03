@@ -1,6 +1,6 @@
 # PeakWeek — Swift App Audit & Extensibility Report
 
-Sources read in full: `/Users/richardholguin/dev/powerlifting-trainer/Sources/PeakWeek/{Models,Engine,Store,PeakWeekApp,ClientView,WeekView}.swift` (1,431 lines total). Reference web build skimmed: `/Users/richardholguin/Downloads/PeakWeek_1.html` (227 KB — a single-file bundled React 19 app; application code extracted and beautified from the minified bundle, engine and UI component read in full).
+Sources read in full: `~/dev/powerlifting-trainer/Sources/PeakWeek/{Models,Engine,Store,PeakWeekApp,ClientView,WeekView}.swift` (1,431 lines total). Reference web build skimmed: `~/Downloads/PeakWeek_1.html` (227 KB — a single-file bundled React 19 app; application code extracted and beautified from the minified bundle, engine and UI component read in full).
 
 ---
 
