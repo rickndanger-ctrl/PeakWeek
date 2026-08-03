@@ -85,3 +85,21 @@ Every 12-15-rep accessory in the dump carries an RPE prescription (Tricep Pushdo
 - DUP and wave schemes keep their host phase's accessory intent
 - Hypertrophy off-season honors its accessory doctrine including intra-meso ramp
 - Deload week introduces two accessories not used in the surrounding blocks (4-day factory)
+
+## Round 2 — coach's decisions applied (2026-08-03)
+
+- **Core on squat days** (new CORE pool: Ab Wheel Rollout, Hanging Leg Raise,
+  Cable Crunch, Plank): accumulation D1 3×10, transmutation D1 2×10 (phase-
+  tapered), DUP D1 3×10, hypertrophy D1 3×12 + D5 3×12. Realization/meet: none.
+- **Biceps, off-season only** (new ARMS pool: DB/EZ-Bar/Hammer Curl): hypertrophy
+  hinge day 3×12; 5-day D5 curls REPLACE the third triceps slot (JM Press) —
+  coach's fatigue-aware call keeps meet prep curl-free.
+- **Barbell Row 3×10 → 4×10** in accumulation D3 (factory + DUP): 10 direct
+  weekly back sets. Note: deadlift/RDL are counted as hinge, not rowing —
+  their isometric lat/erector loading is real but not row-equivalent.
+- **RIR for ALL accessories** (coach's preference): accessory slots render
+  reps-in-reserve everywhere — texts ("· 2 RIR"), PDFs (EFFORT column), and
+  the editor (RIR field, converting to stored RPE). Percentage work keeps RPE.
+- Open items the coach parked: hyp 5-day quad ceiling (kept as a deliberate
+  specialization; weekly rep-range edits already exist per-week in the editor),
+  remaining minor reorders.

@@ -9,6 +9,7 @@
   2. Pause Squat — 3x6 @ 60.0% · RPE 7.0
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x8 @ 65.0% · RPE 7.0
   2. Close-Grip Bench — 3x8 @ 60.0% · RPE 7.5
@@ -17,7 +18,7 @@
 **Day 3 — Deadlift**
   1. Competition Deadlift — 4x6 @ 67.0% · RPE 7.0
   2. Romanian Deadlift — 3x8 @ 55.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
 **Day 4 — Bench 2**
   1. Larsen Press — 4x8 @ 58.0% · RPE 7.0
@@ -31,6 +32,7 @@
   2. Pause Squat — 3x6 @ 66.0% · RPE 7.0
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x8 @ 72.0% · RPE 7.0
   2. Close-Grip Bench — 3x8 @ 65.0% · RPE 7.5
@@ -39,7 +41,7 @@
 **Day 3 — Deadlift**
   1. Competition Deadlift — 4x6 @ 74.0% · RPE 7.0
   2. Romanian Deadlift — 3x8 @ 60.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
 **Day 4 — Bench 2**
   1. Larsen Press — 4x8 @ 64.0% · RPE 7.0
@@ -66,6 +68,7 @@
   1. Competition Squat — 4x4 @ 77.0% · RPE 7.5
   2. Pause Squat — 2x3 @ 70.0% · RPE 7.5
   3. Lying Leg Curl — 3x8 · RPE 8.0
+  4. Ab Wheel Rollout — 2x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x4 @ 76.0% · RPE 7.5
   2. Spoto Press — 3x4 @ 70.0% · RPE 7.5
@@ -123,6 +126,7 @@
   2. Pause Squat — 4x3 @ 68.0% · RPE 6.5 [max bar speed]
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Competition Bench — 4x8 @ 65.0% · RPE 7.0
   2. Spoto Press — 3x8 @ 60.0% · RPE 7.5
@@ -131,7 +135,7 @@
 **Day 3 — Deadlift (strength)**
   1. Competition Deadlift — 4x4 @ 76.0% · RPE 7.5
   2. Romanian Deadlift — 3x8 @ 55.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Glute-Ham Raise — 3x10 · RPE 8.0
 **Day 4 — Bench (speed + strength)**
   1. Close-Grip Bench — 4x3 @ 68.0% · RPE 6.5 [max bar speed]
@@ -145,6 +149,7 @@
   2. Pause Squat — 4x3 @ 69.0% · RPE 6.5 [max bar speed]
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Competition Bench — 4x8 @ 66.0% · RPE 7.0
   2. Spoto Press — 3x8 @ 61.0% · RPE 7.5
@@ -153,7 +158,7 @@
 **Day 3 — Deadlift (strength)**
   1. Competition Deadlift — 4x4 @ 77.0% · RPE 7.5
   2. Romanian Deadlift — 3x8 @ 56.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Glute-Ham Raise — 3x10 · RPE 8.0
 **Day 4 — Bench (speed + strength)**
   1. Close-Grip Bench — 4x3 @ 69.0% · RPE 6.5 [max bar speed]
@@ -169,6 +174,7 @@
   1. Competition Squat — 4x5 @ 76.5% · RPE 7.0
   2. Pause Squat — 2x3 @ 70.0% · RPE 7.5
   3. Lying Leg Curl — 3x8 · RPE 8.0
+  4. Ab Wheel Rollout — 2x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x5 @ 75.5% · RPE 7.0
   2. Spoto Press — 3x4 @ 70.0% · RPE 7.5
@@ -187,6 +193,7 @@
   1. Competition Squat — 4x3 @ 83.5% · RPE 8.0
   2. Pause Squat — 2x3 @ 72.0% · RPE 7.5
   3. Lying Leg Curl — 3x8 · RPE 8.0
+  4. Ab Wheel Rollout — 2x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x3 @ 82.5% · RPE 8.0
   2. Spoto Press — 3x4 @ 72.0% · RPE 7.5
@@ -211,6 +218,7 @@
   4. Walking Lunge — 3x12 · RPE 8.0
   5. Leg Extension — 3x15 · RPE 8.5
   6. Lying Leg Curl — 3x12 · RPE 8.0
+  7. Ab Wheel Rollout — 3x12 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Close-Grip Bench — 4x12 @ 60.0% · RPE 8.0
   2. Incline Bench — 3x8 @ 58.0% · RPE 7.5
@@ -225,6 +233,7 @@
   4. Glute-Ham Raise — 3x10 · RPE 8.0
   5. Seated Cable Row — 3x12 · RPE 8.0
   6. Back Extension — 3x12 · RPE 8.0
+  7. DB Curl — 3x12 · RPE 8.0
 **Day 4 — Bench 2 (volume)**
   1. Larsen Press — 4x12 @ 60.0% · RPE 8.0
   2. Feet-Up Bench — 3x8 @ 58.0% · RPE 7.5
@@ -241,6 +250,7 @@
   4. Walking Lunge — 4x12 · RPE 8.0
   5. Leg Extension — 3x15 · RPE 8.5
   6. Lying Leg Curl — 3x12 · RPE 8.0
+  7. Ab Wheel Rollout — 3x12 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Close-Grip Bench — 4x12 @ 62.0% · RPE 8.0
   2. Incline Bench — 3x8 @ 60.0% · RPE 7.5
@@ -255,6 +265,7 @@
   4. Glute-Ham Raise — 4x10 · RPE 8.0
   5. Seated Cable Row — 3x12 · RPE 8.0
   6. Back Extension — 3x12 · RPE 8.0
+  7. DB Curl — 3x12 · RPE 8.0
 **Day 4 — Bench 2 (volume)**
   1. Larsen Press — 4x12 @ 62.0% · RPE 8.0
   2. Feet-Up Bench — 3x8 @ 60.0% · RPE 7.5
@@ -271,6 +282,7 @@
   4. Walking Lunge — 3x12 · RPE 8.0
   5. Leg Extension — 3x15 · RPE 8.5
   6. Lying Leg Curl — 3x12 · RPE 8.0
+  7. Ab Wheel Rollout — 3x12 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Close-Grip Bench — 4x8 @ 70.0% · RPE 8.0
   2. Incline Bench — 3x8 @ 68.0% · RPE 7.5
@@ -285,6 +297,7 @@
   4. Glute-Ham Raise — 3x10 · RPE 8.0
   5. Seated Cable Row — 3x12 · RPE 8.0
   6. Back Extension — 3x12 · RPE 8.0
+  7. DB Curl — 3x12 · RPE 8.0
 **Day 4 — Bench 2 (volume)**
   1. Larsen Press — 4x8 @ 70.0% · RPE 8.0
   2. Feet-Up Bench — 3x8 @ 68.0% · RPE 7.5
@@ -321,6 +334,7 @@
   2. Pause Squat — 3x6 @ 60.0% · RPE 7.0
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x8 @ 65.0% · RPE 7.0
   2. Close-Grip Bench — 3x8 @ 60.0% · RPE 7.5
@@ -329,7 +343,7 @@
 **Day 3 — Deadlift**
   1. Competition Deadlift — 4x6 @ 67.0% · RPE 7.0
   2. Romanian Deadlift — 3x8 @ 55.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
 **Day 4 — Bench 2**
   1. Larsen Press — 4x8 @ 58.0% · RPE 7.0
@@ -348,6 +362,7 @@
   2. Pause Squat — 3x6 @ 66.0% · RPE 7.0
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x8 @ 72.0% · RPE 7.0
   2. Close-Grip Bench — 3x8 @ 65.0% · RPE 7.5
@@ -356,7 +371,7 @@
 **Day 3 — Deadlift**
   1. Competition Deadlift — 4x6 @ 74.0% · RPE 7.0
   2. Romanian Deadlift — 3x8 @ 60.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
 **Day 4 — Bench 2**
   1. Larsen Press — 4x8 @ 64.0% · RPE 7.0
@@ -388,6 +403,7 @@
   1. Competition Squat — 4x4 @ 77.0% · RPE 7.5
   2. Pause Squat — 2x3 @ 70.0% · RPE 7.5
   3. Lying Leg Curl — 3x8 · RPE 8.0
+  4. Ab Wheel Rollout — 2x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x4 @ 76.0% · RPE 7.5
   2. Spoto Press — 3x4 @ 70.0% · RPE 7.5
@@ -449,6 +465,7 @@
   2. Pause Squat — 3x3 @ 68.0% · RPE 6.5 [max bar speed]
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Competition Bench — 4x8 @ 65.0% · RPE 7.0
   2. Spoto Press — 3x8 @ 60.0% · RPE 7.5
@@ -457,7 +474,7 @@
 **Day 3 — Deadlift (strength)**
   1. Competition Deadlift — 4x4 @ 76.0% · RPE 7.5
   2. Romanian Deadlift — 3x8 @ 55.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Glute-Ham Raise — 3x10 · RPE 8.0
 **Day 4 — Bench (speed + strength)**
   1. Close-Grip Bench — 4x3 @ 68.0% · RPE 6.5 [max bar speed]
@@ -476,6 +493,7 @@
   2. Pause Squat — 3x3 @ 69.0% · RPE 6.5 [max bar speed]
   3. Leg Press — 3x10 · RPE 8.0
   4. Lying Leg Curl — 3x10 · RPE 8.0
+  5. Ab Wheel Rollout — 3x10 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Competition Bench — 4x8 @ 66.0% · RPE 7.0
   2. Spoto Press — 3x8 @ 61.0% · RPE 7.5
@@ -484,7 +502,7 @@
 **Day 3 — Deadlift (strength)**
   1. Competition Deadlift — 4x4 @ 77.0% · RPE 7.5
   2. Romanian Deadlift — 3x8 @ 56.0% · RPE 7.5
-  3. Barbell Row — 3x10 · RPE 8.0
+  3. Barbell Row — 4x10 · RPE 8.0
   4. Glute-Ham Raise — 3x10 · RPE 8.0
 **Day 4 — Bench (speed + strength)**
   1. Close-Grip Bench — 4x3 @ 69.0% · RPE 6.5 [max bar speed]
@@ -505,6 +523,7 @@
   1. Competition Squat — 4x5 @ 76.5% · RPE 7.0
   2. Pause Squat — 2x3 @ 70.0% · RPE 7.5
   3. Lying Leg Curl — 3x8 · RPE 8.0
+  4. Ab Wheel Rollout — 2x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x5 @ 75.5% · RPE 7.0
   2. Spoto Press — 3x4 @ 70.0% · RPE 7.5
@@ -527,6 +546,7 @@
   1. Competition Squat — 4x3 @ 83.5% · RPE 8.0
   2. Pause Squat — 2x3 @ 72.0% · RPE 7.5
   3. Lying Leg Curl — 3x8 · RPE 8.0
+  4. Ab Wheel Rollout — 2x10 · RPE 8.0
 **Day 2 — Bench**
   1. Competition Bench — 4x3 @ 82.5% · RPE 8.0
   2. Spoto Press — 3x4 @ 72.0% · RPE 7.5
@@ -555,6 +575,7 @@
   4. Walking Lunge — 3x12 · RPE 8.0
   5. Leg Extension — 3x15 · RPE 8.5
   6. Lying Leg Curl — 3x12 · RPE 8.0
+  7. Ab Wheel Rollout — 3x12 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Close-Grip Bench — 4x12 @ 60.0% · RPE 8.0
   2. Incline Bench — 3x8 @ 58.0% · RPE 7.5
@@ -569,6 +590,7 @@
   4. Glute-Ham Raise — 3x10 · RPE 8.0
   5. Seated Cable Row — 3x12 · RPE 8.0
   6. Back Extension — 3x12 · RPE 8.0
+  7. DB Curl — 3x12 · RPE 8.0
 **Day 4 — Bench 2 (volume)**
   1. Larsen Press — 4x12 @ 60.0% · RPE 8.0
   2. Feet-Up Bench — 3x8 @ 58.0% · RPE 7.5
@@ -582,7 +604,8 @@
   3. Bulgarian Split Squat — 3x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
   5. Good Morning — 3x10 · RPE 7.5
-  6. JM Press — 3x12 · RPE 8.0
+  6. DB Curl — 3x12 · RPE 8.0
+  7. Hanging Leg Raise — 3x12 · RPE 8.0
 
 ### Hyp meso1 wk3 (acc ramp) — week 3 (Hypertrophy, 3/4)
 **Day 1 — Squat (volume)**
@@ -592,6 +615,7 @@
   4. Walking Lunge — 4x12 · RPE 8.0
   5. Leg Extension — 3x15 · RPE 8.5
   6. Lying Leg Curl — 3x12 · RPE 8.0
+  7. Ab Wheel Rollout — 3x12 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Close-Grip Bench — 4x12 @ 62.0% · RPE 8.0
   2. Incline Bench — 3x8 @ 60.0% · RPE 7.5
@@ -606,6 +630,7 @@
   4. Glute-Ham Raise — 4x10 · RPE 8.0
   5. Seated Cable Row — 3x12 · RPE 8.0
   6. Back Extension — 3x12 · RPE 8.0
+  7. DB Curl — 3x12 · RPE 8.0
 **Day 4 — Bench 2 (volume)**
   1. Larsen Press — 4x12 @ 62.0% · RPE 8.0
   2. Feet-Up Bench — 3x8 @ 60.0% · RPE 7.5
@@ -619,7 +644,8 @@
   3. Bulgarian Split Squat — 4x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
   5. Good Morning — 3x10 · RPE 7.5
-  6. JM Press — 3x12 · RPE 8.0
+  6. DB Curl — 3x12 · RPE 8.0
+  7. Hanging Leg Raise — 3x12 · RPE 8.0
 
 ### Hyp meso3 wk11 — week 11 (Hypertrophy, 1/2)
 **Day 1 — Squat (volume)**
@@ -629,6 +655,7 @@
   4. Walking Lunge — 3x12 · RPE 8.0
   5. Leg Extension — 3x15 · RPE 8.5
   6. Lying Leg Curl — 3x12 · RPE 8.0
+  7. Ab Wheel Rollout — 3x12 · RPE 8.0
 **Day 2 — Bench (volume)**
   1. Close-Grip Bench — 4x8 @ 70.0% · RPE 8.0
   2. Incline Bench — 3x8 @ 68.0% · RPE 7.5
@@ -643,6 +670,7 @@
   4. Glute-Ham Raise — 3x10 · RPE 8.0
   5. Seated Cable Row — 3x12 · RPE 8.0
   6. Back Extension — 3x12 · RPE 8.0
+  7. DB Curl — 3x12 · RPE 8.0
 **Day 4 — Bench 2 (volume)**
   1. Larsen Press — 4x8 @ 70.0% · RPE 8.0
   2. Feet-Up Bench — 3x8 @ 68.0% · RPE 7.5
@@ -656,7 +684,8 @@
   3. Bulgarian Split Squat — 3x10 · RPE 8.0
   4. Hip Thrust — 3x10 · RPE 8.0
   5. Good Morning — 3x10 · RPE 7.5
-  6. JM Press — 3x12 · RPE 8.0
+  6. DB Curl — 3x12 · RPE 8.0
+  7. Hanging Leg Raise — 3x12 · RPE 8.0
 
 
 ## REALIZATION 3-OUT (14wk full shows it) — 5-DAY

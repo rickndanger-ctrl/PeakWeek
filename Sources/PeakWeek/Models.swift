@@ -100,7 +100,7 @@ enum PhaseScheme: String, Codable, CaseIterable, Identifiable {
 }
 
 enum LiftPool: String, Codable, CaseIterable, Identifiable {
-    case squat, bench, deadlift, quads, hams, back, press
+    case squat, bench, deadlift, quads, hams, back, press, core, arms
     var id: String { rawValue }
     var groupLabel: String {
         switch self {
@@ -111,6 +111,8 @@ enum LiftPool: String, Codable, CaseIterable, Identifiable {
         case .hams: return "HAMS / HIPS"
         case .back: return "UPPER BACK"
         case .press: return "PRESS / TRICEPS"
+        case .core: return "CORE"
+        case .arms: return "ARMS"
         }
     }
 }

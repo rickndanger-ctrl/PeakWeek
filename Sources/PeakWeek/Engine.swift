@@ -71,6 +71,18 @@ enum Engine {
             Exercise(name: "Tricep Pushdown", mod: nil),
             Exercise(name: "Skull Crusher", mod: nil),
         ],
+        // Coach's additions (2026-08-03): bracing + elbow insurance.
+        .core: [
+            Exercise(name: "Ab Wheel Rollout", mod: nil),
+            Exercise(name: "Hanging Leg Raise", mod: nil),
+            Exercise(name: "Cable Crunch", mod: nil),
+            Exercise(name: "Plank (seconds)", mod: nil),
+        ],
+        .arms: [
+            Exercise(name: "DB Curl", mod: nil),
+            Exercise(name: "EZ-Bar Curl", mod: nil),
+            Exercise(name: "Hammer Curl", mod: nil),
+        ],
     ]
 
     /// RTS / Tuchscherer style: reps -> (RPE -> % of 1RM)
@@ -179,6 +191,7 @@ enum Engine {
                     S(.squat, 1, 3, 6, lerp(60, 66, t), 7),
                     S(.quads, 0, 3, 10, nil, 8),
                     S(.hams, 0, 3, 10, nil, 8),
+                    S(.core, 0, 3, 10, nil, 8),      // coach: bracing work on squat days
                 ]),
                 DayPlan(title: "Day 2 — Bench", slots: [
                     S(.bench, 0, 4, 8, lerp(65, 72, t), 7),
@@ -189,7 +202,7 @@ enum Engine {
                 DayPlan(title: "Day 3 — Deadlift", slots: [
                     S(.deadlift, 0, 4, 6, lerp(67, 74, t), 7),
                     S(.deadlift, 4, 3, 8, lerp(55, 60, t), 7.5),
-                    S(.back, 0, 3, 10, nil, 8),
+                    S(.back, 0, 4, 10, nil, 8),      // audit: back to 10 weekly direct sets
                     S(.hams, 3, 3, 10, nil, 8),
                 ]),
                 DayPlan(title: "Day 4 — Bench 2", slots: [
@@ -215,6 +228,7 @@ enum Engine {
                     S(.squat, 0, 4, 4, lerp(77, 86, t), 7.5),
                     S(.squat, 1, 2, 3, lerp(70, 76, t), 7.5),
                     S(.hams, 0, 3, 8, nil, 8),
+                    S(.core, 0, 2, 10, nil, 8),      // coach: bracing, tapered for the phase
                 ]),
                 DayPlan(title: "Day 2 — Bench", slots: [
                     S(.bench, 0, 4, 4, lerp(76, 85, t), 7.5),
@@ -371,6 +385,7 @@ enum Engine {
                 speed(S(.squat, 1, 3, 3, band(68, 72), 6.5)),
                 S(.quads, 0, 3, 10, nil, 8),
                 S(.hams, 0, 3, 10, nil, 8),
+                S(.core, 0, 3, 10, nil, 8),          // coach: bracing work on squat days
             ])
         } else {
             let odd = w % 2 == 1
@@ -380,6 +395,7 @@ enum Engine {
                 speed(S(.squat, 1, 4, 3, band(68, 72), 6.5)),
                 S(.quads, 0, 3, 10, nil, 8),
                 S(.hams, 0, 3, 10, nil, 8),
+                S(.core, 0, 3, 10, nil, 8),          // coach: bracing work on squat days
             ])
         }
         var days = [
@@ -393,7 +409,7 @@ enum Engine {
             DayPlan(title: "Day 3 — Deadlift (strength)", slots: [
                 S(.deadlift, 0, 4, 4, band(76, 82), 7.5),
                 S(.deadlift, 4, 3, 8, band(55, 60), 7.5),
-                S(.back, 0, 3, 10, nil, 8),
+                S(.back, 0, 4, 10, nil, 8),          // audit: back to 10 weekly direct sets
                 S(.hams, 1, 3, 10, nil, 8),
             ]),
             DayPlan(title: "Day 4 — Bench (speed + strength)", slots: [
@@ -457,6 +473,7 @@ enum Engine {
                 S(.quads, 2, accSets, 12, nil, 8),
                 S(.quads, 4, 3, 15, nil, 8.5),
                 S(.hams, 0, 3, 12, nil, 8),
+                S(.core, 0, 3, 12, nil, 8),          // coach: bracing work on squat days
             ]),
             DayPlan(title: "Day 2 — Bench (volume)", slots: [
                 S(.bench, 1, 4, reps, pct, 8),          // Close-Grip main
@@ -475,6 +492,7 @@ enum Engine {
                 S(.hams, 1, accSets, 10, nil, 8),
                 S(.back, 4, 3, 12, nil, 8),
                 S(.hams, 2, 3, 12, nil, 8),
+                S(.arms, 0, 3, 12, nil, 8),          // coach: a little bicep work, off-season
             ]),
             DayPlan(title: "Day 4 — Bench 2 (volume)", slots: [
                 S(.bench, 3, 4, reps, pct, 8),          // Larsen main
@@ -492,7 +510,8 @@ enum Engine {
                 S(.quads, 3, accSets, 10, nil, 8),
                 S(.hams, 3, 3, 10, nil, 8),
                 S(.hams, 4, 3, 10, nil, 7.5),
-                S(.press, 3, 3, 12, nil, 8),
+                S(.arms, 0, 3, 12, nil, 8),          // audit+coach: curls replace 3rd triceps slot
+                S(.core, 1, 3, 12, nil, 8),          // coach: bracing on the second squat day
             ]))
         }
         return days
@@ -796,8 +815,16 @@ enum Engine {
                 if let load {
                     line += " → \(loadString(load, unit: client.unit))"
                 }
-                let rpeStr = s.rpe == s.rpe.rounded() ? String(Int(s.rpe)) : String(s.rpe)
-                line += " · RPE \(rpeStr)"
+                // Coach's convention: main/percentage work speaks RPE;
+                // accessories speak RIR (reps in reserve = 10 − RPE).
+                if s.pct == nil {
+                    let rir = 10 - s.rpe
+                    let rirStr = rir == rir.rounded() ? String(Int(rir)) : String(rir)
+                    line += " · \(rirStr) RIR"
+                } else {
+                    let rpeStr = s.rpe == s.rpe.rounded() ? String(Int(s.rpe)) : String(s.rpe)
+                    line += " · RPE \(rpeStr)"
+                }
                 if let note = s.note, !note.isEmpty { line += "  — \(note)" }
                 if s.filmThis == true { line += "  📹 film this" }
                 L.append(line)

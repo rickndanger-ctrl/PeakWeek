@@ -292,16 +292,30 @@ struct SlotRow: View {
                         .foregroundStyle(.primary)
                 }
                 Spacer(minLength: 4)
-                Text("RPE").font(.caption2).foregroundStyle(.secondary)
-                TextField("", value: $slot.rpe, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(.caption, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .frame(width: 40)
-                    .onChange(of: slot.rpe) { v in
-                        // Clamp 5–10, snap to half points.
-                        slot.rpe = min(10, max(5, (v * 2).rounded() / 2))
-                    }
+                // Percentage work speaks RPE; accessories speak RIR (10 − RPE).
+                Text(slot.pct == nil ? "RIR" : "RPE")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .help(slot.pct == nil ? "Reps in reserve — how many reps to leave in the tank" : "Rate of perceived exertion (10 − reps in reserve)")
+                if slot.pct == nil {
+                    TextField("", value: Binding(
+                        get: { 10 - slot.rpe },
+                        set: { slot.rpe = min(10, max(5, 10 - min(5, max(0, ($0 * 2).rounded() / 2)))) }
+                    ), format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.caption, design: .monospaced))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 40)
+                } else {
+                    TextField("", value: $slot.rpe, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.caption, design: .monospaced))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 40)
+                        .onChange(of: slot.rpe) { v in
+                            // Clamp 5–10, snap to half points.
+                            slot.rpe = min(10, max(5, (v * 2).rounded() / 2))
+                        }
+                }
             }
             .font(.caption)
         }

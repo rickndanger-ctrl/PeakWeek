@@ -309,3 +309,49 @@ extension SchemeTests {
         XCTAssertEqual(cw1.days[0].slots[0].pct, 78)
     }
 }
+
+// MARK: - coach's structural decisions (2026-08-03)
+
+extension SchemeTests {
+    func testCoachStructuralDecisions() {
+        let c = Client(name: "T", unit: .lb, maxes: maxes)
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        let w1 = Engine.weekToText(client: c, program: p, week: p.weeks[0], library: lib)
+        // Core on squat day; accessories speak RIR.
+        XCTAssertTrue(w1.contains("Ab Wheel Rollout — 3x10 · 2 RIR"), w1)
+        XCTAssertTrue(w1.contains("Leg Press — 3x10 · 2 RIR"))
+        // Row bumped to 4 sets (10 weekly direct back sets on 4-day).
+        XCTAssertTrue(w1.contains("Barbell Row — 4x10 · 2 RIR"))
+        // Mains still speak RPE.
+        XCTAssertTrue(w1.contains("Competition Squat — 4x6 @ 67% → 270 lb · RPE 7"))
+        // Transmutation squat day: light core, phase-tapered.
+        let trans = p.weeks.first { $0.phase == .trans }!
+        XCTAssertTrue(trans.days[0].slots.contains { $0.pool == .core && $0.sets == 2 })
+        // Realization/meet: no core (taper strips accessories).
+        let real = p.weeks.first { $0.phase == .real }!
+        XCTAssertFalse(real.days[0].slots.contains { $0.pool == .core })
+
+        // Hypertrophy: curls on hinge day; 5-day D5 curls replace 3rd triceps + core.
+        let hp = Engine.buildProgram(startPhase: .hypertrophy, totalWeeks: 12, fiveDay: true, library: lib)
+        XCTAssertTrue(hp.weeks[0].days[2].slots.contains { $0.pool == .arms })
+        let d5 = hp.weeks[0].days[4].slots
+        XCTAssertTrue(d5.contains { $0.pool == .arms })
+        XCTAssertTrue(d5.contains { $0.pool == .core })
+        XCTAssertFalse(d5.contains { $0.pool == .press }, "third triceps slot removed")
+
+        // DUP 5-day day 5 pulls, not presses (audit fix locked).
+        var plan = BlockPlan(acc: 4, deloadAfterAcc: true, trans: 4, real: 3)
+        plan.accScheme = .dup
+        let dp = Engine.buildProgram(startPhase: .full, totalWeeks: plan.total, fiveDay: true,
+                                     library: lib, blockPlan: plan)
+        let dupD5 = dp.weeks[0].days[4].slots
+        XCTAssertTrue(dupD5.contains { $0.pool == .back })
+        XCTAssertFalse(dupD5.contains { $0.pool == .press })
+        // New pools seeded and merged into existing libraries.
+        XCTAssertEqual(lib[.core].map(\.name).first, "Ab Wheel Rollout")
+        XCTAssertEqual(lib[.arms].count, 3)
+        var old = ExerciseLibrary(entries: lib.entries.filter { $0.pool != .core && $0.pool != .arms })
+        old.mergeNewSeeds()
+        XCTAssertFalse(old[.core].isEmpty, "existing libraries gain the new pools")
+    }
+}

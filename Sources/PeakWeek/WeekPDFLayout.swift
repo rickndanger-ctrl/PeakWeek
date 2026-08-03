@@ -235,7 +235,7 @@ enum WeekPDFLayout {
         r.draw("SETS × REPS", x: Cols.setsRepsCenter, at: r.y, font: f, color: gray, kern: 1.2, align: .center)
         r.draw("%1RM", x: Cols.pctCenter, at: r.y, font: f, color: gray, kern: 1.2, align: .center)
         r.draw("LOAD", x: Cols.loadRight, at: r.y, font: f, color: gray, kern: 1.2, align: .right)
-        r.draw("RPE", x: Cols.rpeCenter, at: r.y, font: f, color: gray, kern: 1.2, align: .center)
+        r.draw("EFFORT", x: Cols.rpeCenter, at: r.y, font: f, color: gray, kern: 1.2, align: .center)
         r.y += 14
     }
 
@@ -289,8 +289,15 @@ enum WeekPDFLayout {
                 r.draw("—", x: Cols.loadRight, at: r.y, font: mono(9.5), color: faint, align: .right)
             }
 
-            let rpeStr = slot.rpe == slot.rpe.rounded() ? String(Int(slot.rpe)) : String(slot.rpe)
-            r.draw(rpeStr, x: Cols.rpeCenter, at: r.y, font: mono(9.5), align: .center)
+            // Accessories speak RIR; percentage work speaks RPE.
+            let effortStr: String
+            if slot.pct == nil {
+                let rir = 10 - slot.rpe
+                effortStr = (rir == rir.rounded() ? String(Int(rir)) : String(rir)) + " RIR"
+            } else {
+                effortStr = slot.rpe == slot.rpe.rounded() ? String(Int(slot.rpe)) : String(slot.rpe)
+            }
+            r.draw(effortStr, x: Cols.rpeCenter, at: r.y, font: mono(9.5), align: .center)
             r.y += rowH - 5
 
             if let note = slot.note, !note.isEmpty {
