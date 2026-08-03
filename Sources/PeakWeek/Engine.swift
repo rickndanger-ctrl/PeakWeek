@@ -419,6 +419,14 @@ enum Engine {
             header += out == 0 ? " — MEET WEEK IS HERE" : " — \(out) WK\(out == 1 ? "" : "S") OUT"
         }
         L.append(header)
+        // Calendar anchor so coach and lifter both see exactly WHICH week this is.
+        if let start = client.startDate {
+            let weekStart = DeliverySchedule.weekStart(startDate: start, weekNum: week.num)
+            let weekEnd = Calendar.current.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart
+            let fmt = DateFormatter()
+            fmt.dateFormat = "EEE MMM d"
+            L.append("Week of \(fmt.string(from: weekStart)) – \(fmt.string(from: weekEnd))")
+        }
         L.append("Coach: block periodization · loads rise week to week — trust the percentages, cap sets at the listed RPE.")
         L.append("")
         for day in week.days {

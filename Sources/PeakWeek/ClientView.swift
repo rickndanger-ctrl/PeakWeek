@@ -427,11 +427,71 @@ struct ClientView: View {
                             .labelsHidden().frame(width: 130)
                     }
                 }
+                if let program = client.program {
+                    GridRow {
+                        labeled("Start auto-sends at") {
+                            Picker("", selection: Binding(
+                                get: { client.delivery.firstSendWeek ?? 1 },
+                                set: { client.delivery.firstSendWeek = $0 <= 1 ? nil : $0 }
+                            )) {
+                                ForEach(program.weeks, id: \.num) { wk in
+                                    Text(firstSendLabel(wk, program: program)).tag(wk.num)
+                                }
+                            }
+                            .labelsHidden().frame(width: 200)
+                        }
+                        .gridCellColumns(2)
+                        labeled("Mid-prep clients") {
+                            Text("Set Week 1 to when their prep actually began (past dates are fine), then pick the week sends should begin — earlier weeks are never sent.")
+                                .font(.caption).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .gridCellColumns(2)
+                    }
+                }
             }
+            deliveryStatusLine
             Text(client.delivery.requireReview
                  ? "Due weeks queue up for your approval — check the paper-plane icon in the toolbar."
                  : "Due weeks send without asking. The send log keeps a record of every delivery.")
                 .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func firstSendLabel(_ wk: Week, program: Program) -> String {
+        var label = "Week \(wk.num) — \(wk.phase.label)"
+        if let start = client.startDate {
+            let d = DeliverySchedule.weekStart(startDate: start, weekNum: wk.num)
+            label += " (\(d.formatted(.dateTime.month(.abbreviated).day())))"
+        }
+        return label
+    }
+
+    /// Live confidence line: which program week today falls in, and exactly
+    /// what the next automatic send will be.
+    @ViewBuilder
+    private var deliveryStatusLine: some View {
+        if let program = client.program, let start = client.startDate, client.delivery.autoSend {
+            let records = store.data.sendLog.filter { $0.clientID == client.id }
+            let current = DeliverySchedule.currentWeek(now: Date(), startDate: start, program: program)
+            let next = DeliverySchedule.nextPlannedSend(now: Date(), startDate: start,
+                                                       program: program, prefs: client.delivery,
+                                                       records: records)
+            HStack(spacing: 6) {
+                Image(systemName: "calendar.badge.clock").foregroundStyle(.secondary)
+                Text({
+                    var s = current.map { "Today is Week \($0) of \(program.weeks.count)." }
+                        ?? "Today is outside this program's calendar."
+                    if let next {
+                        s += "  Next auto-send: Week \(next.week) · \(next.moment.formatted(date: .abbreviated, time: .shortened))"
+                        s += client.delivery.requireReview ? " (queues for your review)." : " (sends automatically)."
+                    } else {
+                        s += "  No further auto-sends scheduled."
+                    }
+                    return s
+                }())
+                .font(.caption).fontWeight(.medium)
+            }
         }
     }
 

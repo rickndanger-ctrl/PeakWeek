@@ -122,6 +122,70 @@ final class DeliveryTests: XCTestCase {
                                               prefs: noStart.delivery, records: []))
     }
 
+    // MARK: - mid-prep onboarding: firstSendWeek
+
+    func testFirstSendWeekSkipsEarlierWeeksEntirely() {
+        var c = makeClient()
+        c.delivery.firstSendWeek = 5
+        // Deep into the program: weeks 1-6 all past their send moments.
+        let due = DeliverySchedule.dueSend(now: date(2026, 9, 14, 12), startDate: c.startDate,
+                                          program: c.program, prefs: c.delivery, records: [])
+        XCTAssertEqual(due?.weekNum, 6, "latest due week at/after the start")
+        XCTAssertEqual(due?.supersededWeeks, [5], "week 5 superseded; weeks 1-4 NEVER appear")
+    }
+
+    func testFirstSendWeekNilMeansFromWeekOne() {
+        let c = makeClient()
+        let due = DeliverySchedule.dueSend(now: date(2026, 8, 9, 18), startDate: c.startDate,
+                                          program: c.program, prefs: c.delivery, records: [])
+        XCTAssertEqual(due?.weekNum, 1)
+    }
+
+    // MARK: - calendar position + next planned send
+
+    func testCurrentWeek() {
+        let c = makeClient()
+        XCTAssertEqual(DeliverySchedule.currentWeek(now: date(2026, 8, 12), startDate: monday,
+                                                    program: c.program!), 1)
+        XCTAssertEqual(DeliverySchedule.currentWeek(now: date(2026, 8, 24), startDate: monday,
+                                                    program: c.program!), 3)
+        XCTAssertNil(DeliverySchedule.currentWeek(now: date(2026, 8, 2), startDate: monday,
+                                                  program: c.program!), "before the program")
+        XCTAssertNil(DeliverySchedule.currentWeek(now: date(2026, 12, 1), startDate: monday,
+                                                  program: c.program!), "after the program")
+    }
+
+    func testNextPlannedSend() {
+        let c = makeClient()   // Sunday 18:00 prefs
+        let next = DeliverySchedule.nextPlannedSend(now: date(2026, 8, 10, 9), startDate: monday,
+                                                    program: c.program, prefs: c.delivery, records: [])
+        // Week 1's moment (Aug 9 18:00) has passed; next FUTURE moment is week 2's.
+        XCTAssertEqual(next?.week, 2)
+        XCTAssertEqual(next?.moment, date(2026, 8, 16, 18))
+        // firstSendWeek pushes the next planned send forward.
+        var prefs = c.delivery
+        prefs.firstSendWeek = 6
+        let next6 = DeliverySchedule.nextPlannedSend(now: date(2026, 8, 10, 9), startDate: monday,
+                                                     program: c.program, prefs: prefs, records: [])
+        XCTAssertEqual(next6?.week, 6)
+    }
+
+    // MARK: - export shows the calendar week being sent
+
+    func testExportCarriesWeekDateRange() {
+        var c = makeClient()
+        c.startDate = monday
+        let text = Engine.weekToText(client: c, program: c.program!, week: c.program!.weeks[0],
+                                     library: lib)
+        XCTAssertTrue(text.contains("Week of Mon Aug 10 – Sun Aug 16"), String(text.prefix(120)))
+        // Without a start date the line is simply absent.
+        var noDate = c
+        noDate.startDate = nil
+        let plain = Engine.weekToText(client: noDate, program: noDate.program!,
+                                      week: noDate.program!.weeks[0], library: lib)
+        XCTAssertFalse(plain.contains("Week of "))
+    }
+
     // MARK: - bridge scripts (dry run — nothing executes)
 
     func testMessagesScriptShape() {

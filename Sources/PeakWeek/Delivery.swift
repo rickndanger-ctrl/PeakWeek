@@ -33,6 +33,9 @@ struct DeliveryPrefs: Codable, Hashable {
     var weekday: Int = 1                 // Calendar weekday: 1 = Sunday … 7 = Saturday
     var hour: Int = 18                   // local time, 24h
     var requireReview: Bool = true       // queue for approval instead of sending silently
+    /// Mid-prep onboarding: auto-sending begins at this program week (weeks
+    /// before it are simply never due — no queue, no skip records). nil = week 1.
+    var firstSendWeek: Int? = nil
 
     // Tolerant decoding: any missing key falls back to its default, so adding
     // fields never breaks existing data.json files.
@@ -46,6 +49,7 @@ struct DeliveryPrefs: Codable, Hashable {
         weekday = try c.decodeIfPresent(Int.self, forKey: .weekday) ?? 1
         hour = try c.decodeIfPresent(Int.self, forKey: .hour) ?? 18
         requireReview = try c.decodeIfPresent(Bool.self, forKey: .requireReview) ?? true
+        firstSendWeek = try c.decodeIfPresent(Int.self, forKey: .firstSendWeek)
     }
 }
 
@@ -138,6 +142,34 @@ enum DeliverySchedule {
         return calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
     }
 
+    /// Which program week contains `now` (1-based), or nil outside the program.
+    static func currentWeek(now: Date, startDate: Date, program: Program,
+                            calendar: Calendar = .current) -> Int? {
+        for week in program.weeks {
+            let start = weekStart(startDate: startDate, weekNum: week.num, calendar: calendar)
+            let end = calendar.date(byAdding: .day, value: 7, to: start) ?? start
+            if now >= start && now < end { return week.num }
+        }
+        return nil
+    }
+
+    /// The next auto-send on the calendar (week + moment), honoring
+    /// firstSendWeek and already-covered weeks. nil when nothing remains.
+    static func nextPlannedSend(now: Date, startDate: Date?, program: Program?,
+                                prefs: DeliveryPrefs, records: [SendRecord],
+                                calendar: Calendar = .current) -> (week: Int, moment: Date)? {
+        guard let startDate, let program, !program.weeks.isEmpty else { return nil }
+        let current = records.filter { $0.programStamp == nil || $0.programStamp == program.createdAt }
+        let covered = Set(current.filter { $0.status.isTerminal }.map(\.weekNum))
+        let firstWeek = prefs.firstSendWeek ?? 1
+        return program.weeks.lazy
+            .filter { $0.num >= firstWeek && !covered.contains($0.num) }
+            .map { ($0.num, sendMoment(startDate: startDate, weekNum: $0.num,
+                                       prefs: prefs, calendar: calendar)) }
+            .filter { $0.1 > now }
+            .min { $0.1 < $1.1 }
+    }
+
     /// A send that is due right now for one client.
     struct DueSend: Equatable {
         var weekNum: Int
@@ -163,8 +195,9 @@ enum DeliverySchedule {
             if case .queued = $0.status { return true }
             return false
         }.map(\.weekNum))
+        let firstWeek = prefs.firstSendWeek ?? 1
         var due: [(week: Int, moment: Date)] = []
-        for week in program.weeks {
+        for week in program.weeks where week.num >= firstWeek {
             let moment = sendMoment(startDate: startDate, weekNum: week.num,
                                     prefs: prefs, calendar: calendar)
             if moment <= now, !covered.contains(week.num) {
