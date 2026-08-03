@@ -1,4 +1,26 @@
 import SwiftUI
+import CoreTransferable
+
+// MARK: - Week delivery transferable
+
+/// Lets the share sheet produce the PDF lazily — only rendered when the coach
+/// actually picks a destination (Messages, Mail, AirDrop…).
+struct WeekPDFTransfer: Transferable {
+    let client: Client
+    let program: Program
+    let week: Week
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .pdf) { item in
+            guard let url = WeekExporter.writeTempPDF(client: item.client,
+                                                     program: item.program,
+                                                     week: item.week) else {
+                throw CocoaError(.fileWriteUnknown)
+            }
+            return SentTransferredFile(url)
+        }
+    }
+}
 
 // MARK: - Week
 
@@ -44,7 +66,32 @@ struct WeekView: View {
                 .buttonStyle(.borderless)
                 .padding(.horizontal, 14)
                 .fontWeight(.semibold)
+
+            Menu {
+                ShareLink(item: weekText) {
+                    Label("Send as text…", systemImage: "message")
+                }
+                ShareLink(item: WeekPDFTransfer(client: client, program: program, week: week),
+                          preview: SharePreview("\(client.name) — Week \(week.num)")) {
+                    Label("Send as PDF…", systemImage: "doc.richtext")
+                }
+                Divider()
+                Button("Save PDF…") {
+                    WeekExporter.savePDF(client: client, program: program, week: week)
+                }
+            } label: {
+                Label("Send", systemImage: "square.and.arrow.up")
+                    .fontWeight(.semibold)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .padding(.trailing, 14)
+            .help("Send this week's plan to \(client.name)")
         }
+    }
+
+    private var weekText: String {
+        Engine.weekToText(client: client, program: program, week: week)
     }
 
     private var headerMeta: String {

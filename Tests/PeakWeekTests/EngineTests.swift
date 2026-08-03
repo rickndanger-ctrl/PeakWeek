@@ -211,6 +211,25 @@ final class EngineTests: XCTestCase {
         XCTAssertTrue(text.contains("COACH NOTES: Bring knee sleeves Thursday."))
     }
 
+    // MARK: - PDF export
+
+    func testWeekPDFRenders() {
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false)
+        for week in [p.weeks.first!, p.weeks.last!] {
+            let data = WeekExporter.pdfData(client: client, program: p, week: week)
+            XCTAssertNotNil(data)
+            XCTAssertGreaterThan(data!.count, 500, "PDF has real content")
+            XCTAssertTrue(data!.prefix(5) == Data("%PDF-".utf8), "valid PDF magic bytes")
+        }
+    }
+
+    func testPDFFileNameSanitized() {
+        var c = client
+        c.name = "A/B"
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false)
+        XCTAssertEqual(WeekExporter.pdfFileName(client: c, week: p.weeks[0]), "A-B — Week 1.pdf")
+    }
+
     // MARK: - Persistence round-trip
 
     func testCodableRoundTrip() throws {
