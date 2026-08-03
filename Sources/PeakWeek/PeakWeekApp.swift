@@ -1,0 +1,175 @@
+import SwiftUI
+import AppKit
+
+@main
+struct PeakWeekApp: App {
+    @StateObject private var store = AppStore()
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environmentObject(store)
+                .frame(minWidth: 1000, minHeight: 680)
+        }
+        .windowStyle(.titleBar)
+    }
+}
+
+// MARK: - Theme
+
+enum Theme {
+    static let iron = Color(red: 0.09, green: 0.094, blue: 0.11)
+    static let iron2 = Color(red: 0.122, green: 0.129, blue: 0.153)
+    static let iron3 = Color(red: 0.157, green: 0.169, blue: 0.2)
+    static let line = Color(red: 0.2, green: 0.212, blue: 0.247)
+    static let chalk = Color(red: 0.925, green: 0.914, blue: 0.886)
+    static let smoke = Color(red: 0.545, green: 0.557, blue: 0.596)
+    static let plateRed = Color(red: 0.788, green: 0.275, blue: 0.235)
+    static let plateBlue = Color(red: 0.239, green: 0.42, blue: 0.71)
+    static let plateYellow = Color(red: 0.863, green: 0.663, blue: 0.247)
+    static let plateGreen = Color(red: 0.243, green: 0.557, blue: 0.361)
+    static let plateWhite = Color(red: 0.949, green: 0.941, blue: 0.918)
+
+    static func phaseColor(_ p: Phase) -> Color {
+        switch p {
+        case .acc: return plateBlue
+        case .trans: return plateYellow
+        case .real: return plateRed
+        case .deload: return plateGreen
+        case .meet: return plateWhite
+        }
+    }
+}
+
+// MARK: - Root
+
+struct ContentView: View {
+    @EnvironmentObject var store: AppStore
+    @State private var selectedID: UUID?
+    @State private var showNewClient = false
+    @State private var restoreMessage: String?
+
+    var body: some View {
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            if let id = selectedID, let binding = store.binding(for: id) {
+                ClientView(client: binding, onDelete: {
+                    store.deleteClient(id)
+                    selectedID = nil
+                })
+                .id(id)
+            } else {
+                placeholder
+            }
+        }
+        .background(Theme.iron)
+        .sheet(isPresented: $showNewClient) {
+            NewClientSheet { client in
+                store.addClient(client)
+                selectedID = client.id
+            }
+        }
+        .alert(restoreMessage ?? "", isPresented: Binding(
+            get: { restoreMessage != nil },
+            set: { if !$0 { restoreMessage = nil } }
+        )) { Button("OK", role: .cancel) {} }
+    }
+
+    private var sidebar: some View {
+        List(selection: $selectedID) {
+            Section("Roster") {
+                ForEach(store.data.clients) { c in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(c.name).font(.headline)
+                        Text("S \(Int(c.maxes.squat)) · B \(Int(c.maxes.bench)) · D \(Int(c.maxes.deadlift)) \(c.unit.rawValue)")
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                        Text(c.program == nil ? "No program yet"
+                             : "\(c.program!.startPhase.label.components(separatedBy: " (").first ?? "") · \(c.program!.weeks.count) wks · \(c.program!.fiveDay ? 5 : 4)-day")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    .tag(c.id)
+                }
+            }
+        }
+        .navigationSplitViewColumnWidth(min: 230, ideal: 260)
+        .navigationTitle("Peak Week")
+        .toolbar {
+            ToolbarItemGroup {
+                Button { showNewClient = true } label: { Label("New Client", systemImage: "plus") }
+                Menu {
+                    Button("Backup all data…") { store.exportBackup() }
+                    Button("Restore from backup…") {
+                        restoreMessage = store.importBackup()
+                            ? "Backup restored." : "Restore cancelled or file not valid."
+                        selectedID = nil
+                    }
+                    Divider()
+                    Button("Reveal data file in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([AppStore.dataURL])
+                    }
+                } label: { Label("Data", systemImage: "externaldrive") }
+            }
+        }
+    }
+
+    private var placeholder: some View {
+        VStack(spacing: 10) {
+            Text("PEAK WEEK")
+                .font(.system(size: 46, weight: .black))
+                .kerning(1)
+            Text("Select a client, or press + to add your first lifter.\nEverything saves automatically on this Mac.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.iron)
+    }
+}
+
+// MARK: - New client sheet
+
+struct NewClientSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var onAdd: (Client) -> Void
+
+    @State private var name = ""
+    @State private var unit: Unit = .lb
+    @State private var squat = 0.0
+    @State private var bench = 0.0
+    @State private var deadlift = 0.0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("New Client").font(.title2).bold()
+            Form {
+                TextField("Name", text: $name)
+                Picker("Units", selection: $unit) {
+                    ForEach(Unit.allCases) { u in Text(u.rawValue).tag(u) }
+                }
+                .pickerStyle(.segmented)
+                TextField("Squat 1RM", value: $squat, format: .number)
+                TextField("Bench 1RM", value: $bench, format: .number)
+                TextField("Deadlift 1RM", value: $deadlift, format: .number)
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button("Add Client") {
+                    var c = Client(name: name.trimmingCharacters(in: .whitespaces))
+                    c.unit = unit
+                    c.maxes = Maxes(squat: squat, bench: bench, deadlift: deadlift)
+                    onAdd(c)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 380)
+    }
+}
