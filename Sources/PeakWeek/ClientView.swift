@@ -24,6 +24,7 @@ struct ClientView: View {
                     setupPanel
                     if let program = client.program {
                         timeline(program)
+                        peakProjectionPanel(program)
                         programSections(program)
                         Button(showRPE ? "Hide RPE → % chart" : "Show RPE → % chart") { showRPE.toggle() }
                             .buttonStyle(.bordered)
@@ -621,6 +622,26 @@ struct ClientView: View {
                         .font(.caption).fontWeight(.bold).monospacedDigit()
                 }
                 .font(.caption)
+                // Manual scheme selection — never applied automatically.
+                HStack(spacing: 18) {
+                    if planBinding.acc.wrappedValue > 0 {
+                        Picker("Volume scheme", selection: planBinding.accScheme) {
+                            Text("Linear (classic)").tag(PhaseScheme.linear)
+                            Text("Undulating (DUP)").tag(PhaseScheme.dup)
+                        }
+                        .fixedSize()
+                        .help("Undulating: each lift sees a volume day, a speed day, and a strength day across the week — evidence on par with linear, with a freshness edge for trained lifters. Loads still follow % bands with RPE caps.")
+                    }
+                    Picker("Strength scheme", selection: planBinding.transScheme) {
+                        Text("Linear (classic)").tag(PhaseScheme.linear)
+                        Text("Wave (3-week)").tag(PhaseScheme.wave)
+                    }
+                    .fixedSize()
+                    .help("Wave: reps fall and weight rises for three weeks, then the bar drops back and the next wave starts heavier. Same final-week weights as linear (86/85/87), different route — the drop-backs shed fatigue. Best for lifters whose week 5–6 always collapses.")
+                    Text("Regenerate to apply scheme changes.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .font(.caption)
                 Text("Peaking includes meet week. After generating you can add one recovery week between strength and peaking — the button under the timeline (deload rows carry a − control to undo).")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -677,6 +698,50 @@ struct ClientView: View {
             client.startDate = Calendar.current.startOfDay(for: Date())
         }
         if let first = client.program?.weeks.first { expandedWeeks = [first.id] }
+    }
+
+    // MARK: peak projection
+
+    @ViewBuilder
+    private func peakProjectionPanel(_ program: Program) -> some View {
+        if let meet = client.meetDate, let start = client.startDate,
+           let projection = PeakProjection.compute(program: program, startDate: start,
+                                                   meetDate: meet) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: projection.allInWindow ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                        .foregroundStyle(projection.allInWindow ? Theme.plateGreen : .orange)
+                    Text("PEAK PROJECTION")
+                        .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+                    Text(projection.allInWindow
+                         ? "every milestone sits inside its evidence window"
+                         : "check the flagged spacing below")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
+                    ForEach(projection.events) { e in
+                        GridRow {
+                            Image(systemName: e.ok ? "checkmark.circle" : "exclamationmark.circle")
+                                .foregroundStyle(e.ok ? Theme.plateGreen : .orange)
+                                .font(.caption)
+                            Text(e.kind.rawValue).font(.caption).fontWeight(.semibold)
+                            Text(e.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                                .font(.system(.caption, design: .monospaced))
+                            Text(e.detail).font(.caption).foregroundStyle(e.ok ? .secondary : .primary)
+                        }
+                    }
+                }
+                if let note = projection.meetPlacementNote {
+                    Label(note, systemImage: "calendar.badge.exclamationmark")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                Text("Windows assume typical fatigue clearance (~12-day decay). Deadlift needs the longest runway, bench the shortest — the model derives the calendar, the bar decides the day.")
+                    .font(.system(size: 9)).foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Theme.iron2, in: Rectangle())
+            .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
+        }
     }
 
     // MARK: barbell timeline (signature)

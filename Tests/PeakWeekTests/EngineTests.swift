@@ -126,7 +126,7 @@ final class EngineTests: XCTestCase {
         for w in p.weeks {
             let expected: Int
             switch w.phase {
-            case .acc, .trans: expected = 5
+            case .acc, .trans, .hyp: expected = 5
             case .deload, .real: expected = 4
             case .meet: expected = 2
             }

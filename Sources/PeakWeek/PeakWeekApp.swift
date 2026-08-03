@@ -45,6 +45,7 @@ enum Theme {
         case .real: return plateRed
         case .deload: return plateGreen
         case .meet: return plateWhite
+        case .hyp: return Color(red: 0.42, green: 0.32, blue: 0.64)   // purple: build season
         }
     }
 }

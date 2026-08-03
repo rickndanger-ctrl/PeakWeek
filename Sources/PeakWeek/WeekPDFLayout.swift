@@ -36,6 +36,7 @@ enum WeekPDFLayout {
         case .real: return NSColor(red: 0.788, green: 0.275, blue: 0.235, alpha: 1)
         case .deload: return NSColor(red: 0.243, green: 0.557, blue: 0.361, alpha: 1)
         case .meet: return NSColor(white: 0.15, alpha: 1)
+        case .hyp: return NSColor(red: 0.42, green: 0.32, blue: 0.64, alpha: 1)
         }
     }
 

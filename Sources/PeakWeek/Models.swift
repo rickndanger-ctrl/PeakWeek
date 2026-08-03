@@ -9,7 +9,7 @@ enum Unit: String, Codable, CaseIterable, Identifiable {
 }
 
 enum Phase: String, Codable {
-    case acc, trans, real, deload, meet
+    case acc, trans, real, deload, meet, hyp
 
     var label: String {
         switch self {
@@ -18,6 +18,7 @@ enum Phase: String, Codable {
         case .real: return "Realization"
         case .deload: return "Deload"
         case .meet: return "Meet Week"
+        case .hyp: return "Hypertrophy"
         }
     }
     var sub: String {
@@ -27,6 +28,7 @@ enum Phase: String, Codable {
         case .real: return "Peaking"
         case .deload: return "Recovery"
         case .meet: return "Platform"
+        case .hyp: return "Muscle · Off-Season"
         }
     }
     var blurb: String {
@@ -36,12 +38,13 @@ enum Phase: String, Codable {
         case .real: return "Shed fatigue and sharpen. Heavy singles and doubles at 87–93%, volume cut hard. Openers taken 7–10 days out; last heavy deadlift 10–14 days out."
         case .deload: return "Planned recovery week. Volume cut roughly in half, intensity moderate. Adaptation happens here."
         case .meet: return "Light technique work early, then rest. You cannot gain strength this week — you can only lose fatigue."
+        case .hyp: return "Build muscle now, convert it to strength later. Close variations of the comp lifts at higher reps and moderate loads, accessory volume roughly doubled, reps stepping down and weights up across each block. Re-test your max before the next strength block."
         }
     }
 }
 
 enum StartPhase: String, Codable, CaseIterable, Identifiable {
-    case full, acc, trans, real, offseason
+    case full, acc, trans, real, offseason, hypertrophy
     var id: String { rawValue }
 
     var label: String {
@@ -51,6 +54,7 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .trans: return "Strength block only"
         case .real: return "Peaking block only"
         case .offseason: return "Off-season (volume + strength)"
+        case .hypertrophy: return "Hypertrophy off-season (build)"
         }
     }
     var minWeeks: Int {
@@ -58,7 +62,7 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .full: return 10
         case .acc, .trans: return 4
         case .real: return 3
-        case .offseason: return 8
+        case .offseason, .hypertrophy: return 8
         }
     }
     var maxWeeks: Int {
@@ -66,7 +70,7 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .full: return 16
         case .acc, .trans: return 6
         case .real: return 4
-        case .offseason: return 12
+        case .offseason, .hypertrophy: return 12
         }
     }
     var defaultWeeks: Int {
@@ -75,6 +79,21 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .acc, .trans: return 5
         case .real: return 3
         case .offseason: return 10
+        case .hypertrophy: return 12
+        }
+    }
+}
+
+/// Per-phase progression scheme — the coach picks these MANUALLY (never
+/// auto-applied). Linear is the factory behavior.
+enum PhaseScheme: String, Codable, CaseIterable, Identifiable {
+    case linear, wave, dup
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .linear: return "Linear (classic)"
+        case .wave: return "Wave (3-week waves)"
+        case .dup: return "Undulating (DUP)"
         }
     }
 }
@@ -146,14 +165,19 @@ struct BlockPlan: Codable, Hashable {
     var deloadAfterAcc: Bool = true
     var trans: Int = 4            // strength weeks
     var real: Int = 3             // peaking weeks INCLUDING meet week
+    /// Manual scheme choices (composability: schemes attach to phases).
+    var accScheme: PhaseScheme = .linear
+    var transScheme: PhaseScheme = .linear
 
     // The deload only exists when there's a volume block for it to follow.
     var total: Int { acc + (acc > 0 && deloadAfterAcc ? 1 : 0) + trans + real }
 
     init() {}
-    init(acc: Int, deloadAfterAcc: Bool, trans: Int, real: Int) {
+    init(acc: Int, deloadAfterAcc: Bool, trans: Int, real: Int,
+         accScheme: PhaseScheme = .linear, transScheme: PhaseScheme = .linear) {
         self.acc = acc; self.deloadAfterAcc = deloadAfterAcc
         self.trans = trans; self.real = real
+        self.accScheme = accScheme; self.transScheme = transScheme
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -161,6 +185,8 @@ struct BlockPlan: Codable, Hashable {
         deloadAfterAcc = try c.decodeIfPresent(Bool.self, forKey: .deloadAfterAcc) ?? true
         trans = try c.decodeIfPresent(Int.self, forKey: .trans) ?? 4
         real = try c.decodeIfPresent(Int.self, forKey: .real) ?? 3
+        accScheme = try c.decodeIfPresent(PhaseScheme.self, forKey: .accScheme) ?? .linear
+        transScheme = try c.decodeIfPresent(PhaseScheme.self, forKey: .transScheme) ?? .linear
     }
 }
 

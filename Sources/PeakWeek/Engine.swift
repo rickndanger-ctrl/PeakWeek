@@ -275,7 +275,185 @@ enum Engine {
                 ]),
                 DayPlan(title: "Wed–Fri — Rest, hydrate, sleep", slots: []),
             ]
+
+        case .hyp:
+            // Hypertrophy weeks are built by buildHypertrophy via hypDays
+            // (the meso spine carries reps/%); this fallback covers only a
+            // structurally-edited stray and mirrors an early meso week.
+            return hypDays(reps: 10, pct: 65, weekInMeso: 1, fiveDay: fiveDay)
         }
+    }
+
+    // MARK: - Opt-in schemes (never applied automatically)
+
+    /// WAVE transmutation: 3-week mini-cycles — reps fall, weight rises, then
+    /// the bar drops back and the next wave starts 2.5% heavier. The block
+    /// always ENDS on the full top wave, so realization chains unchanged.
+    /// (Final-wave pins: SQ 79/82.5/86 · BP 78/81.5/85 · DL 80/83.5/87.)
+    static func waveOverride(week: Int, blockLen: Int, lift: LiftPool)
+        -> (sets: Int, reps: Int, pct: Double, rpe: Double)? {
+        guard blockLen >= 1, week >= 1, week <= blockLen else { return nil }
+        let pins: [LiftPool: [Double]] = [
+            .squat: [79, 82.5, 86], .bench: [78, 81.5, 85], .deadlift: [80, 83.5, 87],
+        ]
+        let repScheme: [LiftPool: [Int]] = [
+            .squat: [5, 4, 3], .bench: [5, 4, 3], .deadlift: [4, 3, 2],
+        ]
+        guard let pin = pins[lift], let reps = repScheme[lift] else { return nil }
+        let waves = (blockLen + 2) / 3                 // ceil(N/3)
+        let skip = 3 * waves - blockLen                // steps dropped from wave 1's front
+        let g = week + skip                            // global step index
+        let wave = (g + 2) / 3
+        let step = ((g - 1) % 3)                       // 0..2
+        let pct = pin[step] - 2.5 * Double(waves - wave)
+        let rpe: Double = lift == .deadlift ? 8.0 : [7.0, 7.5, 8.0][step]
+        return (4, reps[step], pct, rpe)
+    }
+
+    /// DUP accumulation: each lift sees different jobs across the week —
+    /// volume (H), speed (P), strength (S) — with %-bands that progress by the
+    /// same lerp discipline as the factory templates.
+    static func dupAccDays(week w: Int, blockLen N: Int, fiveDay: Bool) -> [DayPlan] {
+        let S = slot
+        func band(_ lo: Double, _ hi: Double) -> Double {
+            N > 1 ? lerp(lo, hi, Double(w - 1) / Double(N - 1)) : lo
+        }
+        /// Day-1 alternation evaluates the lerp on its own parity sequence.
+        func parityBand(_ lo: Double, _ hi: Double) -> Double {
+            let mine = stride(from: (w % 2 == 1) ? 1 : 2, through: N, by: 2).map { $0 }
+            guard let i = mine.firstIndex(of: w), mine.count > 1 else { return lo }
+            return lerp(lo, hi, Double(i) / Double(mine.count - 1))
+        }
+        func speed(_ s: Slot) -> Slot { var s = s; s.note = "max bar speed"; return s }
+
+        var day1: DayPlan
+        if fiveDay {
+            day1 = DayPlan(title: "Day 1 — Squat (volume)", slots: [
+                S(.squat, 0, 4, 8, band(65, 71), 7),
+                speed(S(.squat, 1, 3, 3, band(68, 72), 6.5)),
+                S(.quads, 0, 3, 10, nil, 8),
+                S(.hams, 0, 3, 10, nil, 8),
+            ])
+        } else {
+            let odd = w % 2 == 1
+            day1 = DayPlan(title: odd ? "Day 1 — Squat (volume)" : "Day 1 — Squat (strength)", slots: [
+                odd ? S(.squat, 0, 4, 8, parityBand(65, 71), 7)
+                    : S(.squat, 0, 4, 5, parityBand(75, 81), 7.5),
+                speed(S(.squat, 1, 4, 3, band(68, 72), 6.5)),
+                S(.quads, 0, 3, 10, nil, 8),
+                S(.hams, 0, 3, 10, nil, 8),
+            ])
+        }
+        var days = [
+            day1,
+            DayPlan(title: "Day 2 — Bench (volume)", slots: [
+                S(.bench, 0, 4, 8, band(65, 71), 7),
+                S(.bench, 2, 3, 8, band(60, 65), 7.5),
+                S(.press, 0, 3, 10, nil, 8),
+                S(.back, 2, 3, 12, nil, 8),
+            ]),
+            DayPlan(title: "Day 3 — Deadlift (strength)", slots: [
+                S(.deadlift, 0, 4, 4, band(76, 82), 7.5),
+                S(.deadlift, 4, 3, 8, band(55, 60), 7.5),
+                S(.back, 0, 3, 10, nil, 8),
+                S(.hams, 1, 3, 10, nil, 8),
+            ]),
+            DayPlan(title: "Day 4 — Bench (speed + strength)", slots: [
+                speed(S(.bench, 1, 4, 3, band(68, 72), 6.5)),
+                S(.bench, 0, 4, 5, band(75, 81), 7.5),
+                S(.back, 1, 3, 10, nil, 8),
+                S(.press, 4, 3, 12, nil, 8.5),
+            ]),
+        ]
+        if fiveDay {
+            days.append(DayPlan(title: "Day 5 — Squat (strength)", slots: [
+                S(.squat, 0, 4, 5, band(75, 81), 7.5),
+                S(.hams, 2, 3, 10, nil, 8),
+                S(.hams, 3, 3, 10, nil, 8),
+                S(.press, 1, 3, 12, nil, 8),
+            ]))
+        }
+        return days
+    }
+
+    // MARK: - Hypertrophy off-season
+
+    enum HypWeek: Equatable {
+        case work(reps: Int, pct: Double)
+        case deload
+    }
+
+    /// Explicit meso spine per total length (auditable, pinned by tests):
+    /// reps step 12 → 10 → 8 while %s climb; deloads separate mesos.
+    static func hypSpine(totalWeeks: Int) -> [HypWeek] {
+        func work(_ reps: Int, _ pcts: [Double]) -> [HypWeek] {
+            pcts.map { .work(reps: reps, pct: $0) }
+        }
+        switch totalWeeks {
+        case ...8:
+            return work(12, [60, 61, 62, 63]) + [.deload] + work(10, [65, 67, 68])
+        case 9:
+            return work(12, [60, 61, 62, 63]) + [.deload] + work(10, [64, 65, 67, 68])
+        case 10:
+            return work(12, [60, 61, 62, 63]) + [.deload] + work(10, [64, 65, 67, 68]) + work(8, [70])
+        case 11:
+            return work(12, [60, 61, 62, 63]) + [.deload] + work(10, [64, 65, 67, 68]) + [.deload] + work(8, [71])
+        default:
+            return work(12, [60, 61, 62, 63]) + [.deload] + work(10, [64, 65, 67, 68]) + [.deload] + work(8, [70, 72])
+        }
+    }
+
+    /// Day templates for one hypertrophy week. Main variation carries the
+    /// spine's sets×reps@%; secondary = 3×8 @ main−2; the first two
+    /// accessories/day ramp 3→4 sets in meso weeks 3+.
+    static func hypDays(reps: Int, pct: Double, weekInMeso: Int, fiveDay: Bool) -> [DayPlan] {
+        let S = slot
+        let accSets = weekInMeso >= 3 ? 4 : 3
+        var days = [
+            DayPlan(title: "Day 1 — Squat (volume)", slots: [
+                S(.squat, 2, 4, reps, pct, 8),          // High-Bar main
+                S(.squat, 1, 3, 8, pct - 2, 7.5),       // Pause secondary
+                S(.quads, 0, accSets, 12, nil, 8),
+                S(.quads, 2, accSets, 12, nil, 8),
+                S(.quads, 4, 3, 15, nil, 8.5),
+                S(.hams, 0, 3, 12, nil, 8),
+            ]),
+            DayPlan(title: "Day 2 — Bench (volume)", slots: [
+                S(.bench, 1, 4, reps, pct, 8),          // Close-Grip main
+                S(.bench, 5, 3, 8, pct - 2, 7.5),       // Incline secondary
+                S(.press, 2, accSets, 10, nil, 8),
+                S(.press, 1, accSets, 12, nil, 8),
+                S(.press, 4, 3, 15, nil, 8.5),
+                S(.back, 2, 3, 12, nil, 8),
+            ]),
+            DayPlan(title: "Day 3 — Hinge (volume)", slots: [
+                S(.deadlift, 4, 4, reps, pct, 8),       // RDL main
+                S(.deadlift, 5, 3, 8, pct - 2, 7.5),    // Snatch-Grip secondary
+                S(.back, 0, accSets, 10, nil, 8),
+                S(.hams, 1, accSets, 10, nil, 8),
+                S(.back, 4, 3, 12, nil, 8),
+                S(.hams, 2, 3, 12, nil, 8),
+            ]),
+            DayPlan(title: "Day 4 — Bench 2 (volume)", slots: [
+                S(.bench, 3, 4, reps, pct, 8),          // Larsen main
+                S(.bench, 7, 3, 8, pct - 2, 7.5),       // Feet-Up secondary
+                S(.back, 3, accSets, 8, nil, 8),
+                S(.back, 1, 3, 12, nil, 8),
+                S(.press, 0, 3, 10, nil, 7.5),
+                S(.press, 5, 3, 12, nil, 8),
+            ]),
+        ]
+        if fiveDay {
+            days.append(DayPlan(title: "Day 5 — Squat 2 (volume)", slots: [
+                S(.squat, 3, 4, reps, pct, 8),          // SSB main
+                S(.squat, 7, 3, 8, pct - 2, 7.5),       // Box secondary
+                S(.quads, 3, accSets, 10, nil, 8),
+                S(.hams, 3, 3, 10, nil, 8),
+                S(.hams, 4, 3, 10, nil, 7.5),
+                S(.press, 3, 3, 12, nil, 8),
+            ]))
+        }
+        return days
     }
 
     // MARK: meet-date planning
@@ -405,6 +583,9 @@ enum Engine {
         case .real: rawBlocks = [Block(phase: .real, weeks: min(4, max(3, totalWeeks)))]
         case .acc: rawBlocks = [Block(phase: .acc, weeks: totalWeeks)]
         case .trans: rawBlocks = [Block(phase: .trans, weeks: totalWeeks)]
+        case .hypertrophy:
+            // Dedicated builder: the meso spine drives everything.
+            return buildHypertrophy(totalWeeks: totalWeeks, fiveDay: fiveDay)
         }
 
         let isMeetTrack = (startPhase == .full || startPhase == .real)
@@ -417,9 +598,26 @@ enum Engine {
                 let phase: Phase = (isLast && isMeetTrack) ? .meet : b.phase
                 let t = b.weeks > 1 ? Double(i) / Double(b.weeks - 1) : 0
                 let weeksOut: Int? = b.phase == .real ? (b.weeks - 1 - i) : nil
+                var days = dayTemplates(phase: phase, t: t, weeksOut: weeksOut, fiveDay: fiveDay)
+                // Opt-in schemes (coach's manual choice on the block plan):
+                if phase == .acc, blockPlan?.accScheme == .dup {
+                    days = dupAccDays(week: i + 1, blockLen: b.weeks, fiveDay: fiveDay)
+                }
+                if phase == .trans, blockPlan?.transScheme == .wave {
+                    for di in days.indices {
+                        guard let lift: LiftPool = [0: .squat, 1: .bench, 2: .deadlift][di],
+                              let wave = waveOverride(week: i + 1, blockLen: b.weeks, lift: lift),
+                              let first = days[di].slots.first, first.pool == lift, first.exIdx == 0
+                        else { continue }
+                        days[di].slots[0].sets = wave.sets
+                        days[di].slots[0].reps = wave.reps
+                        days[di].slots[0].pct = wave.pct
+                        days[di].slots[0].rpe = wave.rpe
+                    }
+                }
                 weeks.append(Week(
                     num: w, phase: phase, weekInBlock: i + 1, blockLen: b.weeks,
-                    days: dayTemplates(phase: phase, t: t, weeksOut: weeksOut, fiveDay: fiveDay)
+                    days: days
                 ))
                 w += 1
             }
@@ -439,6 +637,31 @@ enum Engine {
         let actualTotal = rawBlocks.reduce(0) { $0 + $1.weeks }
         return Program(startPhase: startPhase, totalWeeks: actualTotal, fiveDay: fiveDay,
                        createdAt: Date(), blocks: blocks, weeks: weeks)
+    }
+
+    /// Hypertrophy off-season: meso-spine-driven builder (no meet week).
+    static func buildHypertrophy(totalWeeks: Int, fiveDay: Bool) -> Program {
+        let spine = hypSpine(totalWeeks: totalWeeks)
+        var weeks: [Week] = []
+        var weekInMeso = 0
+        for (i, entry) in spine.enumerated() {
+            switch entry {
+            case .deload:
+                weekInMeso = 0
+                weeks.append(Week(num: i + 1, phase: .deload, weekInBlock: 1, blockLen: 1,
+                                  days: dayTemplates(phase: .deload, t: 0, weeksOut: nil,
+                                                     fiveDay: fiveDay)))
+            case .work(let reps, let pct):
+                weekInMeso += 1
+                weeks.append(Week(num: i + 1, phase: .hyp, weekInBlock: weekInMeso, blockLen: 1,
+                                  days: hypDays(reps: reps, pct: pct, weekInMeso: weekInMeso,
+                                                fiveDay: fiveDay)))
+            }
+        }
+        var program = Program(startPhase: .hypertrophy, totalWeeks: spine.count, fiveDay: fiveDay,
+                              createdAt: Date(), blocks: [], weeks: weeks)
+        program.renumberAndRegroup()   // block runs + in-block coordinates
+        return program
     }
 
     // MARK: derived values
