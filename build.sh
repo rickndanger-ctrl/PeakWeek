@@ -36,9 +36,13 @@ cat > "$APP/Contents/Info.plist" << 'PLIST'
   <key>NSHighResolutionCapable</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSAppleEventsUsageDescription</key><string>Peak Week sends weekly training plans to your clients through Messages and Mail.</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
 </dict>
 </plist>
 PLIST
+
+# App icon
+[ -f assets/AppIcon.icns ] && cp assets/AppIcon.icns "$APP/Contents/Resources/"
 
 # Ad-hoc sign so macOS runs it without complaints on this machine
 codesign --force --deep -s - "$APP" 2>/dev/null || true
