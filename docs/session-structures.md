@@ -216,8 +216,8 @@
   2. Incline Bench — 3x8 @ 58.0% · RPE 7.5
   3. Dip — 3x10 · RPE 8.0
   4. DB Shoulder Press — 3x12 · RPE 8.0
-  5. Tricep Pushdown — 3x15 · RPE 8.5
-  6. Lat Pulldown — 3x12 · RPE 8.0
+  5. Lat Pulldown — 3x12 · RPE 8.0
+  6. Tricep Pushdown — 3x15 · RPE 8.5
 **Day 3 — Hinge (volume)**
   1. Romanian Deadlift — 4x12 @ 60.0% · RPE 8.0
   2. Snatch-Grip Deadlift — 3x8 @ 58.0% · RPE 7.5
@@ -246,8 +246,8 @@
   2. Incline Bench — 3x8 @ 60.0% · RPE 7.5
   3. Dip — 4x10 · RPE 8.0
   4. DB Shoulder Press — 4x12 · RPE 8.0
-  5. Tricep Pushdown — 3x15 · RPE 8.5
-  6. Lat Pulldown — 3x12 · RPE 8.0
+  5. Lat Pulldown — 3x12 · RPE 8.0
+  6. Tricep Pushdown — 3x15 · RPE 8.5
 **Day 3 — Hinge (volume)**
   1. Romanian Deadlift — 4x12 @ 62.0% · RPE 8.0
   2. Snatch-Grip Deadlift — 3x8 @ 60.0% · RPE 7.5
@@ -276,8 +276,8 @@
   2. Incline Bench — 3x8 @ 68.0% · RPE 7.5
   3. Dip — 3x10 · RPE 8.0
   4. DB Shoulder Press — 3x12 · RPE 8.0
-  5. Tricep Pushdown — 3x15 · RPE 8.5
-  6. Lat Pulldown — 3x12 · RPE 8.0
+  5. Lat Pulldown — 3x12 · RPE 8.0
+  6. Tricep Pushdown — 3x15 · RPE 8.5
 **Day 3 — Hinge (volume)**
   1. Romanian Deadlift — 4x8 @ 70.0% · RPE 8.0
   2. Snatch-Grip Deadlift — 3x8 @ 68.0% · RPE 7.5
@@ -468,7 +468,7 @@
   1. Competition Squat — 4x5 @ 75.0% · RPE 7.5
   2. Back Extension — 3x10 · RPE 8.0
   3. Hip Thrust — 3x10 · RPE 8.0
-  4. DB Shoulder Press — 3x12 · RPE 8.0
+  4. Pull-Up — 3x8 · RPE 8.0
 
 ### DUP wk2 (even) — week 2 (Accumulation, 2/6)
 **Day 1 — Squat (volume)**
@@ -495,7 +495,7 @@
   1. Competition Squat — 4x5 @ 76.0% · RPE 7.5
   2. Back Extension — 3x10 · RPE 8.0
   3. Hip Thrust — 3x10 · RPE 8.0
-  4. DB Shoulder Press — 3x12 · RPE 8.0
+  4. Pull-Up — 3x8 · RPE 8.0
 
 
 ## WAVE TRANSMUTATION — 5-DAY
@@ -560,8 +560,8 @@
   2. Incline Bench — 3x8 @ 58.0% · RPE 7.5
   3. Dip — 3x10 · RPE 8.0
   4. DB Shoulder Press — 3x12 · RPE 8.0
-  5. Tricep Pushdown — 3x15 · RPE 8.5
-  6. Lat Pulldown — 3x12 · RPE 8.0
+  5. Lat Pulldown — 3x12 · RPE 8.0
+  6. Tricep Pushdown — 3x15 · RPE 8.5
 **Day 3 — Hinge (volume)**
   1. Romanian Deadlift — 4x12 @ 60.0% · RPE 8.0
   2. Snatch-Grip Deadlift — 3x8 @ 58.0% · RPE 7.5
@@ -597,8 +597,8 @@
   2. Incline Bench — 3x8 @ 60.0% · RPE 7.5
   3. Dip — 4x10 · RPE 8.0
   4. DB Shoulder Press — 4x12 · RPE 8.0
-  5. Tricep Pushdown — 3x15 · RPE 8.5
-  6. Lat Pulldown — 3x12 · RPE 8.0
+  5. Lat Pulldown — 3x12 · RPE 8.0
+  6. Tricep Pushdown — 3x15 · RPE 8.5
 **Day 3 — Hinge (volume)**
   1. Romanian Deadlift — 4x12 @ 62.0% · RPE 8.0
   2. Snatch-Grip Deadlift — 3x8 @ 60.0% · RPE 7.5
@@ -634,8 +634,8 @@
   2. Incline Bench — 3x8 @ 68.0% · RPE 7.5
   3. Dip — 3x10 · RPE 8.0
   4. DB Shoulder Press — 3x12 · RPE 8.0
-  5. Tricep Pushdown — 3x15 · RPE 8.5
-  6. Lat Pulldown — 3x12 · RPE 8.0
+  5. Lat Pulldown — 3x12 · RPE 8.0
+  6. Tricep Pushdown — 3x15 · RPE 8.5
 **Day 3 — Hinge (volume)**
   1. Romanian Deadlift — 4x8 @ 70.0% · RPE 8.0
   2. Snatch-Grip Deadlift — 3x8 @ 68.0% · RPE 7.5

@@ -404,11 +404,13 @@ enum Engine {
             ]),
         ]
         if fiveDay {
+            // Audit fix: the 5th day must add PULL, not a third overhead press —
+            // without it the DUP week ran 21 pressing : 9 pulling sets.
             days.append(DayPlan(title: "Day 5 — Squat (strength)", slots: [
                 S(.squat, 0, 4, 5, band(75, 81), 7.5),
                 S(.hams, 2, 3, 10, nil, 8),
                 S(.hams, 3, 3, 10, nil, 8),
-                S(.press, 1, 3, 12, nil, 8),
+                S(.back, 3, 3, 8, nil, 8),          // Pull-Up (mirrors factory day 5)
             ]))
         }
         return days
@@ -461,8 +463,10 @@ enum Engine {
                 S(.bench, 5, 3, 8, pct - 2, 7.5),       // Incline secondary
                 S(.press, 2, accSets, 10, nil, 8),
                 S(.press, 1, accSets, 12, nil, 8),
-                S(.press, 4, 3, 15, nil, 8.5),
+                // Audit fix: the day's only pull (a compound) goes BEFORE the
+                // isolation finisher, not dead last in a 19-21 set session.
                 S(.back, 2, 3, 12, nil, 8),
+                S(.press, 4, 3, 15, nil, 8.5),
             ]),
             DayPlan(title: "Day 3 — Hinge (volume)", slots: [
                 S(.deadlift, 4, 4, reps, pct, 8),       // RDL main
