@@ -169,8 +169,47 @@ struct Client: Codable, Identifiable, Hashable {
     var setupWeeks: Int = 12
     var fiveDay: Bool = false
     var program: Program? = nil
+    var startDate: Date? = nil            // Monday of program week 1
+    var delivery: DeliveryPrefs = DeliveryPrefs()
+
+    init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
+         setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
+         program: Program? = nil, startDate: Date? = nil,
+         delivery: DeliveryPrefs = DeliveryPrefs()) {
+        self.id = id; self.name = name; self.unit = unit; self.maxes = maxes
+        self.setupPhase = setupPhase; self.setupWeeks = setupWeeks; self.fiveDay = fiveDay
+        self.program = program; self.startDate = startDate; self.delivery = delivery
+    }
+
+    // Tolerant decoding: fields added after v1 fall back to defaults so old
+    // data.json files (and backups) always open.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        unit = try c.decodeIfPresent(Unit.self, forKey: .unit) ?? .lb
+        maxes = try c.decodeIfPresent(Maxes.self, forKey: .maxes) ?? Maxes()
+        setupPhase = try c.decodeIfPresent(StartPhase.self, forKey: .setupPhase) ?? .full
+        setupWeeks = try c.decodeIfPresent(Int.self, forKey: .setupWeeks) ?? 12
+        fiveDay = try c.decodeIfPresent(Bool.self, forKey: .fiveDay) ?? false
+        program = try c.decodeIfPresent(Program.self, forKey: .program)
+        startDate = try c.decodeIfPresent(Date.self, forKey: .startDate)
+        delivery = try c.decodeIfPresent(DeliveryPrefs.self, forKey: .delivery) ?? DeliveryPrefs()
+    }
 }
 
 struct AppData: Codable {
     var clients: [Client] = []
+    var sendLog: [SendRecord] = []
+
+    init(clients: [Client] = [], sendLog: [SendRecord] = []) {
+        self.clients = clients
+        self.sendLog = sendLog
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        clients = try c.decodeIfPresent([Client].self, forKey: .clients) ?? []
+        sendLog = try c.decodeIfPresent([SendRecord].self, forKey: .sendLog) ?? []
+    }
 }

@@ -48,6 +48,7 @@ struct ContentView: View {
     @State private var selectedID: UUID?
     @State private var showNewClient = false
     @State private var restoreMessage: String?
+    @State private var showDeliveries = false
 
     var body: some View {
         NavigationSplitView {
@@ -69,6 +70,9 @@ struct ContentView: View {
                 store.addClient(client)
                 selectedID = client.id
             }
+        }
+        .sheet(isPresented: $showDeliveries) {
+            DeliveriesView()
         }
         .alert(restoreMessage ?? "", isPresented: Binding(
             get: { restoreMessage != nil },
@@ -100,6 +104,13 @@ struct ContentView: View {
         .toolbar {
             ToolbarItemGroup {
                 Button { showNewClient = true } label: { Label("New Client", systemImage: "plus") }
+                Button { showDeliveries = true } label: {
+                    Label("Deliveries", systemImage: "paperplane")
+                }
+                .badge(store.queuedSends.count)
+                .help(store.queuedSends.isEmpty
+                      ? "Delivery log"
+                      : "\(store.queuedSends.count) plan(s) waiting for your approval")
                 Menu {
                     Button("Backup all data…") { store.exportBackup() }
                     Button("Restore from backup…") {

@@ -1,0 +1,146 @@
+import Foundation
+
+// MARK: - Delivery preferences & send log models
+
+enum DeliveryMethod: String, Codable, CaseIterable, Identifiable {
+    case messages, mail
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .messages: return "Messages"
+        case .mail: return "Mail"
+        }
+    }
+}
+
+enum DeliveryFormat: String, Codable, CaseIterable, Identifiable {
+    case text, pdf, both
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .text: return "Text"
+        case .pdf: return "PDF"
+        case .both: return "Text + PDF"
+        }
+    }
+}
+
+struct DeliveryPrefs: Codable, Hashable {
+    var autoSend: Bool = false           // master switch per client
+    var method: DeliveryMethod = .messages
+    var recipient: String = ""           // phone / iMessage handle / email
+    var format: DeliveryFormat = .text
+    var weekday: Int = 1                 // Calendar weekday: 1 = Sunday … 7 = Saturday
+    var hour: Int = 18                   // local time, 24h
+    var requireReview: Bool = true       // queue for approval instead of sending silently
+
+    // Tolerant decoding: any missing key falls back to its default, so adding
+    // fields never breaks existing data.json files.
+    init() {}
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        autoSend = try c.decodeIfPresent(Bool.self, forKey: .autoSend) ?? false
+        method = try c.decodeIfPresent(DeliveryMethod.self, forKey: .method) ?? .messages
+        recipient = try c.decodeIfPresent(String.self, forKey: .recipient) ?? ""
+        format = try c.decodeIfPresent(DeliveryFormat.self, forKey: .format) ?? .text
+        weekday = try c.decodeIfPresent(Int.self, forKey: .weekday) ?? 1
+        hour = try c.decodeIfPresent(Int.self, forKey: .hour) ?? 18
+        requireReview = try c.decodeIfPresent(Bool.self, forKey: .requireReview) ?? true
+    }
+}
+
+enum SendStatus: Codable, Hashable {
+    case sent
+    case queued                          // waiting for coach approval (review mode)
+    case failed(String)
+    case skipped(String)                 // e.g. superseded by a newer due week
+
+    var label: String {
+        switch self {
+        case .sent: return "Sent"
+        case .queued: return "Awaiting review"
+        case .failed(let why): return "Failed — \(why)"
+        case .skipped(let why): return "Skipped — \(why)"
+        }
+    }
+    var isTerminal: Bool {               // terminal records satisfy a due week
+        if case .queued = self { return false }
+        return true
+    }
+}
+
+struct SendRecord: Codable, Hashable, Identifiable {
+    var id: UUID = UUID()
+    var clientID: UUID
+    var clientName: String
+    var weekNum: Int
+    var date: Date
+    var method: DeliveryMethod
+    var status: SendStatus
+}
+
+// MARK: - Schedule math (pure, fully testable)
+
+enum DeliverySchedule {
+
+    /// Monday 00:00 local of the week `weekNum` (1-based) for a program anchored
+    /// at `startDate` (itself normalized to a Monday).
+    static func weekStart(startDate: Date, weekNum: Int, calendar: Calendar = .current) -> Date {
+        let monday = mondayOfWeek(containing: startDate, calendar: calendar)
+        return calendar.date(byAdding: .day, value: (weekNum - 1) * 7, to: monday)!
+    }
+
+    static func mondayOfWeek(containing date: Date, calendar: Calendar = .current) -> Date {
+        var cal = calendar
+        cal.firstWeekday = 2 // Monday
+        let comps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        return cal.date(from: comps)!
+    }
+
+    /// The moment week `weekNum`'s plan should go out: the occurrence of
+    /// prefs.weekday/prefs.hour in the 7 days ENDING at the week's Monday.
+    /// (Sunday 18:00 prefs → the evening before the training week begins.
+    ///  Monday prefs → the morning the week begins.)
+    static func sendMoment(startDate: Date, weekNum: Int, prefs: DeliveryPrefs,
+                           calendar: Calendar = .current) -> Date {
+        let start = weekStart(startDate: startDate, weekNum: weekNum, calendar: calendar)
+        // Walk back from Monday 00:00 to the requested weekday at the requested hour.
+        // Monday itself counts as "this week" (offset 0), Sunday as -1 day, etc.
+        let weekdayOfMonday = 2
+        var dayOffset = (prefs.weekday - weekdayOfMonday + 7) % 7  // Mon->0, Tue->1 … Sun->6
+        if dayOffset > 0 { dayOffset -= 7 }                        // Tue..Sun land BEFORE the week
+        var moment = calendar.date(byAdding: .day, value: dayOffset, to: start)!
+        moment = calendar.date(bySettingHour: prefs.hour, minute: 0, second: 0, of: moment)!
+        return moment
+    }
+
+    /// A send that is due right now for one client.
+    struct DueSend: Equatable {
+        var weekNum: Int
+        var moment: Date
+        var supersededWeeks: [Int]       // older due-but-unsent weeks to mark skipped
+    }
+
+    /// Catch-up policy: of all weeks whose send moment has passed and which have
+    /// no terminal record yet, only the LATEST is sent; older ones are skipped.
+    static func dueSend(now: Date, startDate: Date?, program: Program?,
+                        prefs: DeliveryPrefs, records: [SendRecord],
+                        calendar: Calendar = .current) -> DueSend? {
+        guard prefs.autoSend,
+              !prefs.recipient.trimmingCharacters(in: .whitespaces).isEmpty,
+              let startDate, let program, !program.weeks.isEmpty else { return nil }
+
+        let covered = Set(records.filter { $0.status.isTerminal }.map(\.weekNum))
+        var due: [(week: Int, moment: Date)] = []
+        for week in program.weeks {
+            let moment = sendMoment(startDate: startDate, weekNum: week.num,
+                                    prefs: prefs, calendar: calendar)
+            if moment <= now, !covered.contains(week.num) {
+                due.append((week.num, moment))
+            }
+        }
+        guard let latest = due.max(by: { $0.week < $1.week }) else { return nil }
+        let superseded = due.map(\.week).filter { $0 != latest.week }.sorted()
+        return DueSend(weekNum: latest.week, moment: latest.moment, supersededWeeks: superseded)
+    }
+}

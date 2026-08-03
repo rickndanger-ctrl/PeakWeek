@@ -31,6 +31,8 @@ struct WeekView: View {
     @Binding var isExpanded: Bool
     let copied: Bool
     let onCopy: () -> Void
+    var onSendNow: (() -> Void)? = nil
+    @State private var confirmSendNow = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,6 +81,12 @@ struct WeekView: View {
                 Button("Save PDF…") {
                     WeekExporter.savePDF(client: client, program: program, week: week)
                 }
+                if onSendNow != nil {
+                    Divider()
+                    Button("Send now to \(client.delivery.recipient) (\(client.delivery.method.label))…") {
+                        confirmSendNow = true
+                    }
+                }
             } label: {
                 Label("Send", systemImage: "square.and.arrow.up")
                     .fontWeight(.semibold)
@@ -87,6 +95,11 @@ struct WeekView: View {
             .fixedSize()
             .padding(.trailing, 14)
             .help("Send this week's plan to \(client.name)")
+            .confirmationDialog(
+                "Send Week \(week.num) to \(client.delivery.recipient) via \(client.delivery.method.label) right now?",
+                isPresented: $confirmSendNow, titleVisibility: .visible) {
+                Button("Send") { onSendNow?() }
+            }
         }
     }
 

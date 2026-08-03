@@ -35,6 +35,7 @@ cat > "$APP/Contents/Info.plist" << 'PLIST'
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
+  <key>NSAppleEventsUsageDescription</key><string>Peak Week sends weekly training plans to your clients through Messages and Mail.</string>
 </dict>
 </plist>
 PLIST

@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 
 struct ClientView: View {
+    @EnvironmentObject var store: AppStore
     @Binding var client: Client
     var onDelete: () -> Void
 
@@ -119,9 +120,99 @@ struct ClientView: View {
             }
             Text("Maxes update loads everywhere instantly — bump a 1RM after a PR and every remaining week recalculates.")
                 .font(.caption).foregroundStyle(.secondary)
+
+            Divider().overlay(Theme.line)
+            deliveryPanel
         }
         .padding(20)
         .background(Theme.iron2, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: delivery preferences
+
+    private static let weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday",
+                                       "Thursday", "Friday", "Saturday"]
+
+    private var startDateBinding: Binding<Date> {
+        Binding(
+            get: { client.startDate ?? DeliverySchedule.mondayOfWeek(containing: Date().addingTimeInterval(7 * 86400)) },
+            set: { client.startDate = DeliverySchedule.mondayOfWeek(containing: $0) }
+        )
+    }
+
+    private var deliveryPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Text("WEEKLY PLAN DELIVERY")
+                    .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+                if client.delivery.autoSend && client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Text("⚠ add a recipient or nothing will send")
+                        .font(.caption2).foregroundStyle(Theme.plateYellow)
+                }
+            }
+            Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 12) {
+                GridRow {
+                    labeled("Auto-send") {
+                        Toggle("", isOn: $client.delivery.autoSend)
+                            .toggleStyle(.switch).labelsHidden()
+                    }
+                    labeled("Via") {
+                        Picker("", selection: $client.delivery.method) {
+                            ForEach(DeliveryMethod.allCases) { m in Text(m.label).tag(m) }
+                        }
+                        .pickerStyle(.segmented).labelsHidden().frame(width: 160)
+                    }
+                    labeled(client.delivery.method == .mail ? "Email address" : "iMessage / phone") {
+                        TextField(client.delivery.method == .mail ? "client@example.com" : "+1 555 010 0000",
+                                  text: $client.delivery.recipient)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 190)
+                    }
+                    labeled("Format") {
+                        Picker("", selection: $client.delivery.format) {
+                            ForEach(DeliveryFormat.allCases) { f in Text(f.label).tag(f) }
+                        }
+                        .labelsHidden().frame(width: 120)
+                    }
+                }
+                GridRow {
+                    labeled("Send on") {
+                        Picker("", selection: $client.delivery.weekday) {
+                            ForEach(1...7, id: \.self) { d in
+                                Text(Self.weekdayNames[d - 1]).tag(d)
+                            }
+                        }
+                        .labelsHidden().frame(width: 120)
+                    }
+                    labeled("At") {
+                        Picker("", selection: $client.delivery.hour) {
+                            ForEach(0..<24, id: \.self) { h in
+                                Text(hourLabel(h)).tag(h)
+                            }
+                        }
+                        .labelsHidden().frame(width: 90)
+                    }
+                    labeled("Review before sending") {
+                        Toggle("", isOn: $client.delivery.requireReview)
+                            .toggleStyle(.switch).labelsHidden()
+                    }
+                    labeled("Week 1 starts (Monday)") {
+                        DatePicker("", selection: startDateBinding, displayedComponents: .date)
+                            .labelsHidden().frame(width: 130)
+                    }
+                }
+            }
+            Text(client.delivery.requireReview
+                 ? "Due weeks queue up for your approval — check the paper-plane icon in the toolbar."
+                 : "Due weeks send without asking. The send log keeps a record of every delivery.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func hourLabel(_ h: Int) -> String {
+        let ampm = h < 12 ? "AM" : "PM"
+        let display = h % 12 == 0 ? 12 : h % 12
+        return "\(display) \(ampm)"
     }
 
     private func maxField(_ value: Binding<Double>) -> some View {
@@ -142,6 +233,11 @@ struct ClientView: View {
         client.program = Engine.buildProgram(startPhase: client.setupPhase,
                                              totalWeeks: clampedWeeks,
                                              fiveDay: client.fiveDay)
+        if client.startDate == nil {
+            // Default anchor: next Monday.
+            client.startDate = DeliverySchedule.mondayOfWeek(
+                containing: Date().addingTimeInterval(7 * 86400))
+        }
         if let first = client.program?.weeks.first { expandedWeeks = [first.id] }
     }
 
@@ -228,7 +324,10 @@ struct ClientView: View {
                         program: program,
                         isExpanded: expandedBinding(program.weeks[wIdx].id),
                         copied: copiedWeek == program.weeks[wIdx].num,
-                        onCopy: { copyWeek(program.weeks[wIdx], program: program) }
+                        onCopy: { copyWeek(program.weeks[wIdx], program: program) },
+                        onSendNow: client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty
+                            ? nil
+                            : { store.sendNow(clientID: client.id, weekNum: program.weeks[wIdx].num) }
                     )
                 }
             }
