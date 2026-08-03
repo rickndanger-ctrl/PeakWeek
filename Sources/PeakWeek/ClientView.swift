@@ -97,10 +97,13 @@ struct ClientView: View {
                     labeled("Meet date") {
                         HStack(spacing: 4) {
                             DatePicker("", selection: Binding(
-                                get: { client.meetDate ?? DeliverySchedule.weekStart(
-                                    startDate: client.startDate ?? Date(),
-                                    weekNum: (client.program?.weeks.count ?? client.setupWeeks) + 1)
-                                    .addingTimeInterval(-2 * 86400) },   // default: Sat after final week
+                                get: { client.meetDate ?? {
+                                    // Default: Saturday of the final program week.
+                                    let afterEnd = DeliverySchedule.weekStart(
+                                        startDate: client.startDate ?? Date(),
+                                        weekNum: (client.program?.weeks.count ?? client.setupWeeks) + 1)
+                                    return Calendar.current.date(byAdding: .day, value: -2, to: afterEnd) ?? afterEnd
+                                }() },
                                 set: { client.meetDate = $0 }
                             ), displayedComponents: .date)
                             .labelsHidden().frame(width: 130)
@@ -242,9 +245,11 @@ struct ClientView: View {
     private func overrideField(_ label: String, _ value: Binding<Double?>, placeholder: String) -> some View {
         HStack(spacing: 4) {
             Text(label).font(.caption2).foregroundStyle(.secondary)
+            // No clamping while typing (that mangles input mid-edit) — the
+            // engine clamps overrides 80–115 at use.
             TextField(placeholder, text: Binding(
                 get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
-                set: { value.wrappedValue = Double($0).map { min(115, max(80, $0)) } }
+                set: { value.wrappedValue = Double($0) }
             ))
             .squareFieldStyle()
             .font(.system(.caption, design: .monospaced))
@@ -287,11 +292,10 @@ struct ClientView: View {
 
     private func optionalNumField(_ value: Binding<Double?>, placeholder: String,
                                   range: ClosedRange<Double>) -> some View {
+        // No clamping while typing — the engine clamps per-lift values at use.
         TextField(placeholder, text: Binding(
             get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
-            set: { s in
-                value.wrappedValue = Double(s).map { min(range.upperBound, max(range.lowerBound, $0)) }
-            }
+            set: { s in value.wrappedValue = Double(s) }
         ))
         .squareFieldStyle()
         .font(.system(.caption, design: .monospaced))
@@ -363,9 +367,15 @@ struct ClientView: View {
 
     private var startDateBinding: Binding<Date> {
         Binding(
-            get: { client.startDate ?? DeliverySchedule.mondayOfWeek(containing: Date().addingTimeInterval(7 * 86400)) },
+            get: { client.startDate ?? Self.nextMonday() },
             set: { client.startDate = DeliverySchedule.mondayOfWeek(containing: $0) }
         )
+    }
+
+    /// DST-safe "next Monday" (calendar day arithmetic, not seconds).
+    static func nextMonday(from date: Date = Date()) -> Date {
+        let inAWeek = Calendar.current.date(byAdding: .day, value: 7, to: date) ?? date
+        return DeliverySchedule.mondayOfWeek(containing: inAWeek)
     }
 
     private var deliveryPanel: some View {
@@ -465,8 +475,7 @@ struct ClientView: View {
                                              excluded: client.settings.excludedExerciseIDs ?? [])
         if client.startDate == nil {
             // Default anchor: next Monday.
-            client.startDate = DeliverySchedule.mondayOfWeek(
-                containing: Date().addingTimeInterval(7 * 86400))
+            client.startDate = Self.nextMonday()
         }
         if let first = client.program?.weeks.first { expandedWeeks = [first.id] }
     }

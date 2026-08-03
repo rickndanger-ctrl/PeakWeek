@@ -123,37 +123,84 @@ final class AppStore: ObservableObject {
 
     func deleteClient(_ id: UUID) {
         data.clients.removeAll { $0.id == id }
+        // Retire any pending queue entries so the badge stays honest; keep
+        // terminal history for the record.
+        for i in data.sendLog.indices where data.sendLog[i].clientID == id {
+            if case .queued = data.sendLog[i].status {
+                data.sendLog[i].status = .skipped("client deleted")
+            }
+        }
     }
 
     // MARK: automated delivery
 
     /// One pass over all clients: queue or send anything due. Idempotent —
-    /// covered weeks are recorded in the send log and never re-sent.
+    /// covered weeks are recorded in the send log and never re-sent, and a
+    /// week that is already queued is never queued twice.
     func runDeliveryPass(now: Date = Date()) {
-        var newRecords: [SendRecord] = []
+        cleanupShareTempFiles()
+        var log = data.sendLog
+        var changed = false
         for client in data.clients {
-            let records = data.sendLog.filter { $0.clientID == client.id }
+            let records = log.filter { $0.clientID == client.id }
             guard let due = DeliverySchedule.dueSend(now: now, startDate: client.startDate,
                                                      program: client.program,
                                                      prefs: client.delivery,
                                                      records: records) else { continue }
+            let stamp = client.program?.createdAt
+            // Retire superseded weeks: convert their queued records in place and
+            // add a terminal skipped record so they never come due again.
             for old in due.supersededWeeks {
-                newRecords.append(SendRecord(clientID: client.id, clientName: client.name,
-                                             weekNum: old, date: now,
-                                             method: client.delivery.method,
-                                             status: .skipped("superseded by week \(due.weekNum)")))
+                for i in log.indices where log[i].clientID == client.id
+                    && log[i].weekNum == old
+                    && (log[i].programStamp == nil || log[i].programStamp == stamp) {
+                    if case .queued = log[i].status {
+                        log[i].status = .skipped("superseded by week \(due.weekNum)")
+                        log[i].date = now
+                        changed = true
+                    }
+                }
+                if !log.contains(where: { $0.clientID == client.id && $0.weekNum == old
+                    && ($0.programStamp == nil || $0.programStamp == stamp)
+                    && $0.status.isTerminal }) {
+                    log.append(SendRecord(clientID: client.id, clientName: client.name,
+                                          weekNum: old, date: now,
+                                          method: client.delivery.method,
+                                          status: .skipped("superseded by week \(due.weekNum)"),
+                                          programStamp: stamp))
+                    changed = true
+                }
             }
             if client.delivery.requireReview {
-                newRecords.append(SendRecord(clientID: client.id, clientName: client.name,
-                                             weekNum: due.weekNum, date: now,
-                                             method: client.delivery.method,
-                                             status: .queued))
+                if !due.alreadyQueued {
+                    log.append(SendRecord(clientID: client.id, clientName: client.name,
+                                          weekNum: due.weekNum, date: now,
+                                          method: client.delivery.method,
+                                          status: .queued, programStamp: stamp))
+                    changed = true
+                }
             } else {
-                newRecords.append(performSend(client: client, weekNum: due.weekNum, now: now))
+                log.append(performSend(client: client, weekNum: due.weekNum, now: now))
+                changed = true
             }
         }
-        if !newRecords.isEmpty {
-            data.sendLog.append(contentsOf: newRecords)
+        if changed {
+            data.sendLog = log
+        }
+    }
+
+    /// Temp PDFs handed to the share sheet / senders: sweep anything older than a day.
+    private func cleanupShareTempFiles() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PeakWeekShare", isDirectory: true)
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: [.contentModificationDateKey]) else { return }
+        let cutoff = Date().addingTimeInterval(-86400)
+        for f in files {
+            let mod = (try? f.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+            if let mod, mod < cutoff {
+                try? FileManager.default.removeItem(at: f)
+            }
         }
     }
 
@@ -161,7 +208,8 @@ final class AppStore: ObservableObject {
     func performSend(client: Client, weekNum: Int, now: Date = Date()) -> SendRecord {
         func record(_ status: SendStatus) -> SendRecord {
             SendRecord(clientID: client.id, clientName: client.name, weekNum: weekNum,
-                       date: now, method: client.delivery.method, status: status)
+                       date: now, method: client.delivery.method, status: status,
+                       programStamp: client.program?.createdAt)
         }
         guard let program = client.program,
               let week = program.weeks.first(where: { $0.num == weekNum }) else {
@@ -207,6 +255,18 @@ final class AppStore: ObservableObject {
         guard let idx = data.sendLog.firstIndex(where: { $0.id == recordID }),
               case .queued = data.sendLog[idx].status else { return }
         data.sendLog[idx].status = .skipped("dismissed by coach")
+    }
+
+    /// Manual retry of a failed automated send (failures never auto-retry —
+    /// re-sending a text message must always be a human decision).
+    func retryFailed(_ recordID: UUID) {
+        guard let idx = data.sendLog.firstIndex(where: { $0.id == recordID }),
+              case .failed = data.sendLog[idx].status,
+              let client = data.clients.first(where: { $0.id == data.sendLog[idx].clientID })
+        else { return }
+        let outcome = performSend(client: client, weekNum: data.sendLog[idx].weekNum)
+        data.sendLog[idx].status = outcome.status
+        data.sendLog[idx].date = outcome.date
     }
 
     var queuedSends: [SendRecord] {

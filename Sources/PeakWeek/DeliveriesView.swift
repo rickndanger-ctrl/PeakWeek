@@ -58,6 +58,12 @@ struct DeliveriesView: View {
                                 Text(rec.status.label)
                                     .font(.caption).foregroundStyle(.secondary)
                                 Spacer()
+                                if case .failed = rec.status,
+                                   store.data.clients.contains(where: { $0.id == rec.clientID }) {
+                                    Button("Retry") { store.retryFailed(rec.id) }
+                                        .buttonStyle(SquareOutlineButtonStyle())
+                                        .font(.caption)
+                                }
                                 Text(rec.date.formatted(date: .abbreviated, time: .shortened))
                                     .font(.caption).foregroundStyle(.secondary)
                             }

@@ -361,8 +361,9 @@ enum Engine {
         var effectivePct = pct
         if let s = settings {
             let lift = s.lift(slot.pool)
-            if let tm = lift.trainingMaxPct { base *= tm / 100 }
-            if let off = lift.intensityOffset { effectivePct += off }
+            // Clamped at use so half-typed UI values can't produce absurd loads.
+            if let tm = lift.trainingMaxPct { base *= min(110, max(50, tm)) / 100 }
+            if let off = lift.intensityOffset { effectivePct += min(15, max(-15, off)) }
         }
         return roundLoad(base * (effectivePct / 100) * mod, unit: unit)
     }
@@ -393,9 +394,15 @@ enum Engine {
             if day.slots.isEmpty { L.append("  Rest. Sleep 8+, eat, hydrate.") }
             for (i, s) in day.slots.enumerated() {
                 var line = "  \(i + 1). \(slotName(s, library: library)) — \(s.sets)x\(s.reps)"
-                if let pct = s.pct { line += " @ \(Int(pct))%" }
-                if let load = slotLoad(s, maxes: client.maxes, unit: client.unit, library: library,
-                                       settings: client.settings) {
+                let load = slotLoad(s, maxes: client.maxes, unit: client.unit, library: library,
+                                    settings: client.settings)
+                if let pct = s.pct {
+                    // Show the % the lifter actually trains at (incl. any per-lift offset).
+                    let off = load != nil ? (client.settings.lift(s.pool).intensityOffset ?? 0) : 0
+                    let eff = pct + off
+                    line += eff == eff.rounded() ? " @ \(Int(eff))%" : String(format: " @ %.1f%%", eff)
+                }
+                if let load {
                     line += " → \(loadString(load, unit: client.unit))"
                 }
                 let rpeStr = s.rpe == s.rpe.rounded() ? String(Int(s.rpe)) : String(s.rpe)
@@ -410,7 +417,10 @@ enum Engine {
             L.append("MEET DAY ATTEMPTS")
             for (label, m) in [("Squat", client.maxes.squat), ("Bench", client.maxes.bench), ("Deadlift", client.maxes.deadlift)] {
                 let a = attempts(max: m, unit: client.unit, profile: client.settings.attempts)
-                L.append("  \(label): open \(Int(a.opener)) / second \(Int(a.second)) / third \(Int(a.third)) \(client.unit.rawValue)")
+                func fmt(_ v: Double) -> String {
+                    v == v.rounded() ? String(Int(v)) : String(format: "%.1f", v)
+                }
+                L.append("  \(label): open \(fmt(a.opener)) / second \(fmt(a.second)) / third \(fmt(a.third)) \(client.unit.rawValue)")
             }
             L.append("")
         }

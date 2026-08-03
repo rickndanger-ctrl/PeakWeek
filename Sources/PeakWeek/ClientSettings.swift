@@ -18,6 +18,8 @@ struct AttemptProfile: Codable, Hashable {
 
     /// Preset percentages per risk level. Standard is the engine's trusted
     /// 91 / 97 / 101.5. Ranges per research (Report 1 §6.3).
+    /// Overrides are clamped 80–115% here so a half-typed value in the UI can
+    /// never produce an absurd attempt.
     var effective: (opener: Double, second: Double, third: Double) {
         let base: (Double, Double, Double)
         switch risk {
@@ -25,7 +27,8 @@ struct AttemptProfile: Codable, Hashable {
         case .standard:     base = (91.0, 97.0, 101.5)
         case .aggressive:   base = (92.5, 97.5, 104.0)
         }
-        return (opener ?? base.0, second ?? base.1, third ?? base.2)
+        func clamp(_ v: Double?) -> Double? { v.map { min(115, max(80, $0)) } }
+        return (clamp(opener) ?? base.0, clamp(second) ?? base.1, clamp(third) ?? base.2)
     }
 
     init() {}
