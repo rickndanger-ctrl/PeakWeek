@@ -91,6 +91,35 @@ struct ExerciseLibrary: Codable, Hashable {
         return nil
     }
 
+    /// Case-insensitive name lookup across all pools (unarchived preferred).
+    func findByName(_ name: String) -> LibraryExercise? {
+        let needle = name.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !needle.isEmpty else { return nil }
+        var archivedHit: LibraryExercise?
+        for e in entries {
+            for ex in e.exercises where ex.name.lowercased() == needle {
+                if ex.archived { archivedHit = archivedHit ?? ex } else { return ex }
+            }
+        }
+        return archivedHit
+    }
+
+    /// The coach typed an exercise name into a slot: reuse the library entry
+    /// if one exists (reviving it if archived), otherwise create it in `pool`
+    /// as an accessory (RPE-only — set a load modifier in Settings for
+    /// computed loads). Returns the canonical entry.
+    mutating func resolveOrCreate(named name: String, in pool: LiftPool) -> LibraryExercise? {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        if let existing = findByName(trimmed) {
+            if existing.archived { setArchived(existing.id, false) }
+            return exercise(id: existing.id)
+        }
+        let ex = LibraryExercise(name: trimmed, mod: nil)
+        add(ex, to: pool)
+        return ex
+    }
+
     // MARK: editing
 
     mutating func add(_ ex: LibraryExercise, to pool: LiftPool) {

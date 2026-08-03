@@ -230,14 +230,20 @@ struct SlotRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 if slot.custom != nil {
-                    TextField("Custom exercise", text: Binding(
+                    TextField("Type exercise, press ⏎ to save to library", text: Binding(
                         get: { slot.custom ?? "" },
                         set: { slot.custom = $0 }
                     ))
                     .textFieldStyle(.plain)
                     .fontWeight(.semibold)
+                    .onSubmit { commitCustomToLibrary() }
+                    Button("Save") { commitCustomToLibrary() }
+                        .buttonStyle(.borderless).font(.caption)
+                        .disabled((slot.custom ?? "").trimmingCharacters(in: .whitespaces).isEmpty)
+                        .help("Save to the exercise library — it'll be in every picker from now on")
                     Button("↩︎ list") { slot.custom = nil }
                         .buttonStyle(.borderless).font(.caption)
+                        .help("Back to the exercise list without saving")
                 } else {
                     Picker("", selection: exerciseSelection) {
                         ForEach(LiftPool.allCases) { pool in
@@ -272,6 +278,12 @@ struct SlotRow: View {
                 .help("Remove exercise")
             }
 
+            if slot.custom != nil {
+                Text("⏎ saves it to the library under \(slot.pool.groupLabel) so you can pick it for anyone later. Loads stay RPE-only until you give it a %-of-1RM modifier in Settings.")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+
             HStack(spacing: 5) {
                 numField($slot.sets, width: 38)
                     .onChange(of: slot.sets) { v in slot.sets = min(99, max(1, v)) }
@@ -303,6 +315,18 @@ struct SlotRow: View {
             .font(.caption)
         }
         .padding(.vertical, 2)
+    }
+
+    /// Coach typed a custom exercise: persist it in the library (dedup by
+    /// name, revive if archived) and link this slot to the saved entry.
+    private func commitCustomToLibrary() {
+        guard let name = slot.custom,
+              let saved = store.data.exerciseLibrary.resolveOrCreate(named: name, in: slot.pool)
+        else { return }
+        slot.pool = store.data.exerciseLibrary.pool(of: saved.id) ?? slot.pool
+        slot.exerciseID = saved.id
+        slot.exIdx = nil
+        slot.custom = nil
     }
 
     private var exerciseSelection: Binding<String> {

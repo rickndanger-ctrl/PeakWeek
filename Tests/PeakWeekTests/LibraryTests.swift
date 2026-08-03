@@ -117,6 +117,43 @@ final class LibraryTests: XCTestCase {
         XCTAssertNotNil(lib.exercise(id: builtin.id), "built-ins cannot be hard-deleted")
     }
 
+    // MARK: - custom exercises auto-save into the library
+
+    func testResolveOrCreateAddsNewExercise() {
+        var lib = ExerciseLibrary.seeded()
+        let ex = lib.resolveOrCreate(named: "  Belt Squat March ", in: .quads)
+        XCTAssertEqual(ex?.name, "Belt Squat March", "trimmed before saving")
+        XCTAssertNil(ex?.mod, "auto-saved entries are accessories (RPE-only)")
+        XCTAssertNil(ex?.seedKey, "coach-added, not built-in")
+        XCTAssertTrue(lib[.quads].contains { $0.id == ex?.id })
+    }
+
+    func testResolveOrCreateDeduplicatesByName() {
+        var lib = ExerciseLibrary.seeded()
+        let first = lib.resolveOrCreate(named: "Belt Squat", in: .quads)
+        let countAfterFirst = lib[.quads].count
+        let second = lib.resolveOrCreate(named: "belt squat", in: .hams)   // different case AND pool
+        XCTAssertEqual(first?.id, second?.id, "case-insensitive reuse across pools")
+        XCTAssertEqual(lib[.quads].count, countAfterFirst, "no duplicate created")
+        // Built-ins dedup too:
+        let comp = lib.resolveOrCreate(named: "competition squat", in: .quads)
+        XCTAssertEqual(comp?.seedKey, "squat:0", "matches the built-in, not a copy")
+    }
+
+    func testResolveOrCreateRevivesArchived() {
+        var lib = ExerciseLibrary.seeded()
+        let ex = lib.resolveOrCreate(named: "Reverse Hyper", in: .hams)!
+        lib.setArchived(ex.id, true)
+        let again = lib.resolveOrCreate(named: "Reverse Hyper", in: .hams)
+        XCTAssertEqual(again?.id, ex.id)
+        XCTAssertEqual(again?.archived, false, "explicitly reused entries unarchive")
+    }
+
+    func testResolveOrCreateRejectsEmpty() {
+        var lib = ExerciseLibrary.seeded()
+        XCTAssertNil(lib.resolveOrCreate(named: "   ", in: .quads))
+    }
+
     // MARK: - migration: legacy exIdx slots gain IDs on decode
 
     func testLegacySlotsMigrateToExerciseIDs() throws {
