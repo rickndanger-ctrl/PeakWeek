@@ -54,14 +54,17 @@ final class ReviewFixTests: XCTestCase {
         XCTAssertEqual(due?.weekNum, 1, "week 1 of the NEW program is due despite old record")
     }
 
-    func testLegacyStamplessRecordsStillSuppress() {
+    func testStamplessRecordsDoNotBlockPrograms() {
+        // Contract (rev 2): only records stamped for THE CURRENT program count.
+        // Stamp-less records exist only in tests/fixtures (stamping predates
+        // every real-world send), so they must not block a program's sends.
         let c = makeClient(review: false)
-        let legacy = SendRecord(clientID: c.id, clientName: c.name, weekNum: 1,
-                                date: date(2026, 8, 9, 18), method: .messages,
-                                status: .sent, programStamp: nil)
+        let stampless = SendRecord(clientID: c.id, clientName: c.name, weekNum: 1,
+                                   date: date(2026, 8, 9, 18), method: .messages,
+                                   status: .sent, programStamp: nil)
         let due = DeliverySchedule.dueSend(now: date(2026, 8, 10, 9), startDate: c.startDate,
-                                          program: c.program, prefs: c.delivery, records: [legacy])
-        XCTAssertNil(due, "stamp-less legacy records keep suppressing (no surprise resends)")
+                                          program: c.program, prefs: c.delivery, records: [stampless])
+        XCTAssertEqual(due?.weekNum, 1)
     }
 
     // MARK: minor — invalid prefs never crash schedule math

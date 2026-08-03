@@ -91,6 +91,21 @@ struct ExerciseLibrary: Codable, Hashable {
         return nil
     }
 
+    /// Library upgrade: seed exercises added in newer app versions are merged
+    /// into existing libraries (append-only, keyed by seedKey — coach edits,
+    /// custom entries, and ordering are untouched).
+    mutating func mergeNewSeeds() {
+        for pool in LiftPool.allCases {
+            let seeds = Engine.pools[pool] ?? []
+            for (i, seed) in seeds.enumerated() {
+                let key = "\(pool.rawValue):\(i)"
+                if seeded(key) == nil {
+                    add(LibraryExercise(seedKey: key, name: seed.name, mod: seed.mod), to: pool)
+                }
+            }
+        }
+    }
+
     /// Case-insensitive name lookup across all pools (unarchived preferred).
     func findByName(_ name: String) -> LibraryExercise? {
         let needle = name.trimmingCharacters(in: .whitespaces).lowercased()

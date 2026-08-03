@@ -34,8 +34,9 @@ struct GeneralSettingsView: View {
                         launchAtLogin = SMAppService.mainApp.status == .enabled
                     }
                 }
-            Text("Scheduled weekly sends only go out while Peak Week is running — opening at login means Monday-morning plans never get missed.")
+            Text("Scheduled weekly sends only go out while Peak Week is running — opening at login means Monday-morning plans never get missed. (Login items require the copy in /Applications.)")
                 .font(.caption).foregroundStyle(.secondary)
+                .onAppear { launchAtLogin = SMAppService.mainApp.status == .enabled }
             if let err = loginItemError {
                 Text(err).font(.caption).foregroundStyle(.red)
             }

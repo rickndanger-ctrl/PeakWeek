@@ -210,7 +210,10 @@ final class AppStore: ObservableObject {
                     changed = true
                 }
             }
-            if client.delivery.requireReview {
+            // One-time forced review after a regeneration protects against an
+            // unconfirmed automatic (re)send while the coach is still editing.
+            let needsReview = client.delivery.requireReview || client.delivery.forceReviewOnce == true
+            if needsReview {
                 if !due.alreadyQueued {
                     log.append(SendRecord(clientID: client.id, clientName: client.name,
                                           weekNum: due.weekNum, date: now,
@@ -218,8 +221,16 @@ final class AppStore: ObservableObject {
                                           status: .queued, programStamp: stamp))
                     changed = true
                 }
+                if client.delivery.forceReviewOnce == true,
+                   let ci = data.clients.firstIndex(where: { $0.id == client.id }) {
+                    data.clients[ci].delivery.forceReviewOnce = nil
+                }
             } else {
                 log.append(performSend(client: client, weekNum: due.weekNum, now: now))
+                // A week sent by ANY path retires its queue entries — a stale
+                // approvable record is a double-send waiting to happen.
+                Self.retireQueued(in: &log, clientID: client.id, weekNum: due.weekNum,
+                                  stamp: stamp, reason: "already sent")
                 changed = true
             }
         }
@@ -228,19 +239,42 @@ final class AppStore: ObservableObject {
         }
     }
 
-    /// Temp PDFs handed to the share sheet / senders: sweep anything older than a day.
+    /// Retire queued review entries for a week that has been delivered by
+    /// another path (auto-send after review was disabled, manual Send Now…).
+    static func retireQueued(in log: inout [SendRecord], clientID: UUID, weekNum: Int,
+                             stamp: Date?, reason: String) {
+        for i in log.indices where log[i].clientID == clientID
+            && log[i].weekNum == weekNum
+            && (log[i].programStamp == nil || log[i].programStamp == stamp) {
+            if case .queued = log[i].status {
+                log[i].status = .skipped(reason)
+                log[i].date = Date()
+            }
+        }
+    }
+
+    /// Temp PDFs handed to the share sheet / senders: sweep anything older
+    /// than a day (files now live one directory deep, per client).
     private func cleanupShareTempFiles() {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("PeakWeekShare", isDirectory: true)
-        guard let files = try? FileManager.default.contentsOfDirectory(
-            at: dir, includingPropertiesForKeys: [.contentModificationDateKey]) else { return }
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey]) else { return }
         let cutoff = Date().addingTimeInterval(-86400)
-        for f in files {
-            let mod = (try? f.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
-            if let mod, mod < cutoff {
-                try? FileManager.default.removeItem(at: f)
+        func sweep(_ url: URL) {
+            let vals = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
+            if vals?.isDirectory == true {
+                let children = (try? FileManager.default.contentsOfDirectory(
+                    at: url, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+                children.forEach(sweep)
+                if ((try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []).isEmpty {
+                    try? FileManager.default.removeItem(at: url)
+                }
+            } else if let mod = vals?.contentModificationDate, mod < cutoff {
+                try? FileManager.default.removeItem(at: url)
             }
         }
+        contents.forEach(sweep)
     }
 
     /// Executes one send through the bridge and returns the outcome record.
@@ -276,7 +310,11 @@ final class AppStore: ObservableObject {
     /// Immediate manual send from a week's Send menu.
     func sendNow(clientID: UUID, weekNum: Int) {
         guard let client = data.clients.first(where: { $0.id == clientID }) else { return }
-        data.sendLog.append(performSend(client: client, weekNum: weekNum))
+        var log = data.sendLog
+        log.append(performSend(client: client, weekNum: weekNum))
+        Self.retireQueued(in: &log, clientID: clientID, weekNum: weekNum,
+                          stamp: client.program?.createdAt, reason: "already sent manually")
+        data.sendLog = log
     }
 
     /// Coach approved a queued send from the review sheet.
@@ -293,7 +331,18 @@ final class AppStore: ObservableObject {
             data.sendLog[idx].date = Date()
             return
         }
-        let outcome = performSend(client: client, weekNum: data.sendLog[idx].weekNum)
+        // Defense in depth: if this week already went out by another path,
+        // approving must NOT send it again.
+        let weekNum = data.sendLog[idx].weekNum
+        if data.sendLog.contains(where: { $0.clientID == client.id && $0.weekNum == weekNum
+            && ($0.programStamp == nil || $0.programStamp == currentStamp)
+            && $0.weekRemoved != true
+            && { if case .sent = $0.status { return true }; return false }($0) }) {
+            data.sendLog[idx].status = .skipped("already sent")
+            data.sendLog[idx].date = Date()
+            return
+        }
+        let outcome = performSend(client: client, weekNum: weekNum)
         data.sendLog[idx].status = outcome.status
         data.sendLog[idx].date = outcome.date
         data.sendLog[idx].programStamp = outcome.programStamp
@@ -335,6 +384,9 @@ final class AppStore: ObservableObject {
                 if case .queued = data.sendLog[i].status {
                     data.sendLog[i].status = .skipped("week removed from program")
                 }
+                // History stays, but a removed week's records must not cover
+                // the week that inherits its number.
+                data.sendLog[i].weekRemoved = true
                 continue
             }
             if data.sendLog[i].weekNum >= fromWeek {

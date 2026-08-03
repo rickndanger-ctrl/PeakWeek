@@ -66,12 +66,15 @@ enum WeekExporter {
         return "\(safe) — Week \(week.num).pdf"
     }
 
-    /// Writes the PDF to a temp file for handing to the share sheet.
+    /// Writes the PDF to a temp file for handing to the share sheet. Files are
+    /// namespaced per client ID so two "Alex"es can never hand off each
+    /// other's plan.
     static func writeTempPDF(client: Client, program: Program, week: Week,
                              library: ExerciseLibrary) -> URL? {
         guard let data = pdfData(client: client, program: program, week: week, library: library) else { return nil }
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("PeakWeekShare", isDirectory: true)
+            .appendingPathComponent(client.id.uuidString.prefix(8).description, isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appendingPathComponent(pdfFileName(client: client, week: week))
         do { try data.write(to: url, options: .atomic) } catch { return nil }

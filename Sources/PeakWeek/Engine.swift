@@ -25,6 +25,10 @@ enum Engine {
             Exercise(name: "Incline Bench", mod: 0.85),
             Exercise(name: "2-Board Press", mod: 1.02),
             Exercise(name: "Feet-Up Bench", mod: 0.92),
+            // Conjugate-inspired additions (append-only: seed indices are stable)
+            Exercise(name: "Floor Press", mod: 0.92),
+            Exercise(name: "Low Pin Press", mod: 0.94),
+            Exercise(name: "High Pin Press", mod: 1.05),
         ],
         .deadlift: [
             Exercise(name: "Competition Deadlift", mod: 1.0),
@@ -35,6 +39,8 @@ enum Engine {
             Exercise(name: "Snatch-Grip Deadlift", mod: 0.8),
             Exercise(name: "Stiff-Leg Deadlift", mod: 0.8),
             Exercise(name: "Opposite-Stance Deadlift", mod: 0.85),
+            // Conjugate-inspired addition (append-only)
+            Exercise(name: "Halting Deadlift", mod: 0.88),
         ],
         .quads: [
             Exercise(name: "Leg Press", mod: nil),
@@ -280,7 +286,9 @@ enum Engine {
                                calendar: Calendar = .current) -> Int {
         guard meetDate >= startMonday else { return 0 }
         let days = calendar.dateComponents([.day], from: startMonday, to: meetDate).day ?? 0
-        return days / 7 + 1
+        // ceil(days/7): a meet exactly k×7 days out is the LAST day of week k,
+        // not the first day of week k+1 (same-day case stays week 1).
+        return days == 0 ? 1 : (days + 6) / 7
     }
 
     /// What kind of prep fits the runway. The coach's rule: pick up a lifter

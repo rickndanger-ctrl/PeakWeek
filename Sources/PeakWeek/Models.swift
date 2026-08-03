@@ -147,7 +147,8 @@ struct BlockPlan: Codable, Hashable {
     var trans: Int = 4            // strength weeks
     var real: Int = 3             // peaking weeks INCLUDING meet week
 
-    var total: Int { acc + (deloadAfterAcc ? 1 : 0) + trans + real }
+    // The deload only exists when there's a volume block for it to follow.
+    var total: Int { acc + (acc > 0 && deloadAfterAcc ? 1 : 0) + trans + real }
 
     init() {}
     init(acc: Int, deloadAfterAcc: Bool, trans: Int, real: Int) {
@@ -327,6 +328,7 @@ struct AppData: Codable {
         clients = try c.decodeIfPresent([Client].self, forKey: .clients) ?? []
         sendLog = try c.decodeIfPresent([SendRecord].self, forKey: .sendLog) ?? []
         exerciseLibrary = try c.decodeIfPresent(ExerciseLibrary.self, forKey: .exerciseLibrary) ?? .seeded()
+        exerciseLibrary.mergeNewSeeds()     // seed additions reach existing libraries
         migrateSlotReferences()
         schemaVersion = 3           // decoding IS the migration
     }

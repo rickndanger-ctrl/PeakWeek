@@ -93,10 +93,24 @@ final class DeliveryTests: XCTestCase {
     func testTerminalRecordsPreventResend() {
         let c = makeClient()
         let sent = SendRecord(clientID: c.id, clientName: c.name, weekNum: 1,
-                              date: date(2026, 8, 9, 18), method: .messages, status: .sent)
+                              date: date(2026, 8, 9, 18), method: .messages, status: .sent,
+                              programStamp: c.program!.createdAt)
         let due = DeliverySchedule.dueSend(now: date(2026, 8, 10, 9), startDate: c.startDate,
                                            program: c.program, prefs: c.delivery, records: [sent])
         XCTAssertNil(due, "already-sent week must not re-send")
+    }
+
+    func testRemovedWeekRecordsDoNotCoverSuccessor() {
+        // A deload sent as week 1 then structurally removed: the week that
+        // inherits number 1 must come due again.
+        let c = makeClient()
+        var sent = SendRecord(clientID: c.id, clientName: c.name, weekNum: 1,
+                              date: date(2026, 8, 9, 18), method: .messages, status: .sent,
+                              programStamp: c.program!.createdAt)
+        sent.weekRemoved = true
+        let due = DeliverySchedule.dueSend(now: date(2026, 8, 10, 9), startDate: c.startDate,
+                                           program: c.program, prefs: c.delivery, records: [sent])
+        XCTAssertEqual(due?.weekNum, 1, "removed-week history must not block the renumbered week")
     }
 
     func testQueuedRecordDoesNotSatisfyDueWeek() {

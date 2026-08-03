@@ -107,6 +107,21 @@ enum WeekPDFLayout {
             return bounds.size
         }
 
+        /// Height a wrapped paragraph will consume (for ensure() before drawing).
+        func measureWrapped(_ string: String, width: CGFloat, font: NSFont,
+                            lineSpacing: CGFloat = 2) -> CGFloat {
+            let para = NSMutableParagraphStyle()
+            para.lineSpacing = lineSpacing
+            let attr = NSAttributedString(string: string, attributes: [
+                .font: font, .paragraphStyle: para,
+            ])
+            let setter = CTFramesetterCreateWithAttributedString(attr)
+            let size = CTFramesetterSuggestFrameSizeWithConstraints(
+                setter, CFRange(location: 0, length: 0), nil,
+                CGSize(width: width, height: .greatestFiniteMagnitude), nil)
+            return ceil(size.height)
+        }
+
         /// Word-wrapped paragraph; returns consumed height.
         @discardableResult
         func drawWrapped(_ string: String, x: CGFloat, width: CGFloat, at yTop: CGFloat,
@@ -278,8 +293,13 @@ enum WeekPDFLayout {
             r.y += rowH - 5
 
             if let note = slot.note, !note.isEmpty {
-                r.draw(note, x: Cols.exercise + 8, at: r.y, font: font(8, .regular), color: gray)
-                r.y += noteH
+                // Wrapped — long coach cues must never run off the page edge.
+                let w = contentWidth - 60
+                let h = r.measureWrapped(note, width: w, font: font(8, .regular))
+                r.ensure(h + 6)
+                r.drawWrapped(note, x: Cols.exercise + 8, width: w, at: r.y,
+                              font: font(8, .regular), color: gray)
+                r.y += max(noteH, h + 2)
             }
             if i < day.slots.count - 1 {
                 r.hairline(atY: r.y + 1)
@@ -290,7 +310,9 @@ enum WeekPDFLayout {
     }
 
     private static func notesBlock(_ r: Renderer, note: String) {
-        r.ensure(50)
+        // Measure BEFORE drawing so a long note paginates instead of clipping.
+        let h = r.measureWrapped(note, width: contentWidth - 12, font: font(9.5, .regular))
+        r.ensure(h + 30)
         r.y += 4
         r.fill(CGRect(x: contentLeft, y: r.y, width: 3, height: 30), NSColor(white: 0.2, alpha: 1))
         r.draw("COACH NOTES", x: contentLeft + 12, at: r.y, font: font(7.5, .bold),

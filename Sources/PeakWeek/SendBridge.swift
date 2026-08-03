@@ -45,11 +45,13 @@ enum SendBridge {
             "  set targetService to 1st account whose service type = iMessage",
             "  set targetBuddy to participant \"\(esc(recipient))\" of targetService",
         ]
-        if let text, !text.isEmpty {
-            lines.append("  send \"\(esc(text))\" to targetBuddy")
-        }
+        // Attachment FIRST: if the script fails partway, nothing has been sent
+        // yet (a retry after a failed text would otherwise duplicate the text).
         if let attachment {
             lines.append("  send POSIX file \"\(esc(attachment.path))\" to targetBuddy")
+        }
+        if let text, !text.isEmpty {
+            lines.append("  send \"\(esc(text))\" to targetBuddy")
         }
         lines.append("end tell")
         return lines.joined(separator: "\n")

@@ -36,6 +36,9 @@ struct DeliveryPrefs: Codable, Hashable {
     /// Mid-prep onboarding: auto-sending begins at this program week (weeks
     /// before it are simply never due — no queue, no skip records). nil = week 1.
     var firstSendWeek: Int? = nil
+    /// Set on regeneration when review is off: the NEXT due send queues for
+    /// approval once, so a rebuild never fires an unconfirmed automatic send.
+    var forceReviewOnce: Bool? = nil
 
     // Tolerant decoding: any missing key falls back to its default, so adding
     // fields never breaks existing data.json files.
@@ -50,6 +53,7 @@ struct DeliveryPrefs: Codable, Hashable {
         hour = try c.decodeIfPresent(Int.self, forKey: .hour) ?? 18
         requireReview = try c.decodeIfPresent(Bool.self, forKey: .requireReview) ?? true
         firstSendWeek = try c.decodeIfPresent(Int.self, forKey: .firstSendWeek)
+        forceReviewOnce = try c.decodeIfPresent(Bool.self, forKey: .forceReviewOnce)
     }
 }
 
@@ -85,12 +89,17 @@ struct SendRecord: Codable, Hashable, Identifiable {
     /// Regenerating a program starts fresh delivery bookkeeping; records from
     /// the old program neither satisfy nor block the new one.
     var programStamp: Date? = nil
+    /// True when this record's week was structurally REMOVED from the program
+    /// (deload deleted after sending): the record stays as history but no
+    /// longer counts as coverage for the week that inherits its number.
+    var weekRemoved: Bool? = nil
 
     init(id: UUID = UUID(), clientID: UUID, clientName: String, weekNum: Int,
-         date: Date, method: DeliveryMethod, status: SendStatus, programStamp: Date? = nil) {
+         date: Date, method: DeliveryMethod, status: SendStatus, programStamp: Date? = nil,
+         weekRemoved: Bool? = nil) {
         self.id = id; self.clientID = clientID; self.clientName = clientName
         self.weekNum = weekNum; self.date = date; self.method = method
-        self.status = status; self.programStamp = programStamp
+        self.status = status; self.programStamp = programStamp; self.weekRemoved = weekRemoved
     }
 
     init(from decoder: Decoder) throws {
@@ -103,6 +112,7 @@ struct SendRecord: Codable, Hashable, Identifiable {
         method = try c.decodeIfPresent(DeliveryMethod.self, forKey: .method) ?? .messages
         status = try c.decodeIfPresent(SendStatus.self, forKey: .status) ?? .skipped("unknown")
         programStamp = try c.decodeIfPresent(Date.self, forKey: .programStamp)
+        weekRemoved = try c.decodeIfPresent(Bool.self, forKey: .weekRemoved)
     }
 }
 
@@ -161,9 +171,10 @@ enum DeliverySchedule {
                                 prefs: DeliveryPrefs, records: [SendRecord],
                                 calendar: Calendar = .current) -> (week: Int, moment: Date)? {
         guard let startDate, let program, !program.weeks.isEmpty else { return nil }
-        let current = records.filter { $0.programStamp == nil || $0.programStamp == program.createdAt }
-        let covered = Set(current.filter { $0.status.isTerminal }.map(\.weekNum))
-        let firstWeek = prefs.firstSendWeek ?? 1
+        let current = records.filter { $0.programStamp == program.createdAt }
+        let covered = Set(current.filter { $0.status.isTerminal && $0.weekRemoved != true }.map(\.weekNum))
+        // A stale first-send week beyond the program must not zero out sends.
+        let firstWeek = min(prefs.firstSendWeek ?? 1, program.weeks.map(\.num).max() ?? 1)
         return program.weeks.lazy
             .filter { $0.num >= firstWeek && !covered.contains($0.num) }
             .map { ($0.num, sendMoment(startDate: startDate, weekNum: $0.num,
@@ -182,8 +193,10 @@ enum DeliverySchedule {
 
     /// Catch-up policy: of all weeks whose send moment has passed and which have
     /// no terminal record yet, only the LATEST is sent; older ones are skipped.
-    /// Only records belonging to the CURRENT program (programStamp) count;
-    /// legacy stamp-less records match any program.
+    /// Only records stamped for THIS program count — regeneration always starts
+    /// fresh bookkeeping (stamping predates every real-world send, so stamp-less
+    /// records exist only in tests/fixtures). Records whose week was removed
+    /// from the program no longer cover the week that inherited the number.
     static func dueSend(now: Date, startDate: Date?, program: Program?,
                         prefs: DeliveryPrefs, records: [SendRecord],
                         calendar: Calendar = .current) -> DueSend? {
@@ -191,13 +204,14 @@ enum DeliverySchedule {
               !prefs.recipient.trimmingCharacters(in: .whitespaces).isEmpty,
               let startDate, let program, !program.weeks.isEmpty else { return nil }
 
-        let current = records.filter { $0.programStamp == nil || $0.programStamp == program.createdAt }
-        let covered = Set(current.filter { $0.status.isTerminal }.map(\.weekNum))
+        let current = records.filter { $0.programStamp == program.createdAt }
+        let covered = Set(current.filter { $0.status.isTerminal && $0.weekRemoved != true }.map(\.weekNum))
         let queuedWeeks = Set(current.filter {
             if case .queued = $0.status { return true }
             return false
         }.map(\.weekNum))
-        let firstWeek = prefs.firstSendWeek ?? 1
+        // A stale first-send week beyond the program must not zero out sends.
+        let firstWeek = min(prefs.firstSendWeek ?? 1, program.weeks.map(\.num).max() ?? 1)
         var due: [(week: Int, moment: Date)] = []
         for week in program.weeks where week.num >= firstWeek {
             let moment = sendMoment(startDate: startDate, weekNum: week.num,

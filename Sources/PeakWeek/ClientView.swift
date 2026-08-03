@@ -461,10 +461,15 @@ struct ClientView: View {
     // MARK: meet-date planning
 
     @State private var meetPlanSummary: String?
+    /// STAGED preview — nothing touches the live client (its delivery anchor,
+    /// phase, or plan) until the coach presses Generate. Dismissing the
+    /// regenerate confirmation abandons the staged plan harmlessly.
+    @State private var pendingMeetPlan: Engine.MeetPlan?
+    @State private var pendingDayOne: Date?
 
-    /// One click: count the runway to the meet and configure the right prep
+    /// One click: count the runway to the meet and PREVIEW the right prep
     /// slice — peaking-only at 3-4 wks, strength+peak at 5-9, full at 10-16,
-    /// extended volume beyond. Coach still reviews and presses Generate.
+    /// extended volume beyond. Nothing applies until Generate.
     private var meetPlanRow: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
@@ -475,31 +480,40 @@ struct ClientView: View {
                         .font(.caption)
                 }
                 .buttonStyle(.bordered)
-                .help("Counts the weeks from next Monday to the meet and sets phase, length, and start date to the right prep slice. Review, then Generate.")
+                .help("Counts the training weeks to the meet and previews the right prep slice — day one is aligned so the meet lands at the end of the final week when possible (today at the earliest). Nothing changes until you press Generate.")
                 if let summary = meetPlanSummary {
                     Text(summary).font(.caption).fontWeight(.medium)
+                }
+                if pendingMeetPlan != nil {
+                    Button("Discard") {
+                        pendingMeetPlan = nil; pendingDayOne = nil; meetPlanSummary = nil
+                    }
+                    .buttonStyle(.borderless).font(.caption)
                 }
             }
         }
     }
 
     private func planFromMeetDate() {
-        guard let meet = client.meetDate else { return }
-        // Day one = TODAY (or the anchor the coach already chose, if it's
-        // today-or-future) — start coaching someone new right away.
+        guard let meet = Calendar.current.startOfDay(for: client.meetDate ?? Date()) as Date?,
+              client.meetDate != nil else { return }
         let today = Calendar.current.startOfDay(for: Date())
-        let dayOne = client.startDate.map { max(Calendar.current.startOfDay(for: $0), today) } ?? today
-        let available = Engine.weeksAvailable(startMonday: dayOne, meetDate: meet)
+        // First pass: how many weeks fit starting today?
+        let available = Engine.weeksAvailable(startMonday: today, meetDate: meet)
         guard let plan = Engine.meetPlan(availableWeeks: available) else {
+            pendingMeetPlan = nil; pendingDayOne = nil
             meetPlanSummary = "Only \(available) wk\(available == 1 ? "" : "s") to the meet — too close to program. Coach meet week by hand (Peaking block needs 3+)."
             return
         }
-        client.setupPhase = plan.phase
-        client.setupWeeks = min(plan.phase.maxWeeks, max(plan.phase.minWeeks, plan.weeks))
-        client.blockPlan = plan.blockPlan
-        client.startDate = dayOne
+        // Meet alignment (Strategy A): pick day one so the meet lands on the
+        // LAST day of the final week — never earlier than today.
+        let aligned = Calendar.current.date(byAdding: .day, value: -(plan.weeks * 7 - 1), to: meet) ?? today
+        let dayOne = max(aligned, today)
+        pendingMeetPlan = plan
+        pendingDayOne = dayOne
         let isToday = dayOne == today
-        meetPlanSummary = plan.summary + " · day one \(isToday ? "TODAY, " : "")\(dayOne.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())) — press Generate."
+        let alignedNote = dayOne == aligned ? " (meet = final day of week \(plan.weeks))" : ""
+        meetPlanSummary = plan.summary + " · day one \(isToday ? "TODAY, " : "")\(dayOne.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))\(alignedNote) — press Generate to apply."
     }
 
     private func firstSendLabel(_ wk: Week, program: Program) -> String {
@@ -521,15 +535,26 @@ struct ClientView: View {
             let next = DeliverySchedule.nextPlannedSend(now: Date(), startDate: start,
                                                        program: program, prefs: client.delivery,
                                                        records: records)
+            let dueNow = DeliverySchedule.dueSend(now: Date(), startDate: start, program: program,
+                                                  prefs: client.delivery, records: records)
+            let queuedCount = records.filter {
+                if case .queued = $0.status { return $0.programStamp == program.createdAt }
+                return false
+            }.count
             HStack(spacing: 6) {
                 Image(systemName: "calendar.badge.clock").foregroundStyle(.secondary)
                 Text({
                     var s = current.map { "Today is Week \($0) of \(program.weeks.count)." }
                         ?? "Today is outside this program's calendar."
-                    if let next {
+                    if queuedCount > 0 {
+                        s += "  \(queuedCount) send\(queuedCount == 1 ? "" : "s") waiting for your review (paper-plane icon)."
+                    }
+                    if let dueNow, dueNow.alreadyQueued == false {
+                        s += "  Week \(dueNow.weekNum) is due — it goes out on the next check (within the hour)."
+                    } else if let next {
                         s += "  Next auto-send: Week \(next.week) · \(next.moment.formatted(date: .abbreviated, time: .shortened))"
                         s += client.delivery.requireReview ? " (queues for your review)." : " (sends automatically)."
-                    } else {
+                    } else if queuedCount == 0 {
                         s += "  No further auto-sends scheduled."
                     }
                     return s
@@ -596,7 +621,7 @@ struct ClientView: View {
                         .font(.caption).fontWeight(.bold).monospacedDigit()
                 }
                 .font(.caption)
-                Text("Peaking includes meet week. You can also insert extra deloads anywhere after generating — use the ⋯ menu on any week.")
+                Text("Peaking includes meet week. After generating you can add one recovery week between strength and peaking — the button under the timeline (deload rows carry a − control to undo).")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -619,6 +644,16 @@ struct ClientView: View {
     }
 
     private func generate() {
+        // A staged meet plan applies HERE — inside the confirmed Generate path.
+        if let staged = pendingMeetPlan {
+            client.setupPhase = staged.phase
+            client.setupWeeks = min(staged.phase.maxWeeks, max(staged.phase.minWeeks, staged.weeks))
+            client.blockPlan = staged.blockPlan
+            if let dayOne = pendingDayOne { client.startDate = dayOne }
+            pendingMeetPlan = nil
+            pendingDayOne = nil
+        }
+        meetPlanSummary = nil
         let plan = client.setupPhase == .full ? client.blockPlan : nil
         client.program = Engine.buildProgram(startPhase: client.setupPhase,
                                              totalWeeks: plan?.total ?? clampedWeeks,
@@ -628,6 +663,14 @@ struct ClientView: View {
                                              blockPlan: plan)
         // Old-program queue entries must not survive into the new program.
         store.retireStaleQueued(clientID: client.id, currentStamp: client.program?.createdAt)
+        // A new program is a fresh delivery contract: a first-send week from
+        // the OLD program would silently misapply (or kill sends entirely).
+        client.delivery.firstSendWeek = nil
+        // Never let a rebuild fire an unconfirmed automatic send: the next due
+        // send queues for one-time review even when review is off.
+        if client.delivery.autoSend && !client.delivery.requireReview {
+            client.delivery.forceReviewOnce = true
+        }
         if client.startDate == nil {
             // Default anchor: TODAY — day one is now, the lifter's week runs
             // from whatever weekday this is. Coach can re-date it any time.
@@ -783,9 +826,13 @@ struct ClientView: View {
                                          library: store.data.exerciseLibrary,
                                          excluded: client.settings.excludedExerciseIDs ?? [])
         guard program.insertDeload(week: week, at: boundary) else { return }
-        // Send records for weeks at/after the insertion point shift up by one.
+        // Send records for weeks at/after the insertion point shift up by one —
+        // and so does a configured first-send week.
         store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,
                                 fromWeek: boundary + 1, by: 1)
+        if let first = client.delivery.firstSendWeek, first >= boundary + 1 {
+            client.delivery.firstSendWeek = first + 1
+        }
         client.program = program
     }
 
@@ -797,6 +844,9 @@ struct ClientView: View {
         program.removeWeek(at: index)
         store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,
                                 fromWeek: removedNum + 1, by: -1, removedWeek: removedNum)
+        if let first = client.delivery.firstSendWeek, first > removedNum {
+            client.delivery.firstSendWeek = first - 1
+        }
         client.program = program
     }
 

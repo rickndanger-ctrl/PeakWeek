@@ -153,6 +153,13 @@ final class StructureTests: XCTestCase {
         XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 11, 21)), 15)
         XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 8, 3)), 0,
                        "meet before start")
+        // Boundary: meet exactly k×7 days out lands on the LAST day of week k
+        // (a Saturday start with a Saturday meet 12 weeks out is a 12-week
+        // prep, not 13 — the whole taper would otherwise run a week late).
+        XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 10, 26)), 11,
+                       "77 days -> ceil = 11")
+        XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 11, 2)), 12,
+                       "84 days (12×7, meet on anchor weekday) -> 12, not 13")
     }
 
     func testMeetPlanPlacesLifterInRightPhase() {
