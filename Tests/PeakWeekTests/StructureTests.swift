@@ -138,6 +138,63 @@ final class StructureTests: XCTestCase {
                        "weeks 1-2 keep history; old week 3 record now tracks the shifted week 4")
     }
 
+    // MARK: - meet-date planning
+
+    func testWeeksAvailable() {
+        let cal = Calendar.current
+        func d(_ y: Int, _ m: Int, _ day: Int) -> Date {
+            cal.date(from: DateComponents(year: y, month: m, day: day))!
+        }
+        let monday = d(2026, 8, 10)
+        XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 8, 29)), 3,
+                       "meet Saturday of week 3")
+        XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 8, 10)), 1,
+                       "meet on start Monday = week 1")
+        XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 11, 21)), 15)
+        XCTAssertEqual(Engine.weeksAvailable(startMonday: monday, meetDate: d(2026, 8, 3)), 0,
+                       "meet before start")
+    }
+
+    func testMeetPlanPlacesLifterInRightPhase() {
+        XCTAssertNil(Engine.meetPlan(availableWeeks: 2), "under 3 weeks: hand-coach")
+        // 3-4 out: peaking only.
+        XCTAssertEqual(Engine.meetPlan(availableWeeks: 3)?.phase, .real)
+        XCTAssertEqual(Engine.meetPlan(availableWeeks: 4)?.weeks, 4)
+        XCTAssertNil(Engine.meetPlan(availableWeeks: 4)?.blockPlan)
+        // 5-9: strength + peak, no volume block.
+        let six = Engine.meetPlan(availableWeeks: 6)!
+        XCTAssertEqual(six.phase, .full)
+        XCTAssertEqual(six.blockPlan?.acc, 0)
+        XCTAssertEqual(six.blockPlan?.trans, 3)
+        XCTAssertEqual(six.blockPlan?.real, 3)
+        XCTAssertEqual(six.blockPlan?.total, 6)
+        let nine = Engine.meetPlan(availableWeeks: 9)!
+        XCTAssertEqual(nine.blockPlan?.trans, 5)
+        XCTAssertEqual(nine.blockPlan?.real, 4)
+        // 10-16: factory full prep.
+        let twelve = Engine.meetPlan(availableWeeks: 12)!
+        XCTAssertEqual(twelve.phase, .full)
+        XCTAssertNil(twelve.blockPlan)
+        XCTAssertEqual(twelve.weeks, 12)
+        // 17+: volume block extends.
+        let eighteen = Engine.meetPlan(availableWeeks: 18)!
+        XCTAssertEqual(eighteen.blockPlan?.acc, 8)
+        XCTAssertEqual(eighteen.blockPlan?.total, 18)
+    }
+
+    func testShortPrepProgramShape() {
+        // 6 weeks out: trans 3 + real 3 (incl meet) — no acc, no deload.
+        let plan = Engine.meetPlan(availableWeeks: 6)!.blockPlan!
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: plan.total, fiveDay: false,
+                                    library: lib, blockPlan: plan)
+        XCTAssertEqual(p.blocks.map(\.phase), [.trans, .real, .meet])
+        XCTAssertEqual(p.blocks.map(\.weeks), [3, 2, 1])
+        XCTAssertEqual(p.weeks.count, 6)
+        XCTAssertEqual(p.weeks.last?.phase, .meet, "short prep still ends on the platform")
+        // Strength block starts at the trans table's entry point.
+        XCTAssertEqual(p.weeks[0].days[0].slots[0].pct, 77)
+    }
+
     // MARK: - client blockPlan decode tolerance
 
     func testClientBlockPlanDecodes() throws {

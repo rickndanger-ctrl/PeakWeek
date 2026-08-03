@@ -144,13 +144,18 @@ struct ClientView: View {
                 phaseLengthsPanel
             }
 
+            if client.meetDate != nil {
+                meetPlanRow
+            }
+
             HStack(spacing: 14) {
                 Button {
                     if client.program != nil { confirmRegen = true } else { generate() }
                 } label: {
+                    let n = (client.setupPhase == .full ? client.blockPlan?.total : nil) ?? clampedWeeks
                     Text(client.program == nil
-                         ? "Generate \(clampedWeeks)-week program"
-                         : "Regenerate \(clampedWeeks)-week program")
+                         ? "Generate \(n)-week program"
+                         : "Regenerate \(n)-week program")
                         .fontWeight(.bold)
                         .padding(.horizontal, 6).padding(.vertical, 3)
                 }
@@ -458,6 +463,46 @@ struct ClientView: View {
         }
     }
 
+    // MARK: meet-date planning
+
+    @State private var meetPlanSummary: String?
+
+    /// One click: count the runway to the meet and configure the right prep
+    /// slice — peaking-only at 3-4 wks, strength+peak at 5-9, full at 10-16,
+    /// extended volume beyond. Coach still reviews and presses Generate.
+    private var meetPlanRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                Button {
+                    planFromMeetDate()
+                } label: {
+                    Label("Plan from meet date", systemImage: "wand.and.stars")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .help("Counts the weeks from next Monday to the meet and sets phase, length, and start date to the right prep slice. Review, then Generate.")
+                if let summary = meetPlanSummary {
+                    Text(summary).font(.caption).fontWeight(.medium)
+                }
+            }
+        }
+    }
+
+    private func planFromMeetDate() {
+        guard let meet = client.meetDate else { return }
+        let startMonday = Self.nextMonday()
+        let available = Engine.weeksAvailable(startMonday: startMonday, meetDate: meet)
+        guard let plan = Engine.meetPlan(availableWeeks: available) else {
+            meetPlanSummary = "Only \(available) wk\(available == 1 ? "" : "s") to the meet — too close to program. Coach meet week by hand (Peaking block needs 3+)."
+            return
+        }
+        client.setupPhase = plan.phase
+        client.setupWeeks = min(plan.phase.maxWeeks, max(plan.phase.minWeeks, plan.weeks))
+        client.blockPlan = plan.blockPlan
+        client.startDate = startMonday
+        meetPlanSummary = plan.summary + " · week 1 starts \(startMonday.formatted(.dateTime.month(.abbreviated).day())) — press Generate."
+    }
+
     private func firstSendLabel(_ wk: Week, program: Program) -> String {
         var label = "Week \(wk.num) — \(wk.phase.label)"
         if let start = client.startDate {
@@ -536,8 +581,10 @@ struct ClientView: View {
 
             if client.blockPlan != nil {
                 HStack(spacing: 18) {
-                    Stepper(value: planBinding.acc, in: 1...10) {
-                        Text("Volume \(planBinding.acc.wrappedValue) wk").monospacedDigit()
+                    Stepper(value: planBinding.acc, in: 0...10) {
+                        Text(planBinding.acc.wrappedValue == 0
+                             ? "Volume — skipped"
+                             : "Volume \(planBinding.acc.wrappedValue) wk").monospacedDigit()
                     }
                     Toggle("Deload after volume", isOn: planBinding.deloadAfterAcc)
                     Stepper(value: planBinding.trans, in: 1...10) {

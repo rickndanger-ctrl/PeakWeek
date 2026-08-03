@@ -272,6 +272,59 @@ enum Engine {
         }
     }
 
+    // MARK: meet-date planning
+
+    /// Full training weeks available when week 1 starts on `startMonday` and
+    /// the meet falls on `meetDate` (the meet lands inside the final week).
+    static func weeksAvailable(startMonday: Date, meetDate: Date,
+                               calendar: Calendar = .current) -> Int {
+        guard meetDate >= startMonday else { return 0 }
+        let days = calendar.dateComponents([.day], from: startMonday, to: meetDate).day ?? 0
+        return days / 7 + 1
+    }
+
+    /// What kind of prep fits the runway. The coach's rule: pick up a lifter
+    /// any distance out (minimum 3 weeks) and the app places them in the right
+    /// phase for the time remaining.
+    struct MeetPlan: Equatable {
+        var phase: StartPhase
+        var weeks: Int
+        var blockPlan: BlockPlan?
+        var summary: String
+    }
+
+    static func meetPlan(availableWeeks: Int) -> MeetPlan? {
+        switch availableWeeks {
+        case ..<3:
+            return nil                              // too close to program — coach handles by hand
+        case 3...4:
+            return MeetPlan(phase: .real, weeks: availableWeeks, blockPlan: nil,
+                            summary: "\(availableWeeks) wks out → peaking only (taper + meet week)")
+        case 5...9:
+            let real = availableWeeks >= 8 ? 4 : 3
+            var plan = BlockPlan(acc: 0, deloadAfterAcc: false,
+                                 trans: availableWeeks - real, real: real)
+            plan.deloadAfterAcc = false
+            return MeetPlan(phase: .full, weeks: availableWeeks, blockPlan: plan,
+                            summary: "\(availableWeeks) wks out → strength \(plan.trans) wk + peaking \(real) wk (no time for a volume block)")
+        case 10...16:
+            return MeetPlan(phase: .full, weeks: availableWeeks, blockPlan: nil,
+                            summary: "\(availableWeeks) wks out → full prep (volume / strength / peak)")
+        default:
+            // Extend the volume block to fill the runway (acc stepper caps at 10).
+            let auto = allocateBlocks(16)
+            var plan = BlockPlan()
+            plan.acc = min(10, (auto.first { $0.phase == .acc }?.weeks ?? 6) + (availableWeeks - 16))
+            plan.deloadAfterAcc = true
+            plan.trans = auto.first { $0.phase == .trans }?.weeks ?? 5
+            plan.real = auto.first { $0.phase == .real }?.weeks ?? 4
+            let capped = plan.total < availableWeeks
+            return MeetPlan(phase: .full, weeks: plan.total, blockPlan: plan,
+                            summary: "\(availableWeeks) wks out → extended volume block (\(plan.acc) wk)"
+                                + (capped ? " — caps at \(plan.total) wks; week 1 can start \(availableWeeks - plan.total) wk(s) later" : ""))
+        }
+    }
+
     // MARK: program builder
 
     /// Builds a program with slots resolved against the coach's exercise
@@ -329,8 +382,11 @@ enum Engine {
         switch startPhase {
         case .full:
             if let plan = blockPlan {
-                var b = [Block(phase: .acc, weeks: max(1, plan.acc))]
-                if plan.deloadAfterAcc { b.append(Block(phase: .deload, weeks: 1)) }
+                var b: [Block] = []
+                if plan.acc > 0 {
+                    b.append(Block(phase: .acc, weeks: plan.acc))
+                    if plan.deloadAfterAcc { b.append(Block(phase: .deload, weeks: 1)) }
+                }
                 b.append(Block(phase: .trans, weeks: max(1, plan.trans)))
                 b.append(Block(phase: .real, weeks: max(2, plan.real)))
                 rawBlocks = b
