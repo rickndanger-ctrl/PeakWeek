@@ -25,9 +25,14 @@ struct ClientView: View {
                     if let program = client.program {
                         timeline(program)
                         peakProjectionPanel(program)
+                        TrendsPanel(client: $client)
                         programSections(program)
                         Button(showRPE ? "Hide RPE → % chart" : "Show RPE → % chart") { showRPE.toggle() }
                             .buttonStyle(.bordered)
+                    } else {
+                        // Logs are client-level: a gym max or old-program sets
+                        // can be recorded before any program exists.
+                        TrendsPanel(client: $client)
                     }
                 }
                 .padding(24)
@@ -87,6 +92,7 @@ struct ClientView: View {
                             // True, exact conversion — round-trips are lossless.
                             let old: Unit = newUnit == .kg ? .lb : .kg
                             client.maxes = client.maxes.converted(from: old, to: newUnit)
+                            client.logs = client.logs.map { $0.converted(from: old, to: newUnit) }
                         }
                     }
                     labeled("Squat max (1RM)") { maxField($client.maxes.squat, lift: .squat) }
@@ -879,7 +885,9 @@ struct ClientView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 if let boundary = program.realizationBoundary,
-                   program.canInsertDeload(at: boundary) {
+                   program.canInsertDeload(at: boundary),
+                   program.weeks.indices.contains(boundary),
+                   weekUntrained(program.weeks[boundary]) {
                     Button {
                         insertDeloadBeforeRealization()
                     } label: {
@@ -941,11 +949,13 @@ struct ClientView: View {
                             ? nil
                             : { store.sendNow(clientID: client.id, weekNum: program.weeks[wIdx].num) },
                         onRemoveDeload: program.weeks[wIdx].phase == .deload
+                            && weekUntrained(program.weeks[wIdx])
                             ? { removeDeload(at: wIdx) } : nil,
                         onBulkApply: { dayID, slotID, dryRun in
                             bulkApplySlot(weekNum: program.weeks[wIdx].num,
                                           dayID: dayID, slotID: slotID, dryRun: dryRun)
-                        }
+                        },
+                        onLog: { entry in client.logs.append(entry) }
                     )
                 }
             }
@@ -999,10 +1009,20 @@ struct ClientView: View {
         client.program = program
     }
 
+    /// True when the week hasn't started yet. Structural edits are limited to
+    /// untrained weeks: pulling a week the lifter already trained through
+    /// would shift every later week's calendar dates and silently re-bucket
+    /// logged results into the wrong blocks.
+    private func weekUntrained(_ week: Week) -> Bool {
+        guard let start = client.startDate else { return true }
+        return DeliverySchedule.weekStart(startDate: start, weekNum: week.num) > Date()
+    }
+
     private func removeDeload(at index: Int) {
         guard var program = client.program,
               program.weeks.indices.contains(index),
-              program.weeks[index].phase == .deload else { return }
+              program.weeks[index].phase == .deload,
+              weekUntrained(program.weeks[index]) else { return }
         let removedNum = program.weeks[index].num
         program.removeWeek(at: index)
         store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,

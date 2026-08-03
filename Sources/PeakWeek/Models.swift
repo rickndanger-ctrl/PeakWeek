@@ -348,6 +348,86 @@ struct Maxes: Codable, Hashable {
     }
 }
 
+/// One logged top-set result — what the lifter actually did, texted in and
+/// entered by the coach. Lives on the CLIENT, not inside the program, so the
+/// history survives regeneration and program deletion: the trend belongs to
+/// the lifter, not to any one program.
+struct LiftLogEntry: Codable, Identifiable, Hashable {
+    var id: UUID = UUID()
+    var date: Date
+    var lift: LiftPool                 // .squat / .bench / .deadlift
+    var exerciseName: String? = nil    // display name; nil reads as the comp lift
+    var loadMod: Double? = nil         // library modifier at log time — normalizes variation e1RM
+    var load: Double                   // stored in the client's unit (converted on unit toggle)
+    var reps: Int
+    var rpe: Double? = nil             // nil = lifter didn't report effort
+    var cleanSingle: Bool = false      // coach's reference-max standard: a crisp 1RM single
+    var prescribedPct: Double? = nil   // what the program asked for (drift detection)
+    var prescribedRPE: Double? = nil
+    var weekNum: Int? = nil            // provenance when logged from a program slot
+    var programStamp: Date? = nil
+    var note: String = ""
+
+    init(id: UUID = UUID(), date: Date, lift: LiftPool, exerciseName: String? = nil,
+         loadMod: Double? = nil, load: Double, reps: Int, rpe: Double? = nil,
+         cleanSingle: Bool = false, prescribedPct: Double? = nil,
+         prescribedRPE: Double? = nil, weekNum: Int? = nil,
+         programStamp: Date? = nil, note: String = "") {
+        self.id = id; self.date = date; self.lift = lift
+        self.exerciseName = exerciseName; self.loadMod = loadMod
+        self.load = load; self.reps = reps; self.rpe = rpe
+        self.cleanSingle = cleanSingle
+        self.prescribedPct = prescribedPct; self.prescribedRPE = prescribedRPE
+        self.weekNum = weekNum; self.programStamp = programStamp; self.note = note
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        date = try c.decode(Date.self, forKey: .date)
+        lift = try c.decodeIfPresent(LiftPool.self, forKey: .lift) ?? .squat
+        exerciseName = try c.decodeIfPresent(String.self, forKey: .exerciseName)
+        loadMod = try c.decodeIfPresent(Double.self, forKey: .loadMod)
+        load = try c.decodeIfPresent(Double.self, forKey: .load) ?? 0
+        reps = try c.decodeIfPresent(Int.self, forKey: .reps) ?? 1
+        rpe = try c.decodeIfPresent(Double.self, forKey: .rpe)
+        cleanSingle = try c.decodeIfPresent(Bool.self, forKey: .cleanSingle) ?? false
+        prescribedPct = try c.decodeIfPresent(Double.self, forKey: .prescribedPct)
+        prescribedRPE = try c.decodeIfPresent(Double.self, forKey: .prescribedRPE)
+        weekNum = try c.decodeIfPresent(Int.self, forKey: .weekNum)
+        programStamp = try c.decodeIfPresent(Date.self, forKey: .programStamp)
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+    }
+
+    /// True when the set was a variation (load modifier ≠ 1), so its comp-lift
+    /// e1RM is an estimate through the modifier, not a direct measurement.
+    var isVariation: Bool {
+        guard let m = loadMod else { return false }
+        return abs(m - 1) > 0.0001
+    }
+
+    /// Comp-lift e1RM estimate. Variations normalize by their modifier (an
+    /// ESTIMATE — modifiers are ±3-5% by anthropometry, which is why verdicts
+    /// only trust comp-measured points). A single whose RPE is missing or
+    /// below the table floor stands as itself — reporting an easy RPE must
+    /// never yield less than reporting none. Multi-rep sets without a usable
+    /// RPE can't be estimated honestly.
+    var compE1RM: Double? {
+        let mod = loadMod ?? 1
+        guard mod > 0, load > 0 else { return nil }
+        if let rpe, let e = Engine.e1RM(load: load, reps: reps, rpe: rpe) { return e / mod }
+        return reps == 1 ? load / mod : nil
+    }
+
+    /// Exact unit conversion, mirroring Maxes.converted (lossless round-trip).
+    func converted(from old: Unit, to new: Unit) -> LiftLogEntry {
+        guard old != new else { return self }
+        var e = self
+        e.load = load * (new == .kg ? 1 / Maxes.lbPerKg : Maxes.lbPerKg)
+        return e
+    }
+}
+
 struct Client: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var name: String
@@ -368,6 +448,8 @@ struct Client: Codable, Identifiable, Hashable {
     var transScheme: PhaseScheme = .linear
     var accBandLo: Double? = nil          // RPE-anchored entry override
     var accBandHi: Double? = nil
+    /// Logged top-set results — the lifter's history, independent of any program.
+    var logs: [LiftLogEntry] = []
 
     init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
          setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
@@ -405,6 +487,7 @@ struct Client: Codable, Identifiable, Hashable {
             ?? blockPlan?.transScheme ?? .linear
         accBandLo = try c.decodeIfPresent(Double.self, forKey: .accBandLo) ?? blockPlan?.accBandLo
         accBandHi = try c.decodeIfPresent(Double.self, forKey: .accBandHi) ?? blockPlan?.accBandHi
+        logs = try c.decodeIfPresent([LiftLogEntry].self, forKey: .logs) ?? []
     }
 }
 

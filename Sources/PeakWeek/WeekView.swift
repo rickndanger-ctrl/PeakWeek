@@ -15,6 +15,8 @@ struct WeekView: View {
     var onRemoveDeload: (() -> Void)? = nil
     /// (dayID, slotID, dryRun) -> weeks touched. Threaded down to SlotRow.
     var onBulkApply: ((UUID, UUID, Bool) -> Int)? = nil
+    /// Appends a logged result to the client's history. Threaded down to SlotRow.
+    var onLog: ((LiftLogEntry) -> Void)? = nil
     @State private var confirmSendNow = false
     @State private var confirmRemoveDeload = false
 
@@ -142,7 +144,8 @@ struct WeekView: View {
             let cols = [GridItem(.adaptive(minimum: 320), spacing: 14, alignment: .top)]
             LazyVGrid(columns: cols, alignment: .leading, spacing: 14) {
                 ForEach($week.days) { $day in
-                    DayCard(day: $day, client: client, onBulkApply: onBulkApply)
+                    DayCard(day: $day, client: client, onBulkApply: onBulkApply,
+                            logging: loggingHooks)
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
@@ -159,6 +162,31 @@ struct WeekView: View {
         }
         .padding(16)
     }
+
+    /// Per-week logging context: SlotRow needs the scheduled date for its day
+    /// (day one anchor + day index) and program provenance for the entry.
+    private var loggingHooks: LoggingHooks? {
+        guard let save = onLog else { return nil }
+        return LoggingHooks(
+            weekNum: week.num,
+            programStamp: program.createdAt,
+            dateForDay: { dayID in
+                guard let start = client.startDate,
+                      let idx = week.days.firstIndex(where: { $0.id == dayID })
+                else { return Date() }
+                let ws = DeliverySchedule.weekStart(startDate: start, weekNum: week.num)
+                return Calendar.current.date(byAdding: .day, value: idx, to: ws) ?? ws
+            },
+            save: save)
+    }
+}
+
+/// Logging plumbing threaded WeekView → DayCard → SlotRow.
+struct LoggingHooks {
+    let weekNum: Int
+    let programStamp: Date?
+    let dateForDay: (UUID) -> Date
+    let save: (LiftLogEntry) -> Void
 }
 
 // MARK: - Day
@@ -168,6 +196,7 @@ struct DayCard: View {
     @Binding var day: DayPlan
     let client: Client
     var onBulkApply: ((UUID, UUID, Bool) -> Int)? = nil
+    var logging: LoggingHooks? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -182,6 +211,12 @@ struct DayCard: View {
                 SlotRow(slot: $slot, client: client,
                         onBulkApply: onBulkApply.map { apply in
                             { dryRun in apply(day.id, slot.id, dryRun) }
+                        },
+                        logging: logging.map { h in
+                            SlotRow.Logging(date: h.dateForDay(day.id),
+                                            weekNum: h.weekNum,
+                                            programStamp: h.programStamp,
+                                            save: h.save)
                         }) {
                     day.slots.removeAll { $0.id == slot.id }
                 }
@@ -214,10 +249,25 @@ struct SlotRow: View {
     @Binding var slot: Slot
     let client: Client
     var onBulkApply: ((Bool) -> Int)? = nil
+    var logging: Logging? = nil
     let onRemove: () -> Void
     @State private var showNewExercise = false
     @State private var bulkApplyCount: Int?
     @State private var bulkAppliedFeedback = false
+    @State private var showLogPopover = false
+    @State private var loggedFeedback = false
+    // Generation counters: rapid repeat clicks must not let an old timer
+    // clear a newer checkmark early.
+    @State private var loggedFeedbackGen = 0
+    @State private var bulkFeedbackGen = 0
+
+    /// Resolved logging context for this specific slot's day.
+    struct Logging {
+        let date: Date
+        let weekNum: Int
+        let programStamp: Date?
+        let save: (LiftLogEntry) -> Void
+    }
 
     private var pctBinding: Binding<Double?> {
         Binding(
@@ -270,6 +320,45 @@ struct SlotRow: View {
                         }
                     }
                 }
+                if let logging, slot.pct != nil, slot.custom == nil,
+                   [.squat, .bench, .deadlift].contains(slot.pool) {
+                    Button {
+                        showLogPopover = true
+                    } label: {
+                        Image(systemName: loggedFeedback ? "checkmark.circle.fill" : "square.and.pencil")
+                            .font(.caption2)
+                            .foregroundStyle(loggedFeedback ? Theme.plateGreen : .secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Log what the lifter actually did on this set — feeds the e1RM trend in Trends & Log")
+                    .popover(isPresented: $showLogPopover) {
+                        LogResultPopover(
+                            lift: slot.pool, unit: client.unit,
+                            prefill: .init(
+                                load: Engine.slotLoad(slot, maxes: client.maxes,
+                                                      unit: client.unit,
+                                                      library: store.data.exerciseLibrary,
+                                                      settings: client.settings),
+                                reps: slot.reps,
+                                rpe: slot.rpe,
+                                date: logging.date,
+                                exerciseName: Engine.slotName(slot, library: store.data.exerciseLibrary),
+                                loadMod: store.data.exerciseLibrary.resolve(slot)?.mod,
+                                prescribedPct: slot.pct,
+                                prescribedRPE: slot.rpe,
+                                weekNum: logging.weekNum,
+                                programStamp: logging.programStamp)
+                        ) { entry in
+                            logging.save(entry)
+                            loggedFeedback = true
+                            loggedFeedbackGen += 1
+                            let gen = loggedFeedbackGen
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                                if gen == loggedFeedbackGen { loggedFeedback = false }
+                            }
+                        }
+                    }
+                }
                 if let bulk = onBulkApply {
                     Button {
                         bulkApplyCount = bulk(true)   // dry run: how many weeks?
@@ -291,8 +380,10 @@ struct SlotRow: View {
                                 _ = bulk(false)
                                 bulkApplyCount = nil
                                 bulkAppliedFeedback = true
+                                bulkFeedbackGen += 1
+                                let gen = bulkFeedbackGen
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                                    bulkAppliedFeedback = false
+                                    if gen == bulkFeedbackGen { bulkAppliedFeedback = false }
                                 }
                             }
                         }
