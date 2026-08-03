@@ -9,12 +9,14 @@ struct WeekPDFTransfer: Transferable {
     let client: Client
     let program: Program
     let week: Week
+    let library: ExerciseLibrary
 
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(exportedContentType: .pdf) { item in
             guard let url = WeekExporter.writeTempPDF(client: item.client,
                                                      program: item.program,
-                                                     week: item.week) else {
+                                                     week: item.week,
+                                                     library: item.library) else {
                 throw CocoaError(.fileWriteUnknown)
             }
             return SentTransferredFile(url)
@@ -25,6 +27,7 @@ struct WeekPDFTransfer: Transferable {
 // MARK: - Week
 
 struct WeekView: View {
+    @EnvironmentObject var store: AppStore
     @Binding var week: Week
     let client: Client
     let program: Program
@@ -73,13 +76,15 @@ struct WeekView: View {
                 ShareLink(item: weekText) {
                     Label("Send as text…", systemImage: "message")
                 }
-                ShareLink(item: WeekPDFTransfer(client: client, program: program, week: week),
+                ShareLink(item: WeekPDFTransfer(client: client, program: program, week: week,
+                                                library: store.data.exerciseLibrary),
                           preview: SharePreview("\(client.name) — Week \(week.num)")) {
                     Label("Send as PDF…", systemImage: "doc.richtext")
                 }
                 Divider()
                 Button("Save PDF…") {
-                    WeekExporter.savePDF(client: client, program: program, week: week)
+                    WeekExporter.savePDF(client: client, program: program, week: week,
+                                         library: store.data.exerciseLibrary)
                 }
                 if onSendNow != nil {
                     Divider()
@@ -104,7 +109,8 @@ struct WeekView: View {
     }
 
     private var weekText: String {
-        Engine.weekToText(client: client, program: program, week: week)
+        Engine.weekToText(client: client, program: program, week: week,
+                          library: store.data.exerciseLibrary)
     }
 
     private var headerMeta: String {
@@ -145,6 +151,7 @@ struct WeekView: View {
 // MARK: - Day
 
 struct DayCard: View {
+    @EnvironmentObject var store: AppStore
     @Binding var day: DayPlan
     let client: Client
 
@@ -164,7 +171,11 @@ struct DayCard: View {
             }
             if !day.slots.isEmpty {
                 Button {
-                    day.slots.append(Slot(pool: .back, exIdx: 0, sets: 3, reps: 10, pct: nil, rpe: 8))
+                    let lib = store.data.exerciseLibrary
+                    let first = lib[.back].first { !$0.archived }
+                    day.slots.append(Slot(pool: .back, exerciseID: first?.id,
+                                          custom: first == nil ? "" : nil,
+                                          sets: 3, reps: 10, pct: nil, rpe: 8))
                 } label: {
                     Label("Add exercise", systemImage: "plus")
                         .font(.caption)
@@ -183,9 +194,11 @@ struct DayCard: View {
 // MARK: - Slot
 
 struct SlotRow: View {
+    @EnvironmentObject var store: AppStore
     @Binding var slot: Slot
     let client: Client
     let onRemove: () -> Void
+    @State private var showNewExercise = false
 
     private var pctText: Binding<String> {
         Binding(
@@ -209,14 +222,28 @@ struct SlotRow: View {
                 } else {
                     Picker("", selection: exerciseSelection) {
                         ForEach(LiftPool.allCases) { pool in
-                            ForEach(Array((Engine.pools[pool] ?? []).enumerated()), id: \.offset) { i, ex in
-                                Text("\(pool.groupLabel) — \(ex.name)").tag("\(pool.rawValue):\(i)")
+                            ForEach(store.data.exerciseLibrary[pool].filter {
+                                !$0.archived || $0.id == slot.exerciseID
+                            }) { ex in
+                                Text("\(pool.groupLabel) — \(ex.name)\(ex.archived ? " (archived)" : "")")
+                                    .tag(ex.id.uuidString)
                             }
                         }
+                        Divider()
                         Text("✎ Custom exercise…").tag("custom")
+                        Text("＋ New library exercise…").tag("new")
                     }
                     .labelsHidden()
                     .fontWeight(.semibold)
+                    .popover(isPresented: $showNewExercise) {
+                        NewExercisePopover(defaultPool: slot.pool) { newEx, pool in
+                            store.data.exerciseLibrary.add(newEx, to: pool)
+                            slot.pool = pool
+                            slot.exerciseID = newEx.id
+                            slot.exIdx = nil
+                            slot.custom = nil
+                        }
+                    }
                 }
                 Button { onRemove() } label: {
                     Image(systemName: "xmark").font(.caption2)
@@ -239,7 +266,8 @@ struct SlotRow: View {
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
                 Text("%").foregroundStyle(.secondary)
-                if let load = Engine.slotLoad(slot, maxes: client.maxes, unit: client.unit) {
+                if let load = Engine.slotLoad(slot, maxes: client.maxes, unit: client.unit,
+                                              library: store.data.exerciseLibrary) {
                     Text("→ \(Engine.loadString(load, unit: client.unit))")
                         .font(.system(.caption, design: .monospaced)).bold()
                         .foregroundStyle(Theme.plateYellow)
@@ -263,17 +291,22 @@ struct SlotRow: View {
 
     private var exerciseSelection: Binding<String> {
         Binding(
-            get: { "\(slot.pool.rawValue):\(slot.exIdx)" },
+            get: {
+                store.data.exerciseLibrary.resolve(slot)?.id.uuidString ?? "custom"
+            },
             set: { newValue in
-                if newValue == "custom" {
+                switch newValue {
+                case "custom":
                     slot.custom = ""
                     slot.pct = nil
-                } else {
-                    let parts = newValue.split(separator: ":")
-                    if parts.count == 2, let pool = LiftPool(rawValue: String(parts[0])),
-                       let idx = Int(parts[1]) {
+                case "new":
+                    showNewExercise = true
+                default:
+                    if let id = UUID(uuidString: newValue),
+                       let pool = store.data.exerciseLibrary.pool(of: id) {
                         slot.pool = pool
-                        slot.exIdx = idx
+                        slot.exerciseID = id
+                        slot.exIdx = nil
                         slot.custom = nil
                     }
                 }
@@ -287,6 +320,62 @@ struct SlotRow: View {
             .font(.system(.caption, design: .monospaced))
             .multilineTextAlignment(.center)
             .frame(width: width)
+    }
+}
+
+// MARK: - New exercise popover (in-context library add)
+
+struct NewExercisePopover: View {
+    @Environment(\.dismiss) private var dismiss
+    let defaultPool: LiftPool
+    var onAdd: (LibraryExercise, LiftPool) -> Void
+
+    @State private var name = ""
+    @State private var pool: LiftPool
+    @State private var isAccessory = true
+    @State private var modPct = 90.0
+
+    init(defaultPool: LiftPool, onAdd: @escaping (LibraryExercise, LiftPool) -> Void) {
+        self.defaultPool = defaultPool
+        self.onAdd = onAdd
+        _pool = State(initialValue: defaultPool)
+        _isAccessory = State(initialValue: ![.squat, .bench, .deadlift].contains(defaultPool))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("New Library Exercise").font(.headline)
+            TextField("Exercise name", text: $name)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 240)
+            Picker("Group", selection: $pool) {
+                ForEach(LiftPool.allCases) { p in Text(p.groupLabel).tag(p) }
+            }
+            Toggle("Accessory (RPE only, no computed load)", isOn: $isAccessory)
+            if !isAccessory {
+                HStack {
+                    Text("Load modifier")
+                    TextField("", value: $modPct, format: .number)
+                        .textFieldStyle(.roundedBorder).frame(width: 56)
+                        .onChange(of: modPct) { v in modPct = min(120, max(30, v)) }
+                    Text("% of comp-lift 1RM").foregroundStyle(.secondary)
+                }
+                .font(.caption)
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button("Add") {
+                    let ex = LibraryExercise(name: name.trimmingCharacters(in: .whitespaces),
+                                             mod: isAccessory ? nil : modPct / 100)
+                    onAdd(ex, pool)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(16)
     }
 }
 

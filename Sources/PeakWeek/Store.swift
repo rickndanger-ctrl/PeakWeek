@@ -167,10 +167,12 @@ final class AppStore: ObservableObject {
               let week = program.weeks.first(where: { $0.num == weekNum }) else {
             return record(.failed("program/week no longer exists"))
         }
-        let text = Engine.weekToText(client: client, program: program, week: week)
+        let text = Engine.weekToText(client: client, program: program, week: week,
+                                     library: data.exerciseLibrary)
         var attachment: URL?
         if client.delivery.format != .text {
-            attachment = WeekExporter.writeTempPDF(client: client, program: program, week: week)
+            attachment = WeekExporter.writeTempPDF(client: client, program: program, week: week,
+                                                   library: data.exerciseLibrary)
             if attachment == nil { return record(.failed("PDF generation failed")) }
         }
         let body = client.delivery.format == .pdf ? nil : text

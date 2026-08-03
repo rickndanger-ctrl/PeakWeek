@@ -12,8 +12,9 @@ enum WeekExporter {
 
     /// Styles the plain-text week export for PDF: bold header, bold day titles,
     /// monospaced set lines. Layout-only — the text is Engine.weekToText verbatim.
-    static func attributedWeek(client: Client, program: Program, week: Week) -> NSAttributedString {
-        let text = Engine.weekToText(client: client, program: program, week: week)
+    static func attributedWeek(client: Client, program: Program, week: Week,
+                               library: ExerciseLibrary) -> NSAttributedString {
+        let text = Engine.weekToText(client: client, program: program, week: week, library: library)
         let out = NSMutableAttributedString()
 
         let body: [NSAttributedString.Key: Any] = [
@@ -54,8 +55,9 @@ enum WeekExporter {
     // MARK: PDF rendering
 
     /// Paginated US-Letter PDF via CTFramesetter — no print panel, fully headless.
-    static func pdfData(client: Client, program: Program, week: Week) -> Data? {
-        let attr = attributedWeek(client: client, program: program, week: week)
+    static func pdfData(client: Client, program: Program, week: Week,
+                        library: ExerciseLibrary) -> Data? {
+        let attr = attributedWeek(client: client, program: program, week: week, library: library)
         let pageRect = CGRect(x: 0, y: 0, width: 612, height: 792)   // US Letter, 72 dpi
         let textRect = pageRect.insetBy(dx: 54, dy: 54)
 
@@ -87,8 +89,9 @@ enum WeekExporter {
     }
 
     /// Writes the PDF to a temp file for handing to the share sheet.
-    static func writeTempPDF(client: Client, program: Program, week: Week) -> URL? {
-        guard let data = pdfData(client: client, program: program, week: week) else { return nil }
+    static func writeTempPDF(client: Client, program: Program, week: Week,
+                             library: ExerciseLibrary) -> URL? {
+        guard let data = pdfData(client: client, program: program, week: week, library: library) else { return nil }
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("PeakWeekShare", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -98,13 +101,13 @@ enum WeekExporter {
     }
 
     /// Save-panel export for coaches who file PDFs manually.
-    static func savePDF(client: Client, program: Program, week: Week) {
+    static func savePDF(client: Client, program: Program, week: Week, library: ExerciseLibrary) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.pdf]
         panel.nameFieldStringValue = pdfFileName(client: client, week: week)
         panel.title = "Export Week \(week.num) as PDF"
         guard panel.runModal() == .OK, let url = panel.url,
-              let data = pdfData(client: client, program: program, week: week) else { return }
+              let data = pdfData(client: client, program: program, week: week, library: library) else { return }
         try? data.write(to: url, options: .atomic)
     }
 }

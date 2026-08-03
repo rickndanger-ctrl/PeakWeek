@@ -232,7 +232,8 @@ struct ClientView: View {
     private func generate() {
         client.program = Engine.buildProgram(startPhase: client.setupPhase,
                                              totalWeeks: clampedWeeks,
-                                             fiveDay: client.fiveDay)
+                                             fiveDay: client.fiveDay,
+                                             library: store.data.exerciseLibrary)
         if client.startDate == nil {
             // Default anchor: next Monday.
             client.startDate = DeliverySchedule.mondayOfWeek(
@@ -359,7 +360,8 @@ struct ClientView: View {
     }
 
     private func copyWeek(_ week: Week, program: Program) {
-        let text = Engine.weekToText(client: client, program: program, week: week)
+        let text = Engine.weekToText(client: client, program: program, week: week,
+                                     library: store.data.exerciseLibrary)
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.setString(text, forType: .string)

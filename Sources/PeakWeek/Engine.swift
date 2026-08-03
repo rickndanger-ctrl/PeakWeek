@@ -274,7 +274,36 @@ enum Engine {
 
     // MARK: program builder
 
-    static func buildProgram(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool) -> Program {
+    /// Builds a program with slots resolved against the coach's exercise
+    /// library. `excluded` exercises are substituted at generation time with
+    /// the first available exercise from the same pool.
+    static func buildProgram(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
+                             library: ExerciseLibrary, excluded: Set<UUID> = []) -> Program {
+        var program = buildProgramLegacy(startPhase: startPhase, totalWeeks: totalWeeks, fiveDay: fiveDay)
+        for wi in program.weeks.indices {
+            for di in program.weeks[wi].days.indices {
+                for si in program.weeks[wi].days[di].slots.indices {
+                    var slot = program.weeks[wi].days[di].slots[si]
+                    guard slot.custom == nil else { continue }
+                    guard let idx = slot.exIdx,
+                          let seedHit = library.seeded("\(slot.pool.rawValue):\(idx)") else { continue }
+                    var chosen = seedHit
+                    if excluded.contains(chosen.id) || chosen.archived {
+                        if let sub = library[slot.pool].first(where: {
+                            !$0.archived && !excluded.contains($0.id)
+                        }) { chosen = sub }
+                    }
+                    slot.exerciseID = chosen.id
+                    program.weeks[wi].days[di].slots[si] = slot
+                }
+            }
+        }
+        return program
+    }
+
+    /// The original index-referenced builder. Templates still speak (pool, index)
+    /// against the seed catalogue; resolution to library UUIDs happens above.
+    static func buildProgramLegacy(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool) -> Program {
         let rawBlocks: [Block]
         switch startPhase {
         case .full: rawBlocks = allocateBlocks(totalWeeks)
@@ -318,19 +347,14 @@ enum Engine {
 
     // MARK: derived values
 
-    static func exercise(for slot: Slot) -> Exercise? {
-        guard let arr = pools[slot.pool], slot.exIdx >= 0, slot.exIdx < arr.count else { return nil }
-        return arr[slot.exIdx]
-    }
-
-    static func slotName(_ slot: Slot) -> String {
+    static func slotName(_ slot: Slot, library: ExerciseLibrary) -> String {
         if let c = slot.custom { return c.isEmpty ? "Custom exercise" : c }
-        return exercise(for: slot)?.name ?? "Exercise"
+        return library.resolve(slot)?.name ?? "Exercise"
     }
 
-    static func slotLoad(_ slot: Slot, maxes: Maxes, unit: Unit) -> Double? {
+    static func slotLoad(_ slot: Slot, maxes: Maxes, unit: Unit, library: ExerciseLibrary) -> Double? {
         guard slot.custom == nil, let pct = slot.pct,
-              let ex = exercise(for: slot), let mod = ex.mod else { return nil }
+              let ex = library.resolve(slot), let mod = ex.mod else { return nil }
         let base = maxes.value(for: slot.pool)
         guard base > 0 else { return nil }
         return roundLoad(base * (pct / 100) * mod, unit: unit)
@@ -344,7 +368,8 @@ enum Engine {
 
     // MARK: plain-text week export
 
-    static func weekToText(client: Client, program: Program, week: Week) -> String {
+    static func weekToText(client: Client, program: Program, week: Week,
+                           library: ExerciseLibrary) -> String {
         var L: [String] = []
         L.append("\(client.name.uppercased()) — WEEK \(week.num) of \(program.weeks.count) — \(week.phase.label.uppercased())")
         L.append("Coach: block periodization · loads rise week to week — trust the percentages, cap sets at the listed RPE.")
@@ -353,13 +378,15 @@ enum Engine {
             L.append(day.title)
             if day.slots.isEmpty { L.append("  Rest. Sleep 8+, eat, hydrate.") }
             for (i, s) in day.slots.enumerated() {
-                var line = "  \(i + 1). \(slotName(s)) — \(s.sets)x\(s.reps)"
+                var line = "  \(i + 1). \(slotName(s, library: library)) — \(s.sets)x\(s.reps)"
                 if let pct = s.pct { line += " @ \(Int(pct))%" }
-                if let load = slotLoad(s, maxes: client.maxes, unit: client.unit) {
+                if let load = slotLoad(s, maxes: client.maxes, unit: client.unit, library: library) {
                     line += " → \(loadString(load, unit: client.unit))"
                 }
                 let rpeStr = s.rpe == s.rpe.rounded() ? String(Int(s.rpe)) : String(s.rpe)
                 line += " · RPE \(rpeStr)"
+                if let note = s.note, !note.isEmpty { line += "  — \(note)" }
+                if s.filmThis == true { line += "  📹 film this" }
                 L.append(line)
             }
             L.append("")

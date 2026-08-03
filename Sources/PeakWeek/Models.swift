@@ -107,12 +107,15 @@ struct Exercise {
 struct Slot: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var pool: LiftPool
-    var exIdx: Int
+    var exIdx: Int? = nil         // legacy seed index; migrated to exerciseID on load
+    var exerciseID: UUID? = nil   // canonical library reference
     var custom: String? = nil     // non-nil = free-typed exercise name
     var sets: Int
     var reps: Int
     var pct: Double? = nil        // nil = accessory (no % / no computed load)
     var rpe: Double
+    var note: String? = nil       // optional per-slot coach cue
+    var filmThis: Bool? = nil     // "film this set" flag
 }
 
 struct DayPlan: Codable, Identifiable, Hashable {
@@ -199,13 +202,16 @@ struct Client: Codable, Identifiable, Hashable {
 }
 
 struct AppData: Codable {
-    var schemaVersion: Int = 2      // absent in v1 files → decodes as 1
+    var schemaVersion: Int = 3      // absent in v1 files → decodes as 1
     var clients: [Client] = []
     var sendLog: [SendRecord] = []
+    var exerciseLibrary: ExerciseLibrary = .seeded()
 
-    init(clients: [Client] = [], sendLog: [SendRecord] = []) {
+    init(clients: [Client] = [], sendLog: [SendRecord] = [],
+         exerciseLibrary: ExerciseLibrary = .seeded()) {
         self.clients = clients
         self.sendLog = sendLog
+        self.exerciseLibrary = exerciseLibrary
     }
 
     init(from decoder: Decoder) throws {
@@ -213,6 +219,31 @@ struct AppData: Codable {
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         clients = try c.decodeIfPresent([Client].self, forKey: .clients) ?? []
         sendLog = try c.decodeIfPresent([SendRecord].self, forKey: .sendLog) ?? []
-        schemaVersion = 2           // decoding IS the v1→v2 migration for now
+        exerciseLibrary = try c.decodeIfPresent(ExerciseLibrary.self, forKey: .exerciseLibrary) ?? .seeded()
+        migrateSlotReferences()
+        schemaVersion = 3           // decoding IS the migration
+    }
+
+    /// v2 → v3: fill canonical exerciseIDs from legacy (pool, exIdx) seed
+    /// references. Never drops a slot — unresolvable refs become custom text.
+    private mutating func migrateSlotReferences() {
+        for ci in clients.indices {
+            guard clients[ci].program != nil else { continue }
+            for wi in clients[ci].program!.weeks.indices {
+                for di in clients[ci].program!.weeks[wi].days.indices {
+                    for si in clients[ci].program!.weeks[wi].days[di].slots.indices {
+                        var slot = clients[ci].program!.weeks[wi].days[di].slots[si]
+                        guard slot.custom == nil, slot.exerciseID == nil else { continue }
+                        if let idx = slot.exIdx,
+                           let hit = exerciseLibrary.seeded("\(slot.pool.rawValue):\(idx)") {
+                            slot.exerciseID = hit.id
+                        } else {
+                            slot.custom = "Exercise"   // unresolvable: keep the slot, lose only the link
+                        }
+                        clients[ci].program!.weeks[wi].days[di].slots[si] = slot
+                    }
+                }
+            }
+        }
     }
 }

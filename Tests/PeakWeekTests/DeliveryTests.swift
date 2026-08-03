@@ -4,6 +4,7 @@ import XCTest
 final class DeliveryTests: XCTestCase {
 
     var cal: Calendar { Calendar.current }
+    let lib = ExerciseLibrary.seeded()
 
     func date(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0) -> Date {
         cal.date(from: DateComponents(year: y, month: m, day: d, hour: h))!
@@ -18,7 +19,7 @@ final class DeliveryTests: XCTestCase {
                     weekday: Int = 1, hour: Int = 18) -> Client {
         var c = Client(name: "Test", unit: .lb,
                        maxes: Maxes(squat: 405, bench: 275, deadlift: 495))
-        c.program = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false)
+        c.program = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
         c.startDate = monday
         c.delivery.autoSend = autoSend
         c.delivery.requireReview = review
@@ -174,9 +175,9 @@ final class DeliveryTests: XCTestCase {
         XCTAssertFalse(c.delivery.autoSend, "delivery defaults applied")
         XCTAssertTrue(c.delivery.requireReview)
         XCTAssertTrue(data.sendLog.isEmpty)
-        XCTAssertEqual(data.schemaVersion, 2, "decoding migrates v1 → v2")
+        XCTAssertEqual(data.schemaVersion, 3, "decoding migrates v1 → current schema")
         let enc = JSONEncoder()
         let out = String(decoding: try enc.encode(data), as: UTF8.self)
-        XCTAssertTrue(out.contains("\"schemaVersion\":2"), "v2 stamp persists on next save")
+        XCTAssertTrue(out.contains("\"schemaVersion\":3"), "current stamp persists on next save")
     }
 }
