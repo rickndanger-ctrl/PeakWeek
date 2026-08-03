@@ -54,32 +54,10 @@ enum WeekExporter {
 
     // MARK: PDF rendering
 
-    /// Paginated US-Letter PDF via CTFramesetter — no print panel, fully headless.
+    /// Professionally laid-out week PDF (tables, day bars, attempts grid).
     static func pdfData(client: Client, program: Program, week: Week,
                         library: ExerciseLibrary) -> Data? {
-        let attr = attributedWeek(client: client, program: program, week: week, library: library)
-        let pageRect = CGRect(x: 0, y: 0, width: 612, height: 792)   // US Letter, 72 dpi
-        let textRect = pageRect.insetBy(dx: 54, dy: 54)
-
-        let data = NSMutableData()
-        guard let consumer = CGDataConsumer(data: data as CFMutableData) else { return nil }
-        var mediaBox = pageRect
-        guard let ctx = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else { return nil }
-
-        let framesetter = CTFramesetterCreateWithAttributedString(attr)
-        var location = 0
-        repeat {
-            ctx.beginPDFPage(nil)
-            let path = CGPath(rect: textRect, transform: nil)
-            let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: location, length: 0), path, nil)
-            CTFrameDraw(frame, ctx)
-            let visible = CTFrameGetVisibleStringRange(frame)
-            ctx.endPDFPage()
-            if visible.length == 0 { break }     // safety: never loop on unrenderable content
-            location = visible.location + visible.length
-        } while location < attr.length
-        ctx.closePDF()
-        return data as Data
+        WeekPDFLayout.render(client: client, program: program, week: week, library: library)
     }
 
     /// Suggested file name, e.g. "Sarah — Week 3.pdf"

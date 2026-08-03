@@ -222,13 +222,17 @@ struct NewClientSheet: View {
             Text("New Client").font(.title2).bold()
             Form {
                 TextField("Name", text: $name)
+                    .squareFieldStyle()
                 Picker("Units", selection: $unit) {
                     ForEach(Unit.allCases) { u in Text(u.rawValue).tag(u) }
                 }
                 .pickerStyle(.segmented)
                 TextField("Squat 1RM", value: $squat, format: .number)
+                    .squareFieldStyle()
                 TextField("Bench 1RM", value: $bench, format: .number)
+                    .squareFieldStyle()
                 TextField("Deadlift 1RM", value: $deadlift, format: .number)
+                    .squareFieldStyle()
             }
             HStack {
                 Spacer()
