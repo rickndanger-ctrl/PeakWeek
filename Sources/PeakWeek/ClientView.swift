@@ -151,6 +151,8 @@ struct ClientView: View {
                 trainingStyleRow
             }
 
+            dayOrderRow
+
             if client.setupPhase == .full {
                 phaseLengthsPanel
             }
@@ -173,6 +175,10 @@ struct ClientView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.plateRed)
 
+                if client.program != nil {
+                    sendProgramMenu
+                }
+
                 Text("5-day adds a second squat day to volume + strength blocks. Peaking and deload stay at 4 days — the taper works by cutting workload.")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -186,6 +192,52 @@ struct ClientView: View {
         }
         .padding(20)
         .background(Theme.iron2, in: Rectangle())
+    }
+
+    // MARK: full-program send
+
+    @State private var confirmSendProgram = false
+
+    /// The whole program, on demand — weekly auto-sends stay untouched. Some
+    /// lifters want the full map up front; the weekly rhythm continues either way.
+    private var sendProgramMenu: some View {
+        Menu {
+            if let program = client.program {
+                ShareLink(item: WeekExporter.programText(client: client, program: program,
+                                                         library: store.data.exerciseLibrary)) {
+                    Label("Send as text…", systemImage: "message")
+                }
+                if let url = WeekExporter.writeTempProgramPDF(client: client, program: program,
+                                                              library: store.data.exerciseLibrary) {
+                    ShareLink(item: url,
+                              preview: SharePreview("\(client.name) — Full Program")) {
+                        Label("Send as PDF…", systemImage: "doc.richtext")
+                    }
+                }
+                Divider()
+                Button("Save PDF…") {
+                    WeekExporter.saveProgramPDF(client: client, program: program,
+                                                library: store.data.exerciseLibrary)
+                }
+                if !client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Divider()
+                    Button("Send now to \(client.delivery.recipient) (\(client.delivery.method.label))…") {
+                        confirmSendProgram = true
+                    }
+                }
+            }
+        } label: {
+            Label("Send program", systemImage: "square.and.arrow.up.on.square")
+                .fontWeight(.semibold)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Send the ENTIRE program whenever you want — all \(client.program?.weeks.count ?? 0) weeks in one document. Weekly auto-sends keep running on their own schedule.")
+        .confirmationDialog(
+            "Send the full \(client.program?.weeks.count ?? 0)-week program to \(client.delivery.recipient) via \(client.delivery.method.label) right now?",
+            isPresented: $confirmSendProgram, titleVisibility: .visible) {
+            Button("Send") { store.sendProgramNow(clientID: client.id) }
+        }
     }
 
     // MARK: coaching options
@@ -714,6 +766,85 @@ struct ClientView: View {
         }
     }
 
+    // MARK: day order
+
+    @State private var confirmApplyDayOrder = false
+
+    /// Factory identity of each day position — what the day IS regardless of
+    /// where the lifter puts it in their week.
+    private static let dayPositionLabels = ["Squat", "Bench", "Deadlift", "Bench 2", "Squat 2"]
+
+    private var dayCount: Int { client.fiveDay ? 5 : 4 }
+
+    /// The working order, normalized: a stored order of the wrong length
+    /// (4-day ↔ 5-day switch) reads as factory until re-edited.
+    private var effectiveDayOrder: [Int] {
+        if let o = client.dayOrder, Set(o) == Set(0..<dayCount) { return o }
+        return Array(0..<dayCount)
+    }
+
+    private var dayOrderRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Text("DAY ORDER").font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+                ForEach(Array(effectiveDayOrder.enumerated()), id: \.offset) { pos, dayIdx in
+                    HStack(spacing: 2) {
+                        Button {
+                            moveDay(from: pos, to: pos - 1)
+                        } label: { Image(systemName: "chevron.left").font(.system(size: 8)) }
+                        .buttonStyle(.borderless)
+                        .disabled(pos == 0)
+                        Text("\(pos + 1). \(Self.dayPositionLabels[dayIdx])")
+                            .font(.caption).fontWeight(.medium)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Theme.iron2, in: Rectangle())
+                            .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
+                        Button {
+                            moveDay(from: pos, to: pos + 1)
+                        } label: { Image(systemName: "chevron.right").font(.system(size: 8)) }
+                        .buttonStyle(.borderless)
+                        .disabled(pos == effectiveDayOrder.count - 1)
+                    }
+                }
+                if client.dayOrder != nil {
+                    Button("Factory order") { client.dayOrder = nil }
+                        .buttonStyle(.borderless).font(.caption)
+                }
+                if client.program != nil, orderDiffersFromProgram {
+                    Button("Apply to current program") { confirmApplyDayOrder = true }
+                        .buttonStyle(.bordered).font(.caption)
+                        .confirmationDialog(
+                            "Re-sequence every week's training days to this order? Exercises, sets and loads don't change — only which day comes first. The meet week keeps its platform structure.",
+                            isPresented: $confirmApplyDayOrder, titleVisibility: .visible) {
+                            Button("Re-sequence") { applyDayOrderToProgram() }
+                        }
+                }
+            }
+            Text("The lifter's week, their way — deadlift-first is a click away. New programs generate in this order; day one's date stays the anchor.")
+                .font(.system(size: 9)).foregroundStyle(.secondary)
+        }
+    }
+
+    private func moveDay(from: Int, to: Int) {
+        var order = effectiveDayOrder
+        guard order.indices.contains(from), order.indices.contains(to) else { return }
+        order.swapAt(from, to)
+        client.dayOrder = order == Array(0..<dayCount) ? nil : order
+    }
+
+    /// True when the saved program's day sequence doesn't already match the
+    /// chosen order (a dry-run apply reports whether anything would move).
+    private var orderDiffersFromProgram: Bool {
+        guard let p = client.program else { return false }
+        var probe = p
+        return probe.applyDayOrder(effectiveDayOrder) > 0
+    }
+
+    private func applyDayOrderToProgram() {
+        guard var p = client.program else { return }
+        if p.applyDayOrder(effectiveDayOrder) > 0 { client.program = p }
+    }
+
     private func generate() {
         // A staged meet plan applies HERE — inside the confirmed Generate path.
         if let staged = pendingMeetPlan {
@@ -749,12 +880,16 @@ struct ClientView: View {
         plan?.accBandLo = client.accBandLo
         plan?.accBandHi = client.accBandHi
         let usesPlanLengths = client.setupPhase == .full && client.blockPlan != nil
-        client.program = Engine.buildProgram(startPhase: client.setupPhase,
-                                             totalWeeks: usesPlanLengths ? (plan?.total ?? clampedWeeks) : clampedWeeks,
-                                             fiveDay: client.fiveDay,
-                                             library: store.data.exerciseLibrary,
-                                             excluded: client.settings.excludedExerciseIDs ?? [],
-                                             blockPlan: plan)
+        var built = Engine.buildProgram(startPhase: client.setupPhase,
+                                        totalWeeks: usesPlanLengths ? (plan?.total ?? clampedWeeks) : clampedWeeks,
+                                        fiveDay: client.fiveDay,
+                                        library: store.data.exerciseLibrary,
+                                        excluded: client.settings.excludedExerciseIDs ?? [],
+                                        blockPlan: plan)
+        // Lifter's preferred day sequence — a pure re-ordering; the frozen
+        // factory content is untouched. Meet week keeps platform structure.
+        if let order = client.dayOrder { built.applyDayOrder(order) }
+        client.program = built
         // Old-program queue entries must not survive into the new program.
         store.retireStaleQueued(clientID: client.id, currentStamp: client.program?.createdAt)
         // A new program is a fresh delivery contract: a first-send week from

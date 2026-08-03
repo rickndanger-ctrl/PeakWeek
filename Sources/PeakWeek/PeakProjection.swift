@@ -71,22 +71,35 @@ struct PeakProjection {
 
         var events: [Event] = []
 
-        // The heavy-double week (realization, 2 out): last heavy SQ (day 1),
-        // BP (day 2), and the LAST HEAVY DEADLIFT (day 3).
+        // Days are located by CONTENT (first day carrying a %-loaded slot of
+        // that lift), not fixed positions — coach-chosen day orders move the
+        // real calendar dates and the projection must follow them.
+        func liftDay(_ week: Week, _ pool: LiftPool, fallback: Int) -> Int {
+            week.days.firstIndex { d in
+                d.slots.contains { $0.pct != nil && $0.pool == pool }
+            } ?? fallback
+        }
+
+        // The heavy-double week (realization, 2 out): last heavy SQ, BP, and
+        // the LAST HEAVY DEADLIFT.
         if let heavy = program.weeks.first(where: { w in
             w.phase == .real && w.days.contains { $0.title.contains("LAST HEAVY DEADLIFT") }
         }) {
-            events.append(event(.lastHeavySquat, week: heavy, dayIndex: 0))
-            events.append(event(.lastHeavyBench, week: heavy, dayIndex: 1))
-            events.append(event(.lastHeavyDeadlift, week: heavy, dayIndex: 2))
+            events.append(event(.lastHeavySquat, week: heavy,
+                                dayIndex: liftDay(heavy, .squat, fallback: 0)))
+            events.append(event(.lastHeavyBench, week: heavy,
+                                dayIndex: liftDay(heavy, .bench, fallback: 1)))
+            events.append(event(.lastHeavyDeadlift, week: heavy,
+                                dayIndex: liftDay(heavy, .deadlift, fallback: 2)))
         }
 
-        // Opener week (realization, 1 out): squat opener day 1 (bench day 2
-        // shares the window).
+        // Opener week (realization, 1 out): the squat-opener day anchors the
+        // window (bench shares it).
         if let openers = program.weeks.first(where: { w in
             w.phase == .real && w.days.contains { $0.title.contains("OPENER") }
         }) {
-            events.append(event(.openers, week: openers, dayIndex: 0))
+            events.append(event(.openers, week: openers,
+                                dayIndex: liftDay(openers, .squat, fallback: 0)))
         }
 
         // Meet week: primers are days 1–2; cessation starts the day after.

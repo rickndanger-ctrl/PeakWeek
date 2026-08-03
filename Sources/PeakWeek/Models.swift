@@ -257,6 +257,32 @@ struct Program: Codable, Hashable {
         }.count
     }
 
+    // MARK: day order
+
+    /// Re-sequence each training week's days to `order` — a permutation of
+    /// day positions (e.g. [2,1,0,3] = deadlift day first). Slot content is
+    /// untouched; only the day sequence (and therefore each day's calendar
+    /// date) changes. The MEET WEEK never reorders — platform-week structure
+    /// (primers early, rest late, no deadlifts past Tuesday) is doctrine.
+    /// Weeks with fewer days than the order (e.g. 4-day realization for a
+    /// 5-day lifter) use the induced sub-order. Returns weeks touched.
+    @discardableResult
+    mutating func applyDayOrder(_ order: [Int]) -> Int {
+        guard order.count > 1, Set(order) == Set(0..<order.count) else { return 0 }
+        var touched = 0
+        for wi in weeks.indices where weeks[wi].phase != .meet {
+            let n = weeks[wi].days.count
+            let effective = order.filter { $0 < n }
+            guard effective.count == n, n > 1 else { continue }
+            let reordered = effective.map { weeks[wi].days[$0] }
+            if reordered.map(\.id) != weeks[wi].days.map(\.id) {
+                weeks[wi].days = reordered
+                touched += 1
+            }
+        }
+        return touched
+    }
+
     // MARK: structural editing (deload insertion/removal)
 
     /// Coach rule: deload weeks are NEVER back-to-back. True when inserting a
@@ -450,6 +476,10 @@ struct Client: Codable, Identifiable, Hashable {
     var accBandHi: Double? = nil
     /// Logged top-set results — the lifter's history, independent of any program.
     var logs: [LiftLogEntry] = []
+    /// Training-day order preference: a permutation of day positions (e.g.
+    /// [2,1,0,3] = deadlift day first). nil = factory order. Meet week never
+    /// reorders — platform-week structure (primers early, rest late) is doctrine.
+    var dayOrder: [Int]? = nil
 
     init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
          setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
@@ -488,6 +518,7 @@ struct Client: Codable, Identifiable, Hashable {
         accBandLo = try c.decodeIfPresent(Double.self, forKey: .accBandLo) ?? blockPlan?.accBandLo
         accBandHi = try c.decodeIfPresent(Double.self, forKey: .accBandHi) ?? blockPlan?.accBandHi
         logs = try c.decodeIfPresent([LiftLogEntry].self, forKey: .logs) ?? []
+        dayOrder = try c.decodeIfPresent([Int].self, forKey: .dayOrder)
     }
 }
 
