@@ -641,17 +641,22 @@ enum Engine {
                 if phase == .acc, blockPlan?.accScheme == .dup {
                     days = dupAccDays(week: i + 1, blockLen: b.weeks, fiveDay: fiveDay)
                 }
-                if phase == .acc, blockPlan?.accScheme == .rpeAnchored {
+                if phase == .acc, let plan = blockPlan, plan.accScheme == .rpeAnchored {
                     // Trained-lifter entry point: comp-lift volume work anchored
                     // to honest RPEs (~6.5 entry → ~8.5 exit) instead of the
-                    // soft factory ramp-in (6 @ 67% ≈ RPE 4). Rep-aware bands
-                    // from the RTS table: 6s 72→80%, 8s 69→75%. RPE cap rises
+                    // soft factory ramp-in (6 @ 67% ≈ RPE 4). The band is
+                    // COACH-ADJUSTABLE to match whatever program the lifter is
+                    // transitioning from (defaults: 6s 72→80%). Bench eights
+                    // derive rep-aware as entry−3 → top−5. RPE cap rises
                     // 7 → 8 across the block. Variation slots stay factory.
+                    let lo = min(78, max(60, plan.accBandLo ?? 72))
+                    let hi = min(84, max(lo + 2, plan.accBandHi ?? 80))
                     for di in 0...min(2, days.count - 1) {
                         guard let first = days[di].slots.first, first.exIdx == 0,
                               [LiftPool.squat, .bench, .deadlift].contains(first.pool)
                         else { continue }
-                        let band: (lo: Double, hi: Double) = first.reps >= 8 ? (69, 75) : (72, 80)
+                        let band: (lo: Double, hi: Double) = first.reps >= 8
+                            ? (lo - 3, hi - 5) : (lo, hi)
                         days[di].slots[0].pct = lerp(band.lo, band.hi, t).rounded()
                         days[di].slots[0].rpe = t < 0.5 ? 7 : 8
                     }

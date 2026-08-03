@@ -273,3 +273,28 @@ extension SchemeTests {
         XCTAssertEqual(p.weeks.first { $0.phase == .trans }!.days[0].slots[0].pct, 77)
     }
 }
+
+// MARK: - adjustable RPE-anchored band (transition-aware entry)
+
+extension SchemeTests {
+    func testRPEAnchoredCustomBand() {
+        var plan = BlockPlan(acc: 5, deloadAfterAcc: true, trans: 4, real: 3)
+        plan.accScheme = .rpeAnchored
+        plan.accBandLo = 68        // e.g. transitioning off a hypertrophy block
+        plan.accBandHi = 78
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: plan.total, fiveDay: false,
+                                    library: lib, blockPlan: plan)
+        let acc = p.weeks.filter { $0.phase == .acc }
+        XCTAssertEqual(acc[0].days[0].slots[0].pct, 68, "custom entry honored")
+        XCTAssertEqual(acc[4].days[0].slots[0].pct, 78, "custom top honored")
+        // Bench eights derive: 65 -> 73.
+        XCTAssertEqual(acc[0].days[1].slots[0].pct, 65)
+        XCTAssertEqual(acc[4].days[1].slots[0].pct, 73)
+        // Absurd values clamp at use (entry 90 -> 78; top below entry forced up).
+        plan.accBandLo = 90; plan.accBandHi = 50
+        let clamped = Engine.buildProgram(startPhase: .full, totalWeeks: plan.total, fiveDay: false,
+                                          library: lib, blockPlan: plan)
+        let cw1 = clamped.weeks.first { $0.phase == .acc }!
+        XCTAssertEqual(cw1.days[0].slots[0].pct, 78)
+    }
+}

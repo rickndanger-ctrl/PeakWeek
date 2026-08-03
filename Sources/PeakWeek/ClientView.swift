@@ -89,9 +89,9 @@ struct ClientView: View {
                             client.maxes = client.maxes.converted(from: old, to: newUnit)
                         }
                     }
-                    labeled("Squat max (e1RM)") { maxField($client.maxes.squat, lift: .squat) }
-                    labeled("Bench max (e1RM)") { maxField($client.maxes.bench, lift: .bench) }
-                    labeled("Deadlift max (e1RM)") { maxField($client.maxes.deadlift, lift: .deadlift) }
+                    labeled("Squat max (1RM)") { maxField($client.maxes.squat, lift: .squat) }
+                    labeled("Bench max (1RM)") { maxField($client.maxes.bench, lift: .bench) }
+                    labeled("Deadlift max (1RM)") { maxField($client.maxes.deadlift, lift: .deadlift) }
                     labeled("Meet date") {
                         HStack(spacing: 4) {
                             DatePicker("", selection: Binding(
@@ -631,7 +631,17 @@ struct ClientView: View {
                             Text("Undulating (DUP)").tag(PhaseScheme.dup)
                         }
                         .fixedSize()
-                        .help("RPE-anchored: comp-lift volume work starts where a trained lifter actually works — 6s at 72→80% (8s at 69→75%), RPE ~6.5 entering, ~8.5 leaving — instead of the classic soft ramp-in (6 @ 67% ≈ RPE 4). Variations stay factory.\n\nUndulating: each lift sees a volume day, a speed day, and a strength day across the week — evidence on par with linear, with a freshness edge for trained lifters.")
+                        .help("RPE-anchored: comp-lift volume work starts where a trained lifter actually works — 6s at 72→80% (8s at 69→75%), RPE ~6.5 entering, ~8.5 leaving — instead of the classic soft ramp-in (6 @ 67% ≈ RPE 4). Adjust the band to match the program the lifter is coming from. Variations stay factory.\n\nUndulating: each lift sees a volume day, a speed day, and a strength day across the week — evidence on par with linear, with a freshness edge for trained lifters.")
+                        if planBinding.accScheme.wrappedValue == .rpeAnchored {
+                            HStack(spacing: 4) {
+                                Text("Band").font(.caption2).foregroundStyle(.secondary)
+                                OptionalNumberField(placeholder: "72", value: planBinding.accBandLo, width: 44)
+                                Text("→").foregroundStyle(.secondary)
+                                OptionalNumberField(placeholder: "80", value: planBinding.accBandHi, width: 44)
+                                Text("%").font(.caption2).foregroundStyle(.secondary)
+                            }
+                            .help("Entry → top %% for the sixes (bench eights derive automatically). Match the entry to where the lifter is coming from: fresh off hypertrophy ≈ 68, hardened meet-prep lifter ≈ 74. Blank = 72→80.")
+                        }
                     }
                     Picker("Strength scheme", selection: planBinding.transScheme) {
                         Text("Linear (classic)").tag(PhaseScheme.linear)
@@ -659,7 +669,7 @@ struct ClientView: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.body, design: .monospaced))
                 .frame(width: 90)
-                .help("Programming max — the coach's convention: use the LAST BLOCK'S e1RM, not a months-old gym single. The ƒx button computes it from a top set.")
+                .help("Programming max — the coach's standard: the most recent CLEAN single, competition or gym. Between tests, the ƒx button estimates e1RM from a top set to keep loads honest.")
             Button {
                 e1rmPool = lift
             } label: {

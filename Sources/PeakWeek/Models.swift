@@ -169,6 +169,11 @@ struct BlockPlan: Codable, Hashable {
     /// Manual scheme choices (composability: schemes attach to phases).
     var accScheme: PhaseScheme = .linear
     var transScheme: PhaseScheme = .linear
+    /// RPE-anchored band override — the coach matches the entry point to
+    /// whatever program the lifter is transitioning FROM (nil = 72→80 sixes;
+    /// bench eights derive as entry−3 → top−5).
+    var accBandLo: Double? = nil
+    var accBandHi: Double? = nil
 
     // The deload only exists when there's a volume block for it to follow.
     var total: Int { acc + (acc > 0 && deloadAfterAcc ? 1 : 0) + trans + real }
@@ -188,6 +193,8 @@ struct BlockPlan: Codable, Hashable {
         real = try c.decodeIfPresent(Int.self, forKey: .real) ?? 3
         accScheme = try c.decodeIfPresent(PhaseScheme.self, forKey: .accScheme) ?? .linear
         transScheme = try c.decodeIfPresent(PhaseScheme.self, forKey: .transScheme) ?? .linear
+        accBandLo = try c.decodeIfPresent(Double.self, forKey: .accBandLo)
+        accBandHi = try c.decodeIfPresent(Double.self, forKey: .accBandHi)
     }
 }
 
