@@ -1,42 +1,58 @@
-# CLAUDE.md — Peak Week (native macOS build)
+# CLAUDE.md — Peak Week (native macOS coaching console)
 
 ## What this is
-A SwiftUI macOS app: a powerlifting coaching console using block periodization.
-Client roster → generate 4- or 5-day programs (full meet prep / single blocks / off-season)
-→ edit weekly → copy formatted week text to send to lifters.
-Data persists as JSON at `~/Library/Application Support/PeakWeek/data.json`.
+A SwiftUI macOS app for a solo powerlifting coach using block periodization.
+Client roster → generate 4- or 5-day programs (full meet prep / single blocks /
+off-season) → customize per client → edit weekly → **deliver each week's plan to
+the client** (share sheet, PDF, or scheduled auto-send via Messages/Mail).
+Data persists as JSON at `~/Library/Application Support/PeakWeek/data.json`
+(schema-versioned, auto-backed-up to `data.json.bak` before every write).
 
-## Your job (local Claude Code)
-1. Run `./build.sh` in this folder.
-2. **If the build fails**: read the compiler errors and fix them with the smallest
-   possible change. The engine logic in `Engine.swift` is a direct port of a fully
-   tested JavaScript implementation — its numbers, templates, and algorithms are
-   correct by design. Do NOT change percentages, rep schemes, block allocation math,
-   RPE table values, or exercise load modifiers while fixing compile errors.
-   Compile issues, if any, will be SwiftUI API-level (view modifiers, bindings,
-   availability) — fix those only.
-3. Rebuild until `PeakWeek.app` is produced, then offer to install to /Applications.
-4. Smoke-test: launch the app, add a client named "Test" with maxes 405/275/495 lb,
-   generate a 12-week full prep, confirm: 5 blocks appear on the barbell timeline
-   (Accumulation, Deload, Transmutation, Realization, Meet Week), week 1 Day 1 shows
-   Competition Squat 4×6 @ 67% → 270 lb, and "Copy week" puts text on the clipboard.
-   Then delete the test client.
+## Working on it
+1. Build: `./build.sh` (assembles PeakWeek.app) or `swift build` for iteration.
+2. Test: `swift test` — the suite locks the trusted engine numbers; keep it green.
+3. **Engine defaults are sacred**: percentages, rep schemes, block allocation math,
+   RPE table values, attempt %s (91/97/101.5 standard), and exercise load modifiers
+   are a direct port of a fully tested implementation. Add configurability AROUND
+   them (opt-in profiles/settings); never silently change a default. A client with
+   no settings must program byte-identically forever.
+4. Any persisted-model change needs tolerant decoding (`decodeIfPresent` + defaults
+   in a hand-written `init(from:)`) and a migration test — old data.json files and
+   backups must always open.
 
 ## Architecture
-- `Models.swift` — Codable data types (Client, Program, Week, DayPlan, Slot, enums)
-- `Engine.swift` — pools with load modifiers, RTS RPE table, block allocation,
-  day templates (incl. 5-day variants for acc/trans), program builder, attempt
-  selection, plain-text week export
-- `Store.swift` — AppStore (ObservableObject), JSON persistence, backup/restore panels
-- `PeakWeekApp.swift` — entry, theme, sidebar roster, new-client sheet
-- `ClientView.swift` — client setup, generate/regenerate, barbell timeline, sections
-- `WeekView.swift` — week/day/slot editing, meet attempts card, RPE chart
+- `Models.swift` — Codable types (Client, Program, Week, DayPlan, Slot, AppData
+  with schemaVersion + slot-reference migration)
+- `Engine.swift` — seed exercise catalogue, RTS RPE table, block allocation, day
+  templates, program builder (library-resolved + exclusion substitution), attempt
+  selection, plain-text week export (with weeks-out header)
+- `ExerciseLibrary.swift` — editable, persisted exercise library; UUID identity;
+  seedKey ("pool:index") maps legacy refs; archive/soft-delete rules
+- `ClientSettings.swift` — attempt risk profiles, per-lift training-max % and
+  intensity offsets, exclusions, notes
+- `Delivery.swift` — delivery prefs, send log records, pure schedule math
+  (send moments, catch-up policy: only latest due week sends)
+- `SendBridge.swift` — AppleScript bridges to Messages/Mail (dry-run injectable)
+- `Store.swift` — AppStore: debounced persistence, backup rotation, decode-failure
+  write-freeze, delivery pass runtime, approval queue
+- `WeekExporter.swift` — styled attributed text + paginated PDF (CTFramesetter)
+- `PeakWeekApp.swift` — app entry, theme, sidebar roster, Deliveries badge, Settings scene
+- `ClientView.swift` — setup, delivery prefs, coaching options, timeline, sections
+- `WeekView.swift` — week/day/slot editing, Send menu, meet card, RPE chart
+- `SettingsView.swift` / `DeliveriesView.swift` — library editor, send log/queue
+- `Styles.swift` — square design language (no rounded corners anywhere)
 
 ## Domain rules baked in (do not break)
 - Full prep 10–16 wks: ~40% accumulation / ~40% transmutation / ~24% realization
-  (realization includes meet week); deload inserted between acc→trans at 12+ wks
+  (incl. meet week); deload inserted between acc→trans at 12+ wks
 - Linear progression: main-lift % climbs linearly within each block
 - Last heavy deadlift 10–14 days out; openers (~92% singles) 7–10 days out
-- Meet week: light technique Mon/Tue only; attempts = 91% / 97% / 101.5%
+- Meet week: light technique Mon/Tue only; attempts standard = 91% / 97% / 101.5%
+  (conservative 89.5/94.5/100, aggressive 92.5/97.5/104 — opt-in per client)
 - 5-day adds a Day 5 to accumulation and transmutation ONLY (taper = fewer days)
 - Loads round to 5 lb / 2.5 kg; variation loads = comp 1RM × % × modifier
+- Delivery never double-sends (send log is the source of truth) and catch-up after
+  downtime sends only the latest due week
+
+## Product docs
+`docs/product-spec.md` (prioritized roadmap; P0 shipped) + four research reports.
