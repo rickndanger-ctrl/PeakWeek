@@ -360,15 +360,9 @@ struct ClientView: View {
 
     private var startDateBinding: Binding<Date> {
         Binding(
-            get: { client.startDate ?? Self.nextMonday() },
-            set: { client.startDate = DeliverySchedule.mondayOfWeek(containing: $0) }
+            get: { client.startDate ?? Calendar.current.startOfDay(for: Date()) },
+            set: { client.startDate = Calendar.current.startOfDay(for: $0) }
         )
-    }
-
-    /// DST-safe "next Monday" (calendar day arithmetic, not seconds).
-    static func nextMonday(from date: Date = Date()) -> Date {
-        let inAWeek = Calendar.current.date(byAdding: .day, value: 7, to: date) ?? date
-        return DeliverySchedule.mondayOfWeek(containing: inAWeek)
     }
 
     private var deliveryPanel: some View {
@@ -427,9 +421,10 @@ struct ClientView: View {
                         Toggle("", isOn: $client.delivery.requireReview)
                             .toggleStyle(.switch).labelsHidden()
                     }
-                    labeled("Week 1 starts (Monday)") {
+                    labeled("Day one (week anchor)") {
                         DatePicker("", selection: startDateBinding, displayedComponents: .date)
                             .labelsHidden().frame(width: 130)
+                            .help("The first training day of week 1 — any date, today included. The lifter's weeks run 7 days from this weekday.")
                     }
                 }
                 if let program = client.program {
@@ -447,7 +442,7 @@ struct ClientView: View {
                         }
                         .gridCellColumns(2)
                         labeled("Mid-prep clients") {
-                            Text("Set Week 1 to when their prep actually began (past dates are fine), then pick the week sends should begin — earlier weeks are never sent.")
+                            Text("Set day one to when their prep actually began (past dates fine), then pick the week sends should begin — earlier weeks are never sent.")
                                 .font(.caption).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -490,8 +485,11 @@ struct ClientView: View {
 
     private func planFromMeetDate() {
         guard let meet = client.meetDate else { return }
-        let startMonday = Self.nextMonday()
-        let available = Engine.weeksAvailable(startMonday: startMonday, meetDate: meet)
+        // Day one = TODAY (or the anchor the coach already chose, if it's
+        // today-or-future) — start coaching someone new right away.
+        let today = Calendar.current.startOfDay(for: Date())
+        let dayOne = client.startDate.map { max(Calendar.current.startOfDay(for: $0), today) } ?? today
+        let available = Engine.weeksAvailable(startMonday: dayOne, meetDate: meet)
         guard let plan = Engine.meetPlan(availableWeeks: available) else {
             meetPlanSummary = "Only \(available) wk\(available == 1 ? "" : "s") to the meet — too close to program. Coach meet week by hand (Peaking block needs 3+)."
             return
@@ -499,8 +497,9 @@ struct ClientView: View {
         client.setupPhase = plan.phase
         client.setupWeeks = min(plan.phase.maxWeeks, max(plan.phase.minWeeks, plan.weeks))
         client.blockPlan = plan.blockPlan
-        client.startDate = startMonday
-        meetPlanSummary = plan.summary + " · week 1 starts \(startMonday.formatted(.dateTime.month(.abbreviated).day())) — press Generate."
+        client.startDate = dayOne
+        let isToday = dayOne == today
+        meetPlanSummary = plan.summary + " · day one \(isToday ? "TODAY, " : "")\(dayOne.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())) — press Generate."
     }
 
     private func firstSendLabel(_ wk: Week, program: Program) -> String {
@@ -630,8 +629,9 @@ struct ClientView: View {
         // Old-program queue entries must not survive into the new program.
         store.retireStaleQueued(clientID: client.id, currentStamp: client.program?.createdAt)
         if client.startDate == nil {
-            // Default anchor: next Monday.
-            client.startDate = Self.nextMonday()
+            // Default anchor: TODAY — day one is now, the lifter's week runs
+            // from whatever weekday this is. Coach can re-date it any time.
+            client.startDate = Calendar.current.startOfDay(for: Date())
         }
         if let first = client.program?.weeks.first { expandedWeeks = [first.id] }
     }

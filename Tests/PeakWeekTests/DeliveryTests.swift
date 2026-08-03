@@ -122,6 +122,54 @@ final class DeliveryTests: XCTestCase {
                                               prefs: noStart.delivery, records: []))
     }
 
+    // MARK: - day-one anchoring (lifter's week starts any weekday)
+
+    func testWednesdayAnchoredWeeks() {
+        // Day one Wednesday Aug 12: weeks run Wed -> Tue.
+        let wednesday = date(2026, 8, 12)
+        XCTAssertEqual(DeliverySchedule.weekStart(startDate: wednesday, weekNum: 1), wednesday)
+        XCTAssertEqual(DeliverySchedule.weekStart(startDate: wednesday, weekNum: 3), date(2026, 8, 26))
+        var c = makeClient()
+        c.startDate = wednesday
+        // Tue Aug 18 is still week 1; Wed Aug 19 begins week 2.
+        XCTAssertEqual(DeliverySchedule.currentWeek(now: date(2026, 8, 18, 12), startDate: wednesday,
+                                                    program: c.program!), 1)
+        XCTAssertEqual(DeliverySchedule.currentWeek(now: date(2026, 8, 19, 12), startDate: wednesday,
+                                                    program: c.program!), 2)
+    }
+
+    func testSendMomentFollowsAnchorWeekday() {
+        let wednesday = date(2026, 8, 12)
+        // Send-day == anchor day (Wednesday=4): morning of day one itself.
+        var prefs = DeliveryPrefs(); prefs.weekday = 4; prefs.hour = 8
+        XCTAssertEqual(DeliverySchedule.sendMoment(startDate: wednesday, weekNum: 1, prefs: prefs),
+                       date(2026, 8, 12, 8))
+        // Send Sunday 18:00 ahead of a Wednesday-anchored week: the Sunday before.
+        prefs.weekday = 1; prefs.hour = 18
+        XCTAssertEqual(DeliverySchedule.sendMoment(startDate: wednesday, weekNum: 1, prefs: prefs),
+                       date(2026, 8, 9, 18))
+        // Week 2's Sunday send: Aug 16.
+        XCTAssertEqual(DeliverySchedule.sendMoment(startDate: wednesday, weekNum: 2, prefs: prefs),
+                       date(2026, 8, 16, 18))
+    }
+
+    func testStartTodaySendsDayOne() {
+        // Coach starts a lifter TODAY (a Monday), sends on Mondays 10:00:
+        // week 1's plan goes out the same morning.
+        var prefs = DeliveryPrefs(); prefs.weekday = 2; prefs.hour = 10
+        let today = date(2026, 8, 3)
+        let moment = DeliverySchedule.sendMoment(startDate: today, weekNum: 1, prefs: prefs)
+        XCTAssertEqual(moment, date(2026, 8, 3, 10))
+        var c = makeClient()
+        c.startDate = today
+        c.delivery = prefs
+        c.delivery.autoSend = true
+        c.delivery.recipient = "+15550100000"
+        let due = DeliverySchedule.dueSend(now: date(2026, 8, 3, 11), startDate: c.startDate,
+                                          program: c.program, prefs: c.delivery, records: [])
+        XCTAssertEqual(due?.weekNum, 1, "day-one start is due the same day at send time")
+    }
+
     // MARK: - mid-prep onboarding: firstSendWeek
 
     func testFirstSendWeekSkipsEarlierWeeksEntirely() {

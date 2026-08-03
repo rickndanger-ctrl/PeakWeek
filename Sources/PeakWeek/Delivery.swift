@@ -110,13 +110,16 @@ struct SendRecord: Codable, Hashable, Identifiable {
 
 enum DeliverySchedule {
 
-    /// Monday 00:00 local of the week `weekNum` (1-based) for a program anchored
-    /// at `startDate` (itself normalized to a Monday).
+    /// 00:00 local on day one of week `weekNum` (1-based). The program anchors
+    /// to WHATEVER date the coach chose as day one — a lifter whose week runs
+    /// Wednesday→Tuesday gets Wednesday-anchored weeks. (Old data stored
+    /// Mondays; identical behavior for those.)
     static func weekStart(startDate: Date, weekNum: Int, calendar: Calendar = .current) -> Date {
-        let monday = mondayOfWeek(containing: startDate, calendar: calendar)
-        return calendar.date(byAdding: .day, value: (weekNum - 1) * 7, to: monday)!
+        let dayOne = calendar.startOfDay(for: startDate)
+        return calendar.date(byAdding: .day, value: (weekNum - 1) * 7, to: dayOne)!
     }
 
+    /// Convenience for suggesting a Monday (legacy default affordances).
     static func mondayOfWeek(containing date: Date, calendar: Calendar = .current) -> Date {
         var cal = calendar
         cal.firstWeekday = 2 // Monday
@@ -125,19 +128,18 @@ enum DeliverySchedule {
     }
 
     /// The moment week `weekNum`'s plan should go out: the occurrence of
-    /// prefs.weekday/prefs.hour in the 7 days ENDING at the week's Monday.
-    /// (Sunday 18:00 prefs → the evening before the training week begins.
-    ///  Monday prefs → the morning the week begins.)
+    /// prefs.weekday/prefs.hour in the 7 days ENDING at the week's day one.
+    /// (Send-day == anchor day → the morning the week begins; any other day →
+    /// the matching day in the week BEFORE, e.g. Sunday-evening sends ahead of
+    /// a Monday-anchored week.)
     static func sendMoment(startDate: Date, weekNum: Int, prefs: DeliveryPrefs,
                            calendar: Calendar = .current) -> Date {
         let start = weekStart(startDate: startDate, weekNum: weekNum, calendar: calendar)
-        // Walk back from Monday 00:00 to the requested weekday at the requested hour.
-        // Monday itself counts as "this week" (offset 0), Sunday as -1 day, etc.
-        let weekdayOfMonday = 2
+        let anchorWeekday = calendar.component(.weekday, from: start)
         let weekday = min(7, max(1, prefs.weekday))
         let hour = min(23, max(0, prefs.hour))
-        var dayOffset = (weekday - weekdayOfMonday + 7) % 7        // Mon->0, Tue->1 … Sun->6
-        if dayOffset > 0 { dayOffset -= 7 }                        // Tue..Sun land BEFORE the week
+        var dayOffset = (weekday - anchorWeekday + 7) % 7   // anchor->0, next day->1 …
+        if dayOffset > 0 { dayOffset -= 7 }                 // non-anchor days land BEFORE the week
         let day = calendar.date(byAdding: .day, value: dayOffset, to: start) ?? start
         return calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
     }
