@@ -87,13 +87,14 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
 /// Per-phase progression scheme — the coach picks these MANUALLY (never
 /// auto-applied). Linear is the factory behavior.
 enum PhaseScheme: String, Codable, CaseIterable, Identifiable {
-    case linear, wave, dup
+    case linear, wave, dup, rpeAnchored
     var id: String { rawValue }
     var label: String {
         switch self {
         case .linear: return "Linear (classic)"
         case .wave: return "Wave (3-week waves)"
         case .dup: return "Undulating (DUP)"
+        case .rpeAnchored: return "Linear — RPE-anchored (72–80%)"
         }
     }
 }

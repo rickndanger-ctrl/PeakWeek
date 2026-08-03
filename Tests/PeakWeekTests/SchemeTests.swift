@@ -232,3 +232,44 @@ final class SchemeTests: XCTestCase {
         XCTAssertEqual(plan.transScheme, .linear)
     }
 }
+
+// MARK: - e1RM + RPE-anchored preset (coach defaults)
+
+extension SchemeTests {
+
+    func testE1RMFromTable() {
+        // 190 × 4 @ 8 → table 4@8 = 84% → 226.19
+        XCTAssertEqual(Engine.e1RM(load: 190, reps: 4, rpe: 8)!, 190 / 0.84, accuracy: 0.01)
+        // Single @ 10 is the definition of a max.
+        XCTAssertEqual(Engine.e1RM(load: 405, reps: 1, rpe: 10)!, 405, accuracy: 0.001)
+        // Half-RPE column: 3 @ 8.5 = 88%.
+        XCTAssertEqual(Engine.e1RM(load: 300, reps: 3, rpe: 8.5)!, 300 / 0.88, accuracy: 0.01)
+        // Interpolated reps: 7 @ 8 between 6@8 (79) and 8@8 (74) = 76.5%.
+        XCTAssertEqual(Engine.e1RM(load: 200, reps: 7, rpe: 8)!, 200 / 0.765, accuracy: 0.01)
+        // Nonsense rejected.
+        XCTAssertNil(Engine.e1RM(load: 0, reps: 4, rpe: 8))
+        XCTAssertNil(Engine.e1RM(load: 200, reps: 15, rpe: 8))
+    }
+
+    func testRPEAnchoredPresetBands() {
+        var plan = BlockPlan(acc: 5, deloadAfterAcc: true, trans: 4, real: 3)
+        plan.accScheme = .rpeAnchored
+        let p = Engine.buildProgram(startPhase: .full, totalWeeks: plan.total, fiveDay: false,
+                                    library: lib, blockPlan: plan)
+        let acc = p.weeks.filter { $0.phase == .acc }
+        // Squat sixes: 72 → 80; RPE 7 first half, 8 second half.
+        XCTAssertEqual(acc[0].days[0].slots[0].pct, 72)
+        XCTAssertEqual(acc[0].days[0].slots[0].rpe, 7)
+        XCTAssertEqual(acc[4].days[0].slots[0].pct, 80)
+        XCTAssertEqual(acc[4].days[0].slots[0].rpe, 8)
+        // Bench eights: rep-aware band 69 → 75.
+        XCTAssertEqual(acc[0].days[1].slots[0].pct, 69)
+        XCTAssertEqual(acc[4].days[1].slots[0].pct, 75)
+        // Deadlift sixes follow the 72→80 band too.
+        XCTAssertEqual(acc[0].days[2].slots[0].pct, 72)
+        // Variations stay factory (pause squat 60→66 lerp).
+        XCTAssertEqual(acc[0].days[0].slots[1].pct, 60)
+        // Trans untouched.
+        XCTAssertEqual(p.weeks.first { $0.phase == .trans }!.days[0].slots[0].pct, 77)
+    }
+}

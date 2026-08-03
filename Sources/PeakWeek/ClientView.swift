@@ -89,9 +89,9 @@ struct ClientView: View {
                             client.maxes = client.maxes.converted(from: old, to: newUnit)
                         }
                     }
-                    labeled("Squat 1RM") { maxField($client.maxes.squat) }
-                    labeled("Bench 1RM") { maxField($client.maxes.bench) }
-                    labeled("Deadlift 1RM") { maxField($client.maxes.deadlift) }
+                    labeled("Squat max (e1RM)") { maxField($client.maxes.squat, lift: .squat) }
+                    labeled("Bench max (e1RM)") { maxField($client.maxes.bench, lift: .bench) }
+                    labeled("Deadlift max (e1RM)") { maxField($client.maxes.deadlift, lift: .deadlift) }
                     labeled("Meet date") {
                         HStack(spacing: 4) {
                             DatePicker("", selection: Binding(
@@ -627,10 +627,11 @@ struct ClientView: View {
                     if planBinding.acc.wrappedValue > 0 {
                         Picker("Volume scheme", selection: planBinding.accScheme) {
                             Text("Linear (classic)").tag(PhaseScheme.linear)
+                            Text("Linear — RPE-anchored").tag(PhaseScheme.rpeAnchored)
                             Text("Undulating (DUP)").tag(PhaseScheme.dup)
                         }
                         .fixedSize()
-                        .help("Undulating: each lift sees a volume day, a speed day, and a strength day across the week — evidence on par with linear, with a freshness edge for trained lifters. Loads still follow % bands with RPE caps.")
+                        .help("RPE-anchored: comp-lift volume work starts where a trained lifter actually works — 6s at 72→80% (8s at 69→75%), RPE ~6.5 entering, ~8.5 leaving — instead of the classic soft ramp-in (6 @ 67% ≈ RPE 4). Variations stay factory.\n\nUndulating: each lift sees a volume day, a speed day, and a strength day across the week — evidence on par with linear, with a freshness edge for trained lifters.")
                     }
                     Picker("Strength scheme", selection: planBinding.transScheme) {
                         Text("Linear (classic)").tag(PhaseScheme.linear)
@@ -648,13 +649,34 @@ struct ClientView: View {
         }
     }
 
-    private func maxField(_ value: Binding<Double>) -> some View {
+    @State private var e1rmPool: LiftPool?
+
+    private func maxField(_ value: Binding<Double>, lift: LiftPool) -> some View {
         // Show at most 1 decimal; stored value keeps full precision so unit
         // conversions round-trip exactly.
-        TextField("", value: value, format: .number.precision(.fractionLength(0...1)))
-            .textFieldStyle(.roundedBorder)
-            .font(.system(.body, design: .monospaced))
-            .frame(width: 90)
+        HStack(spacing: 2) {
+            TextField("", value: value, format: .number.precision(.fractionLength(0...1)))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
+                .frame(width: 90)
+                .help("Programming max — the coach's convention: use the LAST BLOCK'S e1RM, not a months-old gym single. The ƒx button computes it from a top set.")
+            Button {
+                e1rmPool = lift
+            } label: {
+                Image(systemName: "function")
+            }
+            .buttonStyle(.borderless)
+            .font(.caption)
+            .help("Compute e1RM from a top set (load × reps @ RPE) and apply it")
+            .popover(isPresented: Binding(
+                get: { e1rmPool == lift },
+                set: { if !$0 { e1rmPool = nil } }
+            )) {
+                E1RMPopover(lift: lift, unit: client.unit) { e1rm in
+                    value.wrappedValue = e1rm
+                }
+            }
+        }
     }
 
     private func labeled<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
@@ -925,5 +947,69 @@ struct ClientView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
             if copiedWeek == week.num { copiedWeek = nil }
         }
+    }
+}
+
+// MARK: - e1RM calculator
+
+/// Coach's reference-max convention: program off the LAST BLOCK'S e1RM.
+/// Type the lifter's top set → the RTS table produces the estimate → Apply
+/// writes it straight into the programming max (loads recalc everywhere).
+struct E1RMPopover: View {
+    @Environment(\.dismiss) private var dismiss
+    let lift: LiftPool
+    let unit: Unit
+    var onApply: (Double) -> Void
+
+    @State private var load = 0.0
+    @State private var reps = 4
+    @State private var rpe = 8.0
+
+    private var estimate: Double? {
+        Engine.e1RM(load: load, reps: reps, rpe: rpe)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("e1RM — \(lift.groupLabel)").font(.headline)
+            Text("Last block's best top set:")
+                .font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                TextField("load", value: $load, format: .number.precision(.fractionLength(0...1)))
+                    .textFieldStyle(.roundedBorder).frame(width: 70)
+                    .font(.system(.body, design: .monospaced))
+                Text(unit.rawValue).foregroundStyle(.secondary)
+                Text("×").foregroundStyle(.secondary)
+                Stepper(value: $reps, in: 1...12) { Text("\(reps)").monospacedDigit() }
+                    .fixedSize()
+                Text("@ RPE").foregroundStyle(.secondary)
+                Stepper(value: $rpe, in: 6.5...10, step: 0.5) {
+                    Text(rpe == rpe.rounded() ? String(Int(rpe)) : String(rpe)).monospacedDigit()
+                }
+                .fixedSize()
+            }
+            HStack {
+                if let e = estimate {
+                    Text("e1RM ≈ \(Engine.loadString(Engine.roundLoad(e, unit: unit), unit: unit))")
+                        .font(.system(.body, design: .monospaced)).bold()
+                } else {
+                    Text("enter the set…").font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button("Apply") {
+                    if let e = estimate {
+                        onApply((e * 10).rounded() / 10)   // store to 0.1; loads round at prescription
+                        dismiss()
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(estimate == nil)
+            }
+            Text("Loads and attempts recalc everywhere the moment you apply.")
+                .font(.system(size: 9)).foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .frame(width: 380)
     }
 }

@@ -94,6 +94,44 @@ enum Engine {
 
     static func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double { a + (b - a) * t }
 
+    /// e1RM from a top set (load × reps @ RPE) via the RTS table, interpolating
+    /// between listed rep rows (7 ⇒ between 6 and 8) and half-RPE columns.
+    /// This is the coach's reference max convention: program off the LAST
+    /// BLOCK'S e1RM, not a months-old gym single.
+    static func e1RM(load: Double, reps: Int, rpe: Double) -> Double? {
+        guard load > 0, reps >= 1, reps <= 12, rpe >= 6.5, rpe <= 10 else { return nil }
+        let clampedRPE = min(10, max(7, rpe))   // table floor is 7; 6.5 rounds up
+
+        func pct(forReps r: Int) -> Double? {
+            guard let row = rpeTable.first(where: { $0.reps == r })?.row else { return nil }
+            // Exact column or linear interpolation between half-steps.
+            if let hit = row.first(where: { $0.rpe == clampedRPE }) { return Double(hit.pct) }
+            guard let lower = row.last(where: { $0.rpe < clampedRPE }),
+                  let upper = row.first(where: { $0.rpe > clampedRPE }) else { return nil }
+            let t = (clampedRPE - lower.rpe) / (upper.rpe - lower.rpe)
+            return lerp(Double(lower.pct), Double(upper.pct), t)
+        }
+
+        let listed = rpeTable.map(\.reps)
+        let percent: Double?
+        if listed.contains(reps) {
+            percent = pct(forReps: reps)
+        } else if reps < (listed.max() ?? 10) {
+            // Interpolate between neighbouring rep rows (7 → 6 & 8, 9 → 8 & 10).
+            guard let below = listed.last(where: { $0 < reps }),
+                  let above = listed.first(where: { $0 > reps }),
+                  let pLow = pct(forReps: below), let pHigh = pct(forReps: above) else { return nil }
+            let t = Double(reps - below) / Double(above - below)
+            percent = lerp(pLow, pHigh, t)
+        } else {
+            // Beyond the table (11-12 reps): extend the 8→10 slope conservatively.
+            guard let p8 = pct(forReps: 8), let p10 = pct(forReps: 10) else { return nil }
+            percent = p10 + (p10 - p8) / 2 * Double(reps - 10)
+        }
+        guard let percent, percent > 0 else { return nil }
+        return load / (percent / 100)
+    }
+
     static func loadString(_ x: Double, unit: Unit) -> String {
         let v = x == x.rounded() ? String(Int(x)) : String(format: "%.1f", x)
         return "\(v) \(unit.rawValue)"
@@ -602,6 +640,21 @@ enum Engine {
                 // Opt-in schemes (coach's manual choice on the block plan):
                 if phase == .acc, blockPlan?.accScheme == .dup {
                     days = dupAccDays(week: i + 1, blockLen: b.weeks, fiveDay: fiveDay)
+                }
+                if phase == .acc, blockPlan?.accScheme == .rpeAnchored {
+                    // Trained-lifter entry point: comp-lift volume work anchored
+                    // to honest RPEs (~6.5 entry → ~8.5 exit) instead of the
+                    // soft factory ramp-in (6 @ 67% ≈ RPE 4). Rep-aware bands
+                    // from the RTS table: 6s 72→80%, 8s 69→75%. RPE cap rises
+                    // 7 → 8 across the block. Variation slots stay factory.
+                    for di in 0...min(2, days.count - 1) {
+                        guard let first = days[di].slots.first, first.exIdx == 0,
+                              [LiftPool.squat, .bench, .deadlift].contains(first.pool)
+                        else { continue }
+                        let band: (lo: Double, hi: Double) = first.reps >= 8 ? (69, 75) : (72, 80)
+                        days[di].slots[0].pct = lerp(band.lo, band.hi, t).rounded()
+                        days[di].slots[0].rpe = t < 0.5 ? 7 : 8
+                    }
                 }
                 if phase == .trans, blockPlan?.transScheme == .wave {
                     for di in days.indices {
