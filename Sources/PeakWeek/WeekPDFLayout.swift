@@ -160,6 +160,17 @@ enum WeekPDFLayout {
                       color: NSColor = WeekPDFLayout.faint) {
             fill(CGRect(x: x0, y: yTop, width: x1 - x0, height: 0.5), color)
         }
+
+        /// Outlined rectangle (top-down coordinates, same single conversion
+        /// as fill). Used for the per-exercise check-off boxes.
+        func strokeRect(_ rect: CGRect, color: NSColor, width: CGFloat = 0.8) {
+            ctx.saveGState()
+            ctx.setStrokeColor(color.cgColor)
+            ctx.setLineWidth(width)
+            ctx.stroke(CGRect(x: rect.minX, y: pageRect.height - rect.minY - rect.height,
+                              width: rect.width, height: rect.height))
+            ctx.restoreGState()
+        }
     }
 
     // MARK: - document
@@ -177,7 +188,7 @@ enum WeekPDFLayout {
         columnLegend(r)
 
         for day in week.days {
-            dayBlock(r, day: day, client: client, library: library)
+            dayBlock(r, day: day, phase: week.phase, client: client, library: library)
         }
 
         if !week.note.isEmpty {
@@ -217,12 +228,26 @@ enum WeekPDFLayout {
                font: font(21, .black), kern: 0.5)
         r.y += 30
 
-        var meta = "WEEK \(week.num) OF \(program.weeks.count)   ·   \(week.phase.label.uppercased())"
+        // The phase word carries its accent color — same identity the app's
+        // timeline uses, so a glance says which block this week lives in.
+        // Segments advance by measured width + a fixed gap (trailing spaces
+        // are trimmed from measured widths, so gaps must be explicit).
+        let metaFont = font(9.5, .bold)
+        let gap: CGFloat = 7
+        var metaX = contentLeft
+        metaX += r.draw("WEEK \(week.num) OF \(program.weeks.count)",
+                        x: metaX, at: r.y, font: metaFont, kern: 0.8).width + gap
+        metaX += r.draw("·", x: metaX, at: r.y, font: metaFont, color: gray).width + gap
+        metaX += r.draw(week.phase.label.uppercased(), x: metaX, at: r.y,
+                        font: metaFont, color: phaseAccent(week.phase), kern: 0.8).width + gap
         if program.startPhase == .full || program.startPhase == .real {
             let out = program.weeks.count - week.num
-            if out > 0 { meta += "   ·   \(out) WK\(out == 1 ? "" : "S") OUT" }
+            if out > 0 {
+                metaX += r.draw("·", x: metaX, at: r.y, font: metaFont, color: gray).width + gap
+                r.draw("\(out) WK\(out == 1 ? "" : "S") OUT",
+                       x: metaX, at: r.y, font: metaFont, kern: 0.8)
+            }
         }
-        r.draw(meta, x: contentLeft, at: r.y, font: font(9.5, .bold), kern: 0.8)
         r.y += 18
         r.hairline(atY: r.y, color: NSColor(white: 0.3, alpha: 1))
         r.y += 4
@@ -239,8 +264,8 @@ enum WeekPDFLayout {
         r.y += 14
     }
 
-    private static func dayBlock(_ r: Renderer, day: DayPlan, client: Client,
-                                 library: ExerciseLibrary) {
+    private static func dayBlock(_ r: Renderer, day: DayPlan, phase: Phase,
+                                 client: Client, library: ExerciseLibrary) {
         let rowH: CGFloat = 19
         let noteH: CGFloat = 12
         var needed: CGFloat = 24 + 8
@@ -248,9 +273,10 @@ enum WeekPDFLayout {
         needed = min(needed, 120)   // keep header + a few rows together at least
         r.ensure(needed)
 
-        // Day bar
+        // Day bar, with a phase-colored notch on the left edge.
         r.fill(CGRect(x: contentLeft, y: r.y, width: contentWidth, height: 20), barFill)
-        r.draw(day.title.uppercased(), x: contentLeft + 10, at: r.y + 4.5,
+        r.fill(CGRect(x: contentLeft, y: r.y, width: 4, height: 20), phaseAccent(phase))
+        r.draw(day.title.uppercased(), x: contentLeft + 12, at: r.y + 4.5,
                font: font(9, .heavy), color: .white, kern: 1.1)
         r.y += 26
 
@@ -264,10 +290,14 @@ enum WeekPDFLayout {
 
         for (i, slot) in day.slots.enumerated() {
             r.ensure(rowH + (slot.note != nil ? noteH : 0) + 4)
+            // Check-off box — for lifters who print the sheet or mark up the
+            // PDF; ticking sets done is half the fun.
+            r.strokeRect(CGRect(x: contentLeft, y: r.y + 2, width: 7, height: 7),
+                         color: NSColor(white: 0.55, alpha: 1))
             let name = Engine.slotName(slot, library: library)
             var displayName = name
             if slot.filmThis == true { displayName += "  ◉ FILM" }
-            r.draw(displayName, x: Cols.exercise, at: r.y, font: font(10, .semibold))
+            r.draw(displayName, x: Cols.exercise + 4, at: r.y, font: font(10, .semibold))
             r.draw("\(slot.sets) × \(slot.reps)", x: Cols.setsRepsCenter, at: r.y,
                    font: mono(9.5), align: .center)
 
@@ -295,7 +325,9 @@ enum WeekPDFLayout {
                 let rir = 10 - slot.rpe
                 effortStr = (rir == rir.rounded() ? String(Int(rir)) : String(rir)) + " RIR"
             } else {
-                effortStr = slot.rpe == slot.rpe.rounded() ? String(Int(slot.rpe)) : String(slot.rpe)
+                // Spelled out, mirroring "2 RIR" — the column explains itself.
+                effortStr = "RPE " + (slot.rpe == slot.rpe.rounded()
+                                      ? String(Int(slot.rpe)) : String(slot.rpe))
             }
             r.draw(effortStr, x: Cols.rpeCenter, at: r.y, font: mono(9.5), align: .center)
             r.y += rowH - 5
