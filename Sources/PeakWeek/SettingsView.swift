@@ -1,14 +1,55 @@
 import SwiftUI
+import ServiceManagement
 
 // MARK: - Settings window (⌘,)
 
 struct SettingsView: View {
     var body: some View {
         TabView {
+            GeneralSettingsView()
+                .tabItem { Label("General", systemImage: "gearshape") }
             LibrarySettingsView()
                 .tabItem { Label("Exercise Library", systemImage: "list.bullet.rectangle") }
         }
         .frame(width: 640, height: 460)
+    }
+}
+
+// MARK: - General
+
+struct GeneralSettingsView: View {
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var loginItemError: String?
+
+    var body: some View {
+        Form {
+            Toggle("Open Peak Week at login", isOn: $launchAtLogin)
+                .onChange(of: launchAtLogin) { on in
+                    do {
+                        if on { try SMAppService.mainApp.register() }
+                        else { try SMAppService.mainApp.unregister() }
+                        loginItemError = nil
+                    } catch {
+                        loginItemError = error.localizedDescription
+                        launchAtLogin = SMAppService.mainApp.status == .enabled
+                    }
+                }
+            Text("Scheduled weekly sends only go out while Peak Week is running — opening at login means Monday-morning plans never get missed.")
+                .font(.caption).foregroundStyle(.secondary)
+            if let err = loginItemError {
+                Text(err).font(.caption).foregroundStyle(.red)
+            }
+            Divider().padding(.vertical, 8)
+            LabeledContent("Data file") {
+                Button("Reveal in Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([AppStore.dataURL])
+                }
+            }
+            Text("Backups: automatic .bak before every save, plus manual Backup/Restore in the toolbar Data menu.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(24)
+        .frame(maxWidth: 480)
     }
 }
 
