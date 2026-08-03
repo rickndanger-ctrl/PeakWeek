@@ -941,7 +941,11 @@ struct ClientView: View {
                             ? nil
                             : { store.sendNow(clientID: client.id, weekNum: program.weeks[wIdx].num) },
                         onRemoveDeload: program.weeks[wIdx].phase == .deload
-                            ? { removeDeload(at: wIdx) } : nil
+                            ? { removeDeload(at: wIdx) } : nil,
+                        onBulkApply: { dayID, slotID, dryRun in
+                            bulkApplySlot(weekNum: program.weeks[wIdx].num,
+                                          dayID: dayID, slotID: slotID, dryRun: dryRun)
+                        }
                     )
                 }
             }
@@ -1007,6 +1011,22 @@ struct ClientView: View {
             client.delivery.firstSendWeek = first - 1
         }
         client.program = program
+    }
+
+    /// Bulk edit: resolve the slot's position, then count (dry run) or apply
+    /// its configuration to all later same-phase weeks.
+    private func bulkApplySlot(weekNum: Int, dayID: UUID, slotID: UUID, dryRun: Bool) -> Int {
+        guard var program = client.program,
+              let wIdx = program.weeks.firstIndex(where: { $0.num == weekNum }),
+              let dIdx = program.weeks[wIdx].days.firstIndex(where: { $0.id == dayID }),
+              let sIdx = program.weeks[wIdx].days[dIdx].slots.firstIndex(where: { $0.id == slotID })
+        else { return 0 }
+        if dryRun {
+            return program.remainingWeeksForSlot(fromWeek: weekNum, dayIndex: dIdx, slotIndex: sIdx)
+        }
+        let count = program.applySlotToRemainingWeeks(fromWeek: weekNum, dayIndex: dIdx, slotIndex: sIdx)
+        if count > 0 { client.program = program }
+        return count
     }
 
     private func copyWeek(_ week: Week, program: Program) {

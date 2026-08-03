@@ -202,6 +202,74 @@ final class StructureTests: XCTestCase {
         XCTAssertEqual(p.weeks[0].days[0].slots[0].pct, 77)
     }
 
+    // MARK: - bulk edit: apply slot to remaining weeks
+
+    func testBulkApplyPropagatesWithinPhaseOnly() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        // Edit week 2, day 1 (index 0), last slot — an accessory (pct == nil).
+        let sIdx = p.weeks[1].days[0].slots.count - 1
+        p.weeks[1].days[0].slots[sIdx].custom = "Weighted Plank"
+        p.weeks[1].days[0].slots[sIdx].exerciseID = nil
+        p.weeks[1].days[0].slots[sIdx].sets = 4
+        p.weeks[1].days[0].slots[sIdx].reps = 12
+        p.weeks[1].days[0].slots[sIdx].rpe = 7    // RIR 3
+
+        let accWeeksAfter = p.weeks.filter { $0.phase == .acc && $0.num > 2 }.count
+        XCTAssertEqual(p.remainingWeeksForSlot(fromWeek: 2, dayIndex: 0, slotIndex: sIdx),
+                       accWeeksAfter, "dry run counts later same-phase weeks")
+
+        let applied = p.applySlotToRemainingWeeks(fromWeek: 2, dayIndex: 0, slotIndex: sIdx)
+        XCTAssertEqual(applied, accWeeksAfter)
+
+        for w in p.weeks where w.phase == .acc && w.num > 2 {
+            let s = w.days[0].slots[sIdx]
+            XCTAssertEqual(s.custom, "Weighted Plank")
+            XCTAssertNil(s.exerciseID)
+            XCTAssertEqual(s.sets, 4)
+            XCTAssertEqual(s.reps, 12)
+            XCTAssertEqual(s.rpe, 7)
+        }
+        // Week 1 (before the source) is untouched.
+        XCTAssertNil(p.weeks[0].days[0].slots[sIdx].custom)
+        // Non-acc phases are untouched.
+        for w in p.weeks where w.phase != .acc {
+            if w.days[0].slots.indices.contains(sIdx) {
+                XCTAssertNil(w.days[0].slots[sIdx].custom,
+                             "week \(w.num) (\(w.phase)) must not inherit the acc edit")
+            }
+        }
+    }
+
+    func testBulkApplyPreservesPerWeekPct() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        // Main squat slot in week 1 of acc: change sets/reps, then bulk apply.
+        let before = p.weeks.filter { $0.phase == .acc }.map { $0.days[0].slots[0].pct! }
+        p.weeks[0].days[0].slots[0].sets = 5
+        p.weeks[0].days[0].slots[0].reps = 5
+        _ = p.applySlotToRemainingWeeks(fromWeek: 1, dayIndex: 0, slotIndex: 0)
+
+        let after = p.weeks.filter { $0.phase == .acc }.map { $0.days[0].slots[0].pct! }
+        XCTAssertEqual(after, before, "each week keeps its own % — the 67→75 ramp survives")
+        for w in p.weeks where w.phase == .acc {
+            XCTAssertEqual(w.days[0].slots[0].sets, 5)
+            XCTAssertEqual(w.days[0].slots[0].reps, 5)
+        }
+    }
+
+    func testBulkApplyFromLastWeekOfPhaseIsNoop() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        let lastAcc = p.weeks.last { $0.phase == .acc }!.num
+        XCTAssertEqual(p.remainingWeeksForSlot(fromWeek: lastAcc, dayIndex: 0, slotIndex: 0), 0)
+        XCTAssertEqual(p.applySlotToRemainingWeeks(fromWeek: lastAcc, dayIndex: 0, slotIndex: 0), 0)
+    }
+
+    func testBulkApplyBadCoordinatesAreSafe() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        XCTAssertEqual(p.applySlotToRemainingWeeks(fromWeek: 99, dayIndex: 0, slotIndex: 0), 0)
+        XCTAssertEqual(p.applySlotToRemainingWeeks(fromWeek: 1, dayIndex: 9, slotIndex: 0), 0)
+        XCTAssertEqual(p.applySlotToRemainingWeeks(fromWeek: 1, dayIndex: 0, slotIndex: 99), 0)
+    }
+
     // MARK: - client blockPlan decode tolerance
 
     func testClientBlockPlanDecodes() throws {

@@ -13,6 +13,8 @@ struct WeekView: View {
     let onCopy: () -> Void
     var onSendNow: (() -> Void)? = nil
     var onRemoveDeload: (() -> Void)? = nil
+    /// (dayID, slotID, dryRun) -> weeks touched. Threaded down to SlotRow.
+    var onBulkApply: ((UUID, UUID, Bool) -> Int)? = nil
     @State private var confirmSendNow = false
     @State private var confirmRemoveDeload = false
 
@@ -140,7 +142,7 @@ struct WeekView: View {
             let cols = [GridItem(.adaptive(minimum: 320), spacing: 14, alignment: .top)]
             LazyVGrid(columns: cols, alignment: .leading, spacing: 14) {
                 ForEach($week.days) { $day in
-                    DayCard(day: $day, client: client)
+                    DayCard(day: $day, client: client, onBulkApply: onBulkApply)
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
@@ -165,6 +167,7 @@ struct DayCard: View {
     @EnvironmentObject var store: AppStore
     @Binding var day: DayPlan
     let client: Client
+    var onBulkApply: ((UUID, UUID, Bool) -> Int)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -176,7 +179,10 @@ struct DayCard: View {
             }
             ForEach($day.slots) { $slot in
                 Divider()
-                SlotRow(slot: $slot, client: client) {
+                SlotRow(slot: $slot, client: client,
+                        onBulkApply: onBulkApply.map { apply in
+                            { dryRun in apply(day.id, slot.id, dryRun) }
+                        }) {
                     day.slots.removeAll { $0.id == slot.id }
                 }
             }
@@ -207,8 +213,11 @@ struct SlotRow: View {
     @EnvironmentObject var store: AppStore
     @Binding var slot: Slot
     let client: Client
+    var onBulkApply: ((Bool) -> Int)? = nil
     let onRemove: () -> Void
     @State private var showNewExercise = false
+    @State private var bulkApplyCount: Int?
+    @State private var bulkAppliedFeedback = false
 
     private var pctBinding: Binding<Double?> {
         Binding(
@@ -259,6 +268,35 @@ struct SlotRow: View {
                             slot.exIdx = nil
                             slot.custom = nil
                         }
+                    }
+                }
+                if let bulk = onBulkApply {
+                    Button {
+                        bulkApplyCount = bulk(true)   // dry run: how many weeks?
+                    } label: {
+                        Image(systemName: bulkAppliedFeedback ? "checkmark.circle.fill" : "square.stack.3d.down.right")
+                            .font(.caption2)
+                            .foregroundStyle(bulkAppliedFeedback ? Theme.plateGreen : .secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Apply this exercise, sets, reps, effort and note to the same slot in every remaining week of this phase — each week keeps its own % so the progression survives")
+                    .confirmationDialog(
+                        bulkConfirmTitle,
+                        isPresented: Binding(get: { bulkApplyCount != nil },
+                                             set: { if !$0 { bulkApplyCount = nil } }),
+                        titleVisibility: .visible
+                    ) {
+                        if (bulkApplyCount ?? 0) > 0 {
+                            Button("Apply to \(bulkApplyCount ?? 0) week\((bulkApplyCount ?? 0) == 1 ? "" : "s")") {
+                                _ = bulk(false)
+                                bulkApplyCount = nil
+                                bulkAppliedFeedback = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                                    bulkAppliedFeedback = false
+                                }
+                            }
+                        }
+                        Button("Cancel", role: .cancel) { bulkApplyCount = nil }
                     }
                 }
                 Button { onRemove() } label: {
@@ -320,6 +358,14 @@ struct SlotRow: View {
             .font(.caption)
         }
         .padding(.vertical, 2)
+    }
+
+    private var bulkConfirmTitle: String {
+        let n = bulkApplyCount ?? 0
+        if n == 0 {
+            return "No later weeks in this phase share this slot — nothing to change."
+        }
+        return "Apply \(Engine.slotName(slot, library: store.data.exerciseLibrary)) — \(slot.sets)×\(slot.reps) to this slot in the \(n) remaining week\(n == 1 ? "" : "s") of this phase? Each week keeps its own %."
     }
 
     /// Coach typed a custom exercise: persist it in the library (dedup by

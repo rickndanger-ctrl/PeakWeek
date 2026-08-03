@@ -208,6 +208,55 @@ struct Program: Codable, Hashable {
     var blocks: [Block]
     var weeks: [Week]
 
+    // MARK: bulk slot editing
+
+    /// Apply a slot's configuration to the SAME position in every LATER week
+    /// of the SAME phase. Copies exercise, sets, reps, effort, note, and the
+    /// film flag — but each week keeps its OWN percentage, so the block's
+    /// progression ramp survives an exercise swap or volume change.
+    /// Returns how many weeks were updated.
+    @discardableResult
+    mutating func applySlotToRemainingWeeks(fromWeek weekNum: Int,
+                                            dayIndex: Int, slotIndex: Int) -> Int {
+        guard let wIdx = weeks.firstIndex(where: { $0.num == weekNum }),
+              weeks[wIdx].days.indices.contains(dayIndex),
+              weeks[wIdx].days[dayIndex].slots.indices.contains(slotIndex) else { return 0 }
+        let src = weeks[wIdx].days[dayIndex].slots[slotIndex]
+        let phase = weeks[wIdx].phase
+        var count = 0
+        for wi in weeks.indices where weeks[wi].num > weekNum && weeks[wi].phase == phase {
+            guard weeks[wi].days.indices.contains(dayIndex),
+                  weeks[wi].days[dayIndex].slots.indices.contains(slotIndex) else { continue }
+            var target = weeks[wi].days[dayIndex].slots[slotIndex]
+            target.pool = src.pool
+            target.exerciseID = src.exerciseID
+            target.exIdx = src.exIdx
+            target.custom = src.custom
+            target.sets = src.sets
+            target.reps = src.reps
+            target.rpe = src.rpe
+            target.note = src.note
+            target.filmThis = src.filmThis
+            // target.pct intentionally untouched — progression is per-week.
+            weeks[wi].days[dayIndex].slots[slotIndex] = target
+            count += 1
+        }
+        return count
+    }
+
+    /// Dry-run: how many later same-phase weeks the apply would touch.
+    func remainingWeeksForSlot(fromWeek weekNum: Int, dayIndex: Int, slotIndex: Int) -> Int {
+        guard let wIdx = weeks.firstIndex(where: { $0.num == weekNum }),
+              weeks[wIdx].days.indices.contains(dayIndex),
+              weeks[wIdx].days[dayIndex].slots.indices.contains(slotIndex) else { return 0 }
+        let phase = weeks[wIdx].phase
+        return weeks.filter {
+            $0.num > weekNum && $0.phase == phase
+                && $0.days.indices.contains(dayIndex)
+                && $0.days[dayIndex].slots.indices.contains(slotIndex)
+        }.count
+    }
+
     // MARK: structural editing (deload insertion/removal)
 
     /// Coach rule: deload weeks are NEVER back-to-back. True when inserting a
