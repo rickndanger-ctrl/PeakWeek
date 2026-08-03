@@ -565,8 +565,22 @@ struct ClientView: View {
                                          startPoint: .top, endPoint: .bottom))
                     .frame(width: 20, height: 32)
             }
-            Text("Each plate is a block; width = weeks. The collar is the finish line. Click a plate to jump there.")
-                .font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Text("Each plate is a block; width = weeks. The collar is the finish line. Click a plate to jump there.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if let boundary = program.realizationBoundary,
+                   program.canInsertDeload(at: boundary) {
+                    Button {
+                        insertDeloadBeforeRealization()
+                    } label: {
+                        Label("Insert deload before realization", systemImage: "plus.rectangle")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .help("Adds a recovery week between transmutation and realization. Later weeks renumber and the delivery schedule shifts a week — automatically. Never stacks two deloads in a row.")
+                }
+            }
         }
     }
 
@@ -617,7 +631,6 @@ struct ClientView: View {
                         onSendNow: client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty
                             ? nil
                             : { store.sendNow(clientID: client.id, weekNum: program.weeks[wIdx].num) },
-                        onInsertDeload: { after in insertDeload(at: after ? wIdx + 1 : wIdx) },
                         onRemoveDeload: program.weeks[wIdx].phase == .deload
                             ? { removeDeload(at: wIdx) } : nil
                     )
@@ -653,15 +666,19 @@ struct ClientView: View {
     // MARK: structural edits — the schedule, numbering, and delivery
     // bookkeeping all follow automatically.
 
-    private func insertDeload(at index: Int) {
-        guard var program = client.program else { return }
+    /// Coach workflow: an extra deload goes between transmutation and
+    /// realization when the lifter needs one. Never two deloads in a row —
+    /// the model refuses adjacent insertions.
+    private func insertDeloadBeforeRealization() {
+        guard var program = client.program,
+              let boundary = program.realizationBoundary else { return }
         let week = Engine.makeDeloadWeek(fiveDay: program.fiveDay,
                                          library: store.data.exerciseLibrary,
                                          excluded: client.settings.excludedExerciseIDs ?? [])
-        program.insert(week: week, at: index)
+        guard program.insertDeload(week: week, at: boundary) else { return }
         // Send records for weeks at/after the insertion point shift up by one.
         store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,
-                                fromWeek: index + 1, by: 1)
+                                fromWeek: boundary + 1, by: 1)
         client.program = program
     }
 

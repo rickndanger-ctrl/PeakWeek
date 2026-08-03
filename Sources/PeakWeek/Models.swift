@@ -173,6 +173,30 @@ struct Program: Codable, Hashable {
 
     // MARK: structural editing (deload insertion/removal)
 
+    /// Coach rule: deload weeks are NEVER back-to-back. True when inserting a
+    /// deload at `index` keeps that invariant.
+    func canInsertDeload(at index: Int) -> Bool {
+        let i = min(max(0, index), weeks.count)
+        if i > 0, weeks[i - 1].phase == .deload { return false }
+        if i < weeks.count, weeks[i].phase == .deload { return false }
+        return true
+    }
+
+    /// The transmutation → realization boundary (index of the first
+    /// realization week) — where a pre-meet deload belongs.
+    var realizationBoundary: Int? {
+        weeks.firstIndex { $0.phase == .real }
+    }
+
+    /// Insert a deload week, refusing any position that would create two
+    /// deloads in a row. Returns whether the insertion happened.
+    @discardableResult
+    mutating func insertDeload(week: Week, at index: Int) -> Bool {
+        guard week.phase == .deload, canInsertDeload(at: index) else { return false }
+        insert(week: week, at: index)
+        return true
+    }
+
     /// Insert a week at `index`; everything downstream adjusts: numbering,
     /// block grouping, per-week block coordinates, totals.
     mutating func insert(week: Week, at index: Int) {

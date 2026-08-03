@@ -12,7 +12,6 @@ struct WeekView: View {
     let copied: Bool
     let onCopy: () -> Void
     var onSendNow: (() -> Void)? = nil
-    var onInsertDeload: ((_ after: Bool) -> Void)? = nil
     var onRemoveDeload: (() -> Void)? = nil
     @State private var confirmSendNow = false
     @State private var confirmRemoveDeload = false
@@ -88,7 +87,7 @@ struct WeekView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .padding(.trailing, 6)
+            .padding(.trailing, onRemoveDeload != nil ? 6 : 14)
             .help("Send this week's plan to \(client.name)")
             .confirmationDialog(
                 "Send Week \(week.num) to \(client.delivery.recipient) via \(client.delivery.method.label) right now?",
@@ -96,25 +95,17 @@ struct WeekView: View {
                 Button("Send") { onSendNow?() }
             }
 
-            if onInsertDeload != nil || onRemoveDeload != nil {
-                Menu {
-                    if let insert = onInsertDeload {
-                        Button("Insert deload week before this week") { insert(false) }
-                        Button("Insert deload week after this week") { insert(true) }
-                    }
-                    if onRemoveDeload != nil {
-                        Divider()
-                        Button("Remove this deload week", role: .destructive) {
-                            confirmRemoveDeload = true
-                        }
-                    }
+            if onRemoveDeload != nil {
+                Button {
+                    confirmRemoveDeload = true
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "minus.rectangle")
                 }
-                .menuStyle(.borderlessButton)
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
                 .fixedSize()
                 .padding(.trailing, 14)
-                .help("Restructure: insert or remove deload weeks — numbering and the delivery schedule adjust automatically")
+                .help("Remove this deload week — later weeks move up and the schedule shifts a week earlier")
                 .confirmationDialog(
                     "Remove this deload week? Later weeks move up and the schedule shifts a week earlier.",
                     isPresented: $confirmRemoveDeload, titleVisibility: .visible) {

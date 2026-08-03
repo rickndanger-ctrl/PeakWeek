@@ -43,36 +43,53 @@ final class StructureTests: XCTestCase {
         XCTAssertEqual(auto.weeks.count, explicit.weeks.count)
     }
 
-    // MARK: - deload insertion
+    // MARK: - deload insertion (coach policy: trans→real boundary, never back-to-back)
 
-    func testInsertDeloadRenumbersAndRegroups() {
+    func testInsertDeloadAtRealizationBoundary() {
         var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
-        // Insert a deload before week 7 (index 6): mid-transmutation.
+        // 12-wk factory: acc idx 0-3, deload idx 4, trans idx 5-8, real idx 9-10, meet idx 11.
+        let boundary = p.realizationBoundary
+        XCTAssertEqual(boundary, 9, "boundary is the first realization week")
         let deload = Engine.makeDeloadWeek(fiveDay: false, library: lib)
-        p.insert(week: deload, at: 6)
+        XCTAssertTrue(p.insertDeload(week: deload, at: boundary!))
 
         XCTAssertEqual(p.weeks.count, 13)
         XCTAssertEqual(p.totalWeeks, 13)
         XCTAssertEqual(p.weeks.map(\.num), Array(1...13), "contiguous renumbering")
-        XCTAssertEqual(p.weeks[6].phase, .deload)
-        // Insertion at index 6 splits trans (weeks idx 5-8) into 1 + 3:
-        // acc 4, deload 1, trans 1, deload 1, trans 3, real 2, meet 1.
-        XCTAssertEqual(p.blocks.map(\.phase), [.acc, .deload, .trans, .deload, .trans, .real, .meet])
-        XCTAssertEqual(p.blocks.map(\.weeks), [4, 1, 1, 1, 3, 2, 1])
-        // Split trans runs get correct in-block coordinates.
-        let trans2 = p.weeks[7]
-        XCTAssertEqual(trans2.weekInBlock, 1)
-        XCTAssertEqual(trans2.blockLen, 3)
+        XCTAssertEqual(p.weeks[9].phase, .deload)
+        // Between transmutation and realization: acc 4, deload 1, trans 4, deload 1, real 2, meet 1.
+        XCTAssertEqual(p.blocks.map(\.phase), [.acc, .deload, .trans, .deload, .real, .meet])
+        XCTAssertEqual(p.blocks.map(\.weeks), [4, 1, 4, 1, 2, 1])
         // Inserted week's slots resolve against the library.
-        for day in p.weeks[6].days {
+        for day in p.weeks[9].days {
             for slot in day.slots where slot.custom == nil {
                 XCTAssertNotNil(slot.exerciseID)
             }
         }
         // Deload content is the standard 62% week.
         let client = Client(name: "T", unit: .lb, maxes: maxes)
-        let text = Engine.weekToText(client: client, program: p, week: p.weeks[6], library: lib)
+        let text = Engine.weekToText(client: client, program: p, week: p.weeks[9], library: lib)
         XCTAssertTrue(text.contains("Competition Squat — 3x5 @ 62% → 250 lb · RPE 6"))
+    }
+
+    func testNeverTwoDeloadsInARow() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        let deload = Engine.makeDeloadWeek(fiveDay: false, library: lib)
+        // Adjacent to the existing acc→trans deload (idx 4): refused on both sides.
+        XCTAssertFalse(p.canInsertDeload(at: 4))
+        XCTAssertFalse(p.canInsertDeload(at: 5))
+        XCTAssertFalse(p.insertDeload(week: deload, at: 4))
+        XCTAssertEqual(p.weeks.count, 12, "refused insertion changes nothing")
+        // Boundary insert once: fine. Twice: refused (a deload now sits there).
+        XCTAssertTrue(p.insertDeload(week: deload, at: p.realizationBoundary!))
+        let second = Engine.makeDeloadWeek(fiveDay: false, library: lib)
+        XCTAssertFalse(p.insertDeload(week: second, at: p.realizationBoundary!),
+                       "never two deload weeks in a row")
+        XCTAssertEqual(p.weeks.count, 13)
+        // A non-deload week can never sneak through insertDeload.
+        var bogus = Engine.makeDeloadWeek(fiveDay: false, library: lib)
+        bogus.phase = .acc
+        XCTAssertFalse(p.insertDeload(week: bogus, at: 0))
     }
 
     func testRemoveDeloadRestoresStructure() {
@@ -83,9 +100,9 @@ final class StructureTests: XCTestCase {
         // normalized form — remove(insert(x)) must be exactly normalize(x).
         var baseline = p
         baseline.renumberAndRegroup()
-        let deload = Engine.makeDeloadWeek(fiveDay: false, library: lib)
-        p.insert(week: deload, at: 6)
-        p.removeWeek(at: 6)
+        let boundary = p.realizationBoundary!
+        p.insertDeload(week: Engine.makeDeloadWeek(fiveDay: false, library: lib), at: boundary)
+        p.removeWeek(at: boundary)
         XCTAssertEqual(p.weeks.count, 12)
         XCTAssertEqual(p.blocks, baseline.blocks)
         XCTAssertEqual(p.weeks.map(\.num), baseline.weeks.map(\.num))
@@ -95,7 +112,8 @@ final class StructureTests: XCTestCase {
 
     func testWeeksOutFollowsInsertion() {
         var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
-        p.insert(week: Engine.makeDeloadWeek(fiveDay: false, library: lib), at: 6)
+        p.insertDeload(week: Engine.makeDeloadWeek(fiveDay: false, library: lib),
+                       at: p.realizationBoundary!)
         let client = Client(name: "T", unit: .lb, maxes: maxes)
         // Week 1 is now 12 out (13-week program).
         let w1 = Engine.weekToText(client: client, program: p, week: p.weeks[0], library: lib)
