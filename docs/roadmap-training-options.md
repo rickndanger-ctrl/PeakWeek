@@ -42,6 +42,18 @@ A volume-first off-season distinct from the current strength off-season.
   templates. StartPhase is persisted by rawValue — additive case is
   decode-safe for existing files.
 
+## Design principle: composability (Rick, 2026-08-03)
+"We can always find interesting ways to combine training techniques, or use
+different training techniques for different phases, if that's what works for
+the client." — Build these as **per-phase schemes, not monolithic program
+types**: each block in a program can carry its own template set + progression
+scheme (e.g. DUP accumulation → wave-loaded transmutation → standard
+realization). Concretely: extend BlockPlan so each phase entry holds an
+optional scheme; templates and progression functions register per scheme;
+the phase timeline shows the scheme per plate. Conjugate and hypertrophy
+off-season still work as whole-program presets, but internally they're just
+phase+scheme combinations — so everything mixes.
+
 ## Sequencing suggestion
 Wave (small: progression function) → DUP (template set) → hypertrophy
 off-season (new phase) → conjugate (new prescription forms + rotation policy).
