@@ -44,8 +44,8 @@ struct WeekView: View {
                 content
             }
         }
-        .background(Theme.iron2, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+        .background(Theme.iron2, in: Rectangle())
+        .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
     }
 
     private var header: some View {
@@ -142,7 +142,7 @@ struct WeekView: View {
                 TextField("e.g. Keep the pause squats honest — full 2-count. Video your last set of comp squats.",
                           text: $week.note, axis: .vertical)
                     .lineLimit(2...4)
-                    .textFieldStyle(.roundedBorder)
+                    .squareFieldStyle()
             }
             if week.phase == .meet {
                 MeetCard(client: client)
@@ -185,13 +185,13 @@ struct DayCard: View {
                         .font(.caption)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(SquareOutlineButtonStyle())
                 .padding(.top, 4)
             }
         }
         .padding(12)
-        .background(Theme.iron, in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.line, lineWidth: 1))
+        .background(Theme.iron, in: Rectangle())
+        .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
     }
 }
 
@@ -265,7 +265,7 @@ struct SlotRow: View {
                     .onChange(of: slot.reps) { v in slot.reps = min(99, max(1, v)) }
                 Text("@").foregroundStyle(.secondary)
                 TextField("—", text: pctText)
-                    .textFieldStyle(.roundedBorder)
+                    .squareFieldStyle()
                     .font(.system(.caption, design: .monospaced))
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
@@ -280,7 +280,7 @@ struct SlotRow: View {
                 Spacer(minLength: 4)
                 Text("RPE").font(.caption2).foregroundStyle(.secondary)
                 TextField("", value: $slot.rpe, format: .number)
-                    .textFieldStyle(.roundedBorder)
+                    .squareFieldStyle()
                     .font(.system(.caption, design: .monospaced))
                     .multilineTextAlignment(.center)
                     .frame(width: 40)
@@ -321,7 +321,7 @@ struct SlotRow: View {
 
     private func numField(_ value: Binding<Int>, width: CGFloat) -> some View {
         TextField("", value: value, format: .number)
-            .textFieldStyle(.roundedBorder)
+            .squareFieldStyle()
             .font(.system(.caption, design: .monospaced))
             .multilineTextAlignment(.center)
             .frame(width: width)
@@ -351,7 +351,7 @@ struct NewExercisePopover: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("New Library Exercise").font(.headline)
             TextField("Exercise name", text: $name)
-                .textFieldStyle(.roundedBorder)
+                .squareFieldStyle()
                 .frame(width: 240)
             Picker("Group", selection: $pool) {
                 ForEach(LiftPool.allCases) { p in Text(p.groupLabel).tag(p) }
@@ -361,7 +361,7 @@ struct NewExercisePopover: View {
                 HStack {
                     Text("Load modifier")
                     TextField("", value: $modPct, format: .number)
-                        .textFieldStyle(.roundedBorder).frame(width: 56)
+                        .squareFieldStyle().frame(width: 56)
                         .onChange(of: modPct) { v in modPct = min(120, max(30, v)) }
                     Text("% of comp-lift 1RM").foregroundStyle(.secondary)
                 }
@@ -402,14 +402,14 @@ struct MeetCard: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Theme.iron, in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.iron, in: Rectangle())
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            Rectangle()
                 .stroke(Theme.line, lineWidth: 1)
         )
         .overlay(alignment: .leading) {
             Rectangle().fill(Theme.plateWhite).frame(width: 4)
-                .clipShape(RoundedRectangle(cornerRadius: 2))
+                .clipShape(Rectangle())
         }
     }
 
@@ -435,7 +435,7 @@ struct MeetCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.iron2, in: RoundedRectangle(cornerRadius: 8))
+        .background(Theme.iron2, in: Rectangle())
     }
 
     private func row(_ label: String, _ value: Double, color: Color) -> some View {
@@ -477,7 +477,7 @@ struct RPEChartView: View {
                     }
                 }
             }
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.line, lineWidth: 1))
+            .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
 
             HStack { Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.defaultAction) }
         }

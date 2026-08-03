@@ -26,7 +26,7 @@ struct ClientView: View {
                         timeline(program)
                         programSections(program)
                         Button(showRPE ? "Hide RPE → % chart" : "Show RPE → % chart") { showRPE.toggle() }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(SquareOutlineButtonStyle())
                     }
                 }
                 .padding(24)
@@ -149,7 +149,7 @@ struct ClientView: View {
                         .fontWeight(.bold)
                         .padding(.horizontal, 6).padding(.vertical, 3)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(SquareButtonStyle())
                 .tint(Theme.plateRed)
 
                 Text("5-day adds a second squat day to volume + strength blocks. Peaking and deload stay at 4 days — the taper works by cutting workload.")
@@ -164,7 +164,7 @@ struct ClientView: View {
             coachingOptions
         }
         .padding(20)
-        .background(Theme.iron2, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.iron2, in: Rectangle())
     }
 
     // MARK: coaching options
@@ -246,7 +246,7 @@ struct ClientView: View {
                 get: { value.wrappedValue.map { $0 == $0.rounded() ? String(Int($0)) : String($0) } ?? "" },
                 set: { value.wrappedValue = Double($0).map { min(115, max(80, $0)) } }
             ))
-            .textFieldStyle(.roundedBorder)
+            .squareFieldStyle()
             .font(.system(.caption, design: .monospaced))
             .frame(width: 52)
         }
@@ -293,7 +293,7 @@ struct ClientView: View {
                 value.wrappedValue = Double(s).map { min(range.upperBound, max(range.lowerBound, $0)) }
             }
         ))
-        .textFieldStyle(.roundedBorder)
+        .squareFieldStyle()
         .font(.system(.caption, design: .monospaced))
         .multilineTextAlignment(.center)
         .frame(width: 64)
@@ -352,7 +352,7 @@ struct ClientView: View {
                         set: { client.settings.notes = $0.isEmpty ? nil : $0 }
                       ), axis: .vertical)
                 .lineLimit(2...4)
-                .textFieldStyle(.roundedBorder)
+                .squareFieldStyle()
         }
     }
 
@@ -393,7 +393,7 @@ struct ClientView: View {
                     labeled(client.delivery.method == .mail ? "Email address" : "iMessage / phone") {
                         TextField(client.delivery.method == .mail ? "client@example.com" : "+1 555 010 0000",
                                   text: $client.delivery.recipient)
-                            .textFieldStyle(.roundedBorder)
+                            .squareFieldStyle()
                             .frame(width: 190)
                     }
                     labeled("Format") {
@@ -445,7 +445,7 @@ struct ClientView: View {
 
     private func maxField(_ value: Binding<Double>) -> some View {
         TextField("", value: value, format: .number)
-            .textFieldStyle(.roundedBorder)
+            .squareFieldStyle()
             .font(.system(.body, design: .monospaced))
             .frame(width: 90)
     }
@@ -478,7 +478,7 @@ struct ClientView: View {
             Text("\(client.name.uppercased())'S \(program.weeks.count) WEEKS, LOADED ON THE BAR")
                 .font(.caption2).kerning(2).foregroundStyle(.secondary)
             HStack(spacing: 3) {
-                RoundedRectangle(cornerRadius: 2)
+                Rectangle()
                     .fill(LinearGradient(colors: [Color(white: 0.72), Color(white: 0.5)],
                                          startPoint: .top, endPoint: .bottom))
                     .frame(width: 44, height: 13)
@@ -494,14 +494,14 @@ struct ClientView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 84)
-                        .background(Theme.phaseColor(block.phase), in: RoundedRectangle(cornerRadius: 6))
+                        .background(Theme.phaseColor(block.phase), in: Rectangle())
                         .foregroundStyle(block.phase == .meet ? Color.black : Color.white)
                     }
                     .buttonStyle(.plain)
                     .layoutPriority(Double(block.weeks))
                     .frame(minWidth: CGFloat(block.weeks) * 40)
                 }
-                RoundedRectangle(cornerRadius: 3)
+                Rectangle()
                     .fill(LinearGradient(colors: [Color(white: 0.8), Color(white: 0.55)],
                                          startPoint: .top, endPoint: .bottom))
                     .frame(width: 20, height: 32)

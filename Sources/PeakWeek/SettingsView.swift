@@ -106,7 +106,7 @@ struct LibrarySettingsView: View {
                     get: { (ex.mod ?? 1) * 100 },
                     set: { var e = ex; e.mod = min(120, max(30, $0)) / 100; store.data.exerciseLibrary.update(e) }
                 ), format: .number)
-                .textFieldStyle(.roundedBorder)
+                .squareFieldStyle()
                 .font(.system(.caption, design: .monospaced))
                 .multilineTextAlignment(.center)
                 .frame(width: 48)

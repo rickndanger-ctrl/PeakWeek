@@ -38,10 +38,10 @@ struct DeliveriesView: View {
                         Spacer()
                         Button("Dismiss") { store.dismissQueued(rec.id) }
                         Button("Send") { store.approveQueued(rec.id) }
-                            .buttonStyle(.borderedProminent).tint(Theme.plateGreen)
+                            .buttonStyle(SquareButtonStyle()).tint(Theme.plateGreen)
                     }
                     .padding(10)
-                    .background(Theme.iron2, in: RoundedRectangle(cornerRadius: 8))
+                    .background(Theme.iron2, in: Rectangle())
                 }
             }
 
