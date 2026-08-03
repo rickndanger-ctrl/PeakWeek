@@ -190,7 +190,7 @@ struct SlotRow: View {
     private var pctText: Binding<String> {
         Binding(
             get: { slot.pct.map { String(Int($0)) } ?? "" },
-            set: { slot.pct = Double($0) }
+            set: { slot.pct = Double($0).map { min(110, max(0, $0)) } }
         )
     }
 
@@ -228,8 +228,10 @@ struct SlotRow: View {
 
             HStack(spacing: 5) {
                 numField($slot.sets, width: 38)
+                    .onChange(of: slot.sets) { v in slot.sets = min(99, max(1, v)) }
                 Text("×").foregroundStyle(.secondary)
                 numField($slot.reps, width: 38)
+                    .onChange(of: slot.reps) { v in slot.reps = min(99, max(1, v)) }
                 Text("@").foregroundStyle(.secondary)
                 TextField("—", text: pctText)
                     .textFieldStyle(.roundedBorder)
@@ -249,6 +251,10 @@ struct SlotRow: View {
                     .font(.system(.caption, design: .monospaced))
                     .multilineTextAlignment(.center)
                     .frame(width: 40)
+                    .onChange(of: slot.rpe) { v in
+                        // Clamp 5–10, snap to half points.
+                        slot.rpe = min(10, max(5, (v * 2).rounded() / 2))
+                    }
             }
             .font(.caption)
         }

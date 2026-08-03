@@ -199,6 +199,7 @@ struct Client: Codable, Identifiable, Hashable {
 }
 
 struct AppData: Codable {
+    var schemaVersion: Int = 2      // absent in v1 files → decodes as 1
     var clients: [Client] = []
     var sendLog: [SendRecord] = []
 
@@ -209,7 +210,9 @@ struct AppData: Codable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         clients = try c.decodeIfPresent([Client].self, forKey: .clients) ?? []
         sendLog = try c.decodeIfPresent([SendRecord].self, forKey: .sendLog) ?? []
+        schemaVersion = 2           // decoding IS the v1→v2 migration for now
     }
 }

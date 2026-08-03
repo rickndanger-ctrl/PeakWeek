@@ -6,11 +6,17 @@ import UniformTypeIdentifiers
 final class AppStore: ObservableObject {
 
     @Published var data = AppData() {
-        didSet { save() }
+        didSet { scheduleSave() }
     }
+
+    /// True when data.json exists but could not be decoded. While set, saving is
+    /// REFUSED — the app must never overwrite a file it couldn't read.
+    @Published var loadFailed = false
 
     private var loading = false
     private var deliveryTimer: Timer?
+    private var pendingSave: DispatchWorkItem?
+    private var terminateObserver: NSObjectProtocol?
 
     static let dataURL: URL = {
         let fm = FileManager.default
@@ -19,6 +25,10 @@ final class AppStore: ObservableObject {
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("data.json")
     }()
+
+    static var backupURL: URL {
+        dataURL.deletingLastPathComponent().appendingPathComponent("data.json.bak")
+    }
 
     init() {
         load()
@@ -29,27 +39,64 @@ final class AppStore: ObservableObject {
         deliveryTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             self?.runDeliveryPass()
         }
+        // Flush any debounced save before quitting.
+        terminateObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.saveNow()
+        }
     }
 
     func load() {
         loading = true
         defer { loading = false }
-        guard let raw = try? Data(contentsOf: Self.dataURL) else { return }
+        guard let raw = try? Data(contentsOf: Self.dataURL) else { return }  // no file yet: fresh start
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = .iso8601
         if let decoded = try? dec.decode(AppData.self, from: raw) {
             data = decoded
+        } else {
+            // File exists but can't be read — freeze writes and let the UI offer recovery.
+            loadFailed = true
         }
     }
 
-    func save() {
+    /// Debounced save: the didSet fires on every keystroke; disk sees at most
+    /// one write per second. saveNow() flushes immediately (quit, backup).
+    private func scheduleSave() {
         if loading { return }
+        pendingSave?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.saveNow() }
+        pendingSave = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
+    }
+
+    func saveNow() {
+        pendingSave?.cancel()
+        pendingSave = nil
+        if loading || loadFailed { return }   // never clobber a file we couldn't read
         let enc = JSONEncoder()
         enc.dateEncodingStrategy = .iso8601
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
-        if let raw = try? enc.encode(data) {
-            try? raw.write(to: Self.dataURL, options: .atomic)
+        guard let raw = try? enc.encode(data) else { return }
+        let fm = FileManager.default
+        // Rotate a one-generation safety copy before every write.
+        if fm.fileExists(atPath: Self.dataURL.path) {
+            try? fm.removeItem(at: Self.backupURL)
+            try? fm.copyItem(at: Self.dataURL, to: Self.backupURL)
         }
+        try? raw.write(to: Self.dataURL, options: .atomic)
+    }
+
+    /// Restore from the automatic .bak (decode-failure recovery path).
+    func restoreAutomaticBackup() -> Bool {
+        guard let raw = try? Data(contentsOf: Self.backupURL) else { return false }
+        let dec = JSONDecoder()
+        dec.dateDecodingStrategy = .iso8601
+        guard let decoded = try? dec.decode(AppData.self, from: raw) else { return false }
+        loadFailed = false
+        data = decoded
+        return true
     }
 
     // MARK: client helpers
@@ -191,6 +238,7 @@ final class AppStore: ObservableObject {
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = .iso8601
         guard let decoded = try? dec.decode(AppData.self, from: raw) else { return false }
+        loadFailed = false          // a good backup un-freezes writes
         data = decoded
         return true
     }

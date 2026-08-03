@@ -174,5 +174,9 @@ final class DeliveryTests: XCTestCase {
         XCTAssertFalse(c.delivery.autoSend, "delivery defaults applied")
         XCTAssertTrue(c.delivery.requireReview)
         XCTAssertTrue(data.sendLog.isEmpty)
+        XCTAssertEqual(data.schemaVersion, 2, "decoding migrates v1 → v2")
+        let enc = JSONEncoder()
+        let out = String(decoding: try enc.encode(data), as: UTF8.self)
+        XCTAssertTrue(out.contains("\"schemaVersion\":2"), "v2 stamp persists on next save")
     }
 }

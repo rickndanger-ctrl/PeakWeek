@@ -78,6 +78,20 @@ struct ContentView: View {
             get: { restoreMessage != nil },
             set: { if !$0 { restoreMessage = nil } }
         )) { Button("OK", role: .cancel) {} }
+        .alert("Peak Week couldn't read its data file",
+               isPresented: $store.loadFailed) {
+            Button("Restore Automatic Backup") {
+                restoreMessage = store.restoreAutomaticBackup()
+                    ? "Automatic backup restored."
+                    : "No readable automatic backup found. Try Restore from a manual backup in the Data menu."
+            }
+            Button("Reveal in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting([AppStore.dataURL])
+            }
+            Button("Quit", role: .cancel) { NSApplication.shared.terminate(nil) }
+        } message: {
+            Text("Your clients are safe on disk — nothing will be overwritten. Restore the automatic backup, or quit and inspect the file.")
+        }
     }
 
     private var sidebar: some View {
@@ -116,6 +130,12 @@ struct ContentView: View {
                     Button("Restore from backup…") {
                         restoreMessage = store.importBackup()
                             ? "Backup restored." : "Restore cancelled or file not valid."
+                        selectedID = nil
+                    }
+                    Button("Restore automatic backup (.bak)") {
+                        restoreMessage = store.restoreAutomaticBackup()
+                            ? "Automatic backup restored."
+                            : "No readable automatic backup found."
                         selectedID = nil
                     }
                     Divider()
