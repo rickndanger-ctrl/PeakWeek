@@ -378,6 +378,27 @@ struct Program: Codable, Hashable {
         renumberAndRegroup()
     }
 
+    /// TRADE a training week for a deload: the week at `index` becomes the
+    /// deload and its planned training simply doesn't happen this cycle. The
+    /// calendar, the meet, and every other week stay exactly where they are —
+    /// this is how a mid-prep deload gets ABSORBED into a fixed runway.
+    /// Refused for realization (the taper is never traded), meet week,
+    /// existing deloads, and anywhere it would stack two deloads in a row.
+    @discardableResult
+    mutating func replaceWeekWithDeload(at index: Int, deload: Week) -> Bool {
+        guard weeks.indices.contains(index),
+              deload.phase == .deload,
+              ![.deload, .meet, .real].contains(weeks[index].phase),
+              index == 0 || weeks[index - 1].phase != .deload,
+              index == weeks.count - 1 || weeks[index + 1].phase != .deload
+        else { return false }
+        var d = deload
+        d.num = weeks[index].num
+        weeks[index] = d
+        renumberAndRegroup()
+        return true
+    }
+
     /// Remove the week at `index` (callers restrict this to deload weeks so
     /// real training content can't be destroyed by a structural edit).
     mutating func removeWeek(at index: Int) {

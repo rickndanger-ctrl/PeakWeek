@@ -969,19 +969,7 @@ struct ClientView: View {
                 Text("Each plate is a block; width = weeks. The collar is the finish line. Click a plate to jump there.")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                if let boundary = program.realizationBoundary,
-                   program.canInsertDeload(at: boundary),
-                   program.weeks.indices.contains(boundary),
-                   weekUntrained(program.weeks[boundary]) {
-                    Button {
-                        insertDeloadBeforeRealization()
-                    } label: {
-                        Label("Insert deload before realization", systemImage: "plus.rectangle")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .help("Adds a recovery week between transmutation and realization. Later weeks renumber and the delivery schedule shifts a week — automatically. Never stacks two deloads in a row.")
-                }
+                deloadMenu(program)
             }
         }
     }
@@ -1075,23 +1063,147 @@ struct ClientView: View {
     // bookkeeping all follow automatically.
 
     /// Coach workflow: an extra deload goes between transmutation and
-    /// realization when the lifter needs one. Never two deloads in a row —
-    /// the model refuses adjacent insertions.
-    private func insertDeloadBeforeRealization() {
+    @State private var pendingDeloadReplace: Int?   // week num to trade
+    @State private var pendingDeloadInsert: Int?    // index to insert before
+
+    /// Deloads, anywhere the lifter needs one — mid-accumulation, mid-
+    /// transmutation, or the classic spot before realization. Two honest
+    /// modes: TRADE a week (the deload absorbs into the fixed runway — the
+    /// meet and calendar stay put) or INSERT one (everything after shifts).
+    /// Future weeks only; never two deloads in a row; the taper is never traded.
+    @ViewBuilder
+    private func deloadMenu(_ program: Program) -> some View {
+        let replaceTargets = program.weeks.indices.filter { i in
+            [.acc, .trans, .hyp].contains(program.weeks[i].phase)
+                && weekUntrained(program.weeks[i])
+                && (i == 0 || program.weeks[i - 1].phase != .deload)
+                && (i == program.weeks.count - 1 || program.weeks[i + 1].phase != .deload)
+        }
+        let insertPoints = program.weeks.indices.filter { i in
+            i > 0 && program.canInsertDeload(at: i)
+                && weekUntrained(program.weeks[i])
+                && ([.acc, .trans, .hyp].contains(program.weeks[i].phase)
+                    || i == program.realizationBoundary)
+        }
+        if !replaceTargets.isEmpty || !insertPoints.isEmpty {
+            Menu {
+                if client.meetDate != nil {
+                    replaceSection(program, replaceTargets)
+                    insertSection(program, insertPoints)
+                } else {
+                    insertSection(program, insertPoints)
+                    replaceSection(program, replaceTargets)
+                }
+            } label: {
+                Label("Add deload…", systemImage: "plus.rectangle")
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help("Drop a recovery week in wherever the lifter needs it. Trading a week keeps the meet and every date in place; inserting one shifts everything after it. Never two deloads in a row, and the taper is never traded.")
+            .confirmationDialog(deloadReplaceTitle, isPresented: Binding(
+                get: { pendingDeloadReplace != nil },
+                set: { if !$0 { pendingDeloadReplace = nil } }), titleVisibility: .visible) {
+                Button("Make it the deload") {
+                    if let n = pendingDeloadReplace { convertWeekToDeload(num: n) }
+                    pendingDeloadReplace = nil
+                }
+                Button("Cancel", role: .cancel) { pendingDeloadReplace = nil }
+            }
+            .confirmationDialog(deloadInsertTitle, isPresented: Binding(
+                get: { pendingDeloadInsert != nil },
+                set: { if !$0 { pendingDeloadInsert = nil } }), titleVisibility: .visible) {
+                Button("Insert deload") {
+                    if let i = pendingDeloadInsert { insertDeload(at: i) }
+                    pendingDeloadInsert = nil
+                }
+                Button("Cancel", role: .cancel) { pendingDeloadInsert = nil }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func replaceSection(_ program: Program, _ targets: [Int]) -> some View {
+        Section("Trade a week — meet and dates stay put") {
+            ForEach(targets, id: \.self) { i in
+                let w = program.weeks[i]
+                Button("Week \(w.num) becomes the deload  (\(w.phase.label) \(w.weekInBlock) of \(w.blockLen))") {
+                    pendingDeloadReplace = w.num
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func insertSection(_ program: Program, _ points: [Int]) -> some View {
+        Section("Insert a week — everything after shifts") {
+            ForEach(points, id: \.self) { i in
+                let w = program.weeks[i]
+                if i == program.realizationBoundary {
+                    Button("Before realization (classic pre-taper spot)") {
+                        pendingDeloadInsert = i
+                    }
+                } else {
+                    Button("Before week \(w.num)  (\(w.phase.label) \(w.weekInBlock) of \(w.blockLen))") {
+                        pendingDeloadInsert = i
+                    }
+                }
+            }
+        }
+    }
+
+    private var deloadReplaceTitle: String {
+        guard let n = pendingDeloadReplace,
+              let w = client.program?.weeks.first(where: { $0.num == n }) else { return "" }
+        let meet = client.meetDate != nil ? ", and the meet" : ""
+        return "Turn Week \(n) (\(w.phase.label) \(w.weekInBlock) of \(w.blockLen)) into a deload? Its planned training is skipped this cycle — every other week, the calendar\(meet) stay exactly where they are."
+    }
+
+    private var deloadInsertTitle: String {
+        guard let i = pendingDeloadInsert,
+              let w = client.program.map({ $0.weeks.indices.contains(i) ? $0.weeks[i] : nil }) ?? nil
+        else { return "" }
+        let meetNote = client.meetDate != nil
+            ? " The meet check will re-grade the timing — with a meet set, trading a week is usually the better move." : ""
+        return "Insert a deload before week \(w.num)? Everything from there shifts one week later, including the delivery schedule.\(meetNote)"
+    }
+
+    /// TRADE: the chosen week becomes the deload — nothing else moves.
+    private func convertWeekToDeload(num: Int) {
         guard var program = client.program,
-              let boundary = program.realizationBoundary else { return }
+              let idx = program.weeks.firstIndex(where: { $0.num == num }),
+              weekUntrained(program.weeks[idx]) else { return }
+        let deload = Engine.makeDeloadWeek(fiveDay: program.fiveDay,
+                                           library: store.data.exerciseLibrary,
+                                           excluded: client.settings.excludedExerciseIDs ?? [])
+        guard program.replaceWeekWithDeload(at: idx, deload: deload) else { return }
+        if client.dayOrder != nil { program.applyDayOrder(effectiveDayOrder) }
+        // A queued send for that week would carry the OLD training — retire it.
+        AppStore.retireQueued(in: &store.data.sendLog, clientID: client.id, weekNum: num,
+                              stamp: program.createdAt, reason: "week became a deload")
+        client.program = program
+    }
+
+    /// INSERT: a new deload goes in before `index`; later weeks renumber and
+    /// the delivery schedule shifts with them. Never two deloads in a row —
+    /// the model refuses adjacent insertions.
+    private func insertDeload(at index: Int) {
+        guard var program = client.program,
+              program.weeks.indices.contains(index),
+              weekUntrained(program.weeks[index]) else { return }
+        let fromNum = program.weeks[index].num
         let week = Engine.makeDeloadWeek(fiveDay: program.fiveDay,
                                          library: store.data.exerciseLibrary,
                                          excluded: client.settings.excludedExerciseIDs ?? [])
-        guard program.insertDeload(week: week, at: boundary) else { return }
+        guard program.insertDeload(week: week, at: index) else { return }
         // The fresh deload arrives factory-ordered; fold it into the lifter's
         // day order. Idempotent — weeks already in order are untouched.
         if client.dayOrder != nil { program.applyDayOrder(effectiveDayOrder) }
         // Send records for weeks at/after the insertion point shift up by one —
         // and so does a configured first-send week.
         store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,
-                                fromWeek: boundary + 1, by: 1)
-        if let first = client.delivery.firstSendWeek, first >= boundary + 1 {
+                                fromWeek: fromNum, by: 1)
+        if let first = client.delivery.firstSendWeek, first >= fromNum {
             client.delivery.firstSendWeek = first + 1
         }
         client.program = program

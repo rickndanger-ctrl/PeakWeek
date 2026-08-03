@@ -202,6 +202,63 @@ final class StructureTests: XCTestCase {
         XCTAssertEqual(p.weeks[0].days[0].slots[0].pct, 77)
     }
 
+    // MARK: - deloads anywhere: trade a week vs insert one
+
+    private func deload(_ p: Program) -> Week {
+        Engine.makeDeloadWeek(fiveDay: p.fiveDay, library: lib)
+    }
+
+    func testTradeWeekForDeloadKeepsCalendar() {
+        // Factory 12: acc 1-4, deload 5, trans 6-9, real 10-11, meet 12.
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        let realNumsBefore = p.weeks.filter { $0.phase == .real || $0.phase == .meet }.map(\.num)
+
+        // Lifter's fried in accumulation: week 3 becomes the deload.
+        XCTAssertTrue(p.replaceWeekWithDeload(at: 2, deload: deload(p)))
+        XCTAssertEqual(p.weeks.count, 12, "trade never changes the total — the deload is absorbed")
+        XCTAssertEqual(p.weeks[2].phase, .deload)
+        XCTAssertEqual(p.weeks[2].num, 3)
+        XCTAssertEqual(p.weeks[2].days[0].slots[0].pct, 62, "factory recovery week content")
+        // Everything after keeps its number — the meet doesn't move.
+        XCTAssertEqual(p.weeks.filter { $0.phase == .real || $0.phase == .meet }.map(\.num),
+                       realNumsBefore)
+        // Accumulation split into two runs around the recovery week.
+        XCTAssertEqual(p.blocks.map(\.phase),
+                       [.acc, .deload, .acc, .deload, .trans, .real, .meet])
+    }
+
+    func testTradeRefusalsProtectDoctrine() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        let d = deload(p)
+        let realIdx = p.realizationBoundary!
+        XCTAssertFalse(p.replaceWeekWithDeload(at: realIdx, deload: d),
+                       "the taper is never traded")
+        XCTAssertFalse(p.replaceWeekWithDeload(at: p.weeks.count - 1, deload: d), "meet week never")
+        let deloadIdx = p.weeks.firstIndex { $0.phase == .deload }!
+        XCTAssertFalse(p.replaceWeekWithDeload(at: deloadIdx, deload: d), "already a deload")
+        XCTAssertFalse(p.replaceWeekWithDeload(at: deloadIdx - 1, deload: d),
+                       "would stack two deloads back-to-back")
+        XCTAssertFalse(p.replaceWeekWithDeload(at: deloadIdx + 1, deload: d),
+                       "would stack two deloads back-to-back")
+        XCTAssertEqual(p.weeks.count, 12, "refusals leave the program untouched")
+    }
+
+    func testInsertDeloadMidAccumulationShifts() {
+        var p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
+        // New deload before week 3 (mid-accumulation).
+        XCTAssertTrue(p.insertDeload(week: deload(p), at: 2))
+        XCTAssertEqual(p.weeks.count, 13, "insert adds a week — everything after shifts")
+        XCTAssertEqual(p.weeks[2].phase, .deload)
+        XCTAssertEqual(p.weeks.map(\.num), Array(1...13), "numbering stays contiguous")
+        XCTAssertEqual(p.weeks.last?.phase, .meet)
+        XCTAssertEqual(p.weeks.last?.num, 13, "meet week now a week later")
+        // Factory mid-plan deload still there; no adjacency anywhere.
+        for i in 1..<p.weeks.count {
+            XCTAssertFalse(p.weeks[i].phase == .deload && p.weeks[i - 1].phase == .deload,
+                           "adjacent deloads at \(i)")
+        }
+    }
+
     // MARK: - bulk edit: apply slot to remaining weeks
 
     func testBulkApplyPropagatesWithinPhaseOnly() {
