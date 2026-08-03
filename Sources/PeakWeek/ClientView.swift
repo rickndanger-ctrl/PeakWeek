@@ -26,7 +26,7 @@ struct ClientView: View {
                         timeline(program)
                         programSections(program)
                         Button(showRPE ? "Hide RPE → % chart" : "Show RPE → % chart") { showRPE.toggle() }
-                            .buttonStyle(SquareOutlineButtonStyle())
+                            .buttonStyle(.bordered)
                     }
                 }
                 .padding(24)
@@ -149,7 +149,7 @@ struct ClientView: View {
                         .fontWeight(.bold)
                         .padding(.horizontal, 6).padding(.vertical, 3)
                 }
-                .buttonStyle(SquareButtonStyle())
+                .buttonStyle(.borderedProminent)
                 .tint(Theme.plateRed)
 
                 Text("5-day adds a second squat day to volume + strength blocks. Peaking and deload stay at 4 days — the taper works by cutting workload.")
@@ -195,12 +195,12 @@ struct ClientView: View {
                 Text("COACHING OPTIONS")
                     .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
                 if client.settings.isCustomized {
-                    Circle().fill(Theme.plateYellow).frame(width: 6, height: 6)
+                    Circle().fill(Color.orange).frame(width: 6, height: 6)
                         .help("This client has customized settings")
                 }
                 if excludedInProgram {
                     Text("excluded exercises still in program — regenerate to apply")
-                        .font(.caption2).foregroundStyle(Theme.plateYellow)
+                        .font(.caption2).foregroundStyle(.orange)
                 }
             }
         }
@@ -339,7 +339,7 @@ struct ClientView: View {
                         set: { client.settings.notes = $0.isEmpty ? nil : $0 }
                       ), axis: .vertical)
                 .lineLimit(2...4)
-                .squareFieldStyle()
+                .textFieldStyle(.roundedBorder)
         }
     }
 
@@ -368,7 +368,7 @@ struct ClientView: View {
                     .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
                 if client.delivery.autoSend && client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty {
                     Text("⚠ add a recipient or nothing will send")
-                        .font(.caption2).foregroundStyle(Theme.plateYellow)
+                        .font(.caption2).foregroundStyle(.orange)
                 }
             }
             Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 12) {
@@ -386,7 +386,7 @@ struct ClientView: View {
                     labeled(client.delivery.method == .mail ? "Email address" : "iMessage / phone") {
                         TextField(client.delivery.method == .mail ? "client@example.com" : "+1 555 010 0000",
                                   text: $client.delivery.recipient)
-                            .squareFieldStyle()
+                            .textFieldStyle(.roundedBorder)
                             .frame(width: 190)
                     }
                     labeled("Format") {
@@ -440,7 +440,7 @@ struct ClientView: View {
         // Show at most 1 decimal; stored value keeps full precision so unit
         // conversions round-trip exactly.
         TextField("", value: value, format: .number.precision(.fractionLength(0...1)))
-            .squareFieldStyle()
+            .textFieldStyle(.roundedBorder)
             .font(.system(.body, design: .monospaced))
             .frame(width: 90)
     }
@@ -491,6 +491,7 @@ struct ClientView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 84)
                         .background(Theme.phaseColor(block.phase), in: Rectangle())
+                        .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))  // near-white meet plate stays visible in light mode
                         .foregroundStyle(block.phase == .meet ? Color.black : Color.white)
                     }
                     .buttonStyle(.plain)

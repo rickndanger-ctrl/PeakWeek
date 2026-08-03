@@ -38,7 +38,7 @@ struct DeliveriesView: View {
                         Spacer()
                         Button("Dismiss") { store.dismissQueued(rec.id) }
                         Button("Send") { store.approveQueued(rec.id) }
-                            .buttonStyle(SquareButtonStyle()).tint(Theme.plateGreen)
+                            .buttonStyle(.borderedProminent).tint(Theme.plateGreen)
                     }
                     .padding(10)
                     .background(Theme.iron2, in: Rectangle())
@@ -61,7 +61,7 @@ struct DeliveriesView: View {
                                 if case .failed = rec.status,
                                    store.data.clients.contains(where: { $0.id == rec.clientID }) {
                                     Button("Retry") { store.retryFailed(rec.id) }
-                                        .buttonStyle(SquareOutlineButtonStyle())
+                                        .buttonStyle(.bordered)
                                         .font(.caption)
                                 }
                                 Text(rec.date.formatted(date: .abbreviated, time: .shortened))

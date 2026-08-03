@@ -22,13 +22,16 @@ struct PeakWeekApp: App {
 
 // MARK: - Theme
 
+// Native macOS appearance: every surface uses semantic system colors so the
+// app follows the user's light/dark setting and looks like a real Mac app.
+// The IPF plate colors survive only as DATA accents (phase timeline, status).
 enum Theme {
-    static let iron = Color(red: 0.09, green: 0.094, blue: 0.11)
-    static let iron2 = Color(red: 0.122, green: 0.129, blue: 0.153)
-    static let iron3 = Color(red: 0.157, green: 0.169, blue: 0.2)
-    static let line = Color(red: 0.2, green: 0.212, blue: 0.247)
-    static let chalk = Color(red: 0.925, green: 0.914, blue: 0.886)
-    static let smoke = Color(red: 0.545, green: 0.557, blue: 0.596)
+    static let iron = Color(nsColor: .windowBackgroundColor)          // window
+    static let iron2 = Color(nsColor: .controlBackgroundColor)        // panels/cards
+    static let iron3 = Color(nsColor: .unemphasizedSelectedContentBackgroundColor) // chips
+    static let line = Color(nsColor: .separatorColor)
+    static let chalk = Color(nsColor: .labelColor)
+    static let smoke = Color(nsColor: .secondaryLabelColor)
     static let plateRed = Color(red: 0.788, green: 0.275, blue: 0.235)
     static let plateBlue = Color(red: 0.239, green: 0.42, blue: 0.71)
     static let plateYellow = Color(red: 0.863, green: 0.663, blue: 0.247)
@@ -179,15 +182,15 @@ struct ContentView: View {
                 restoreMessage = store.restoreAutomaticBackup()
                     ? "Automatic backup restored." : "No readable automatic backup found."
             }
-            .buttonStyle(SquareOutlineButtonStyle())
+            .buttonStyle(.bordered)
             Button("Restore from file…") {
                 restoreMessage = store.importBackup()
                     ? "Backup restored." : "Restore cancelled or file not valid."
             }
-            .buttonStyle(SquareOutlineButtonStyle())
+            .buttonStyle(.bordered)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
-        .background(Theme.plateRed)
+        .background(Color(nsColor: .systemRed))
         .foregroundStyle(.white)
     }
 
@@ -222,17 +225,17 @@ struct NewClientSheet: View {
             Text("New Client").font(.title2).bold()
             Form {
                 TextField("Name", text: $name)
-                    .squareFieldStyle()
+                    .textFieldStyle(.roundedBorder)
                 Picker("Units", selection: $unit) {
                     ForEach(Unit.allCases) { u in Text(u.rawValue).tag(u) }
                 }
                 .pickerStyle(.segmented)
                 TextField("Squat 1RM", value: $squat, format: .number)
-                    .squareFieldStyle()
+                    .textFieldStyle(.roundedBorder)
                 TextField("Bench 1RM", value: $bench, format: .number)
-                    .squareFieldStyle()
+                    .textFieldStyle(.roundedBorder)
                 TextField("Deadlift 1RM", value: $deadlift, format: .number)
-                    .squareFieldStyle()
+                    .textFieldStyle(.roundedBorder)
             }
             HStack {
                 Spacer()

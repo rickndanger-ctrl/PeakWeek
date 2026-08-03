@@ -23,6 +23,12 @@ final class AppStore: ObservableObject {
     private var pendingSave: DispatchWorkItem?
     private var terminateObserver: NSObjectProtocol?
 
+    /// One-shot consent for writing an EMPTY roster over a non-empty file.
+    /// Only explicit user actions (deleting the last client, restoring an
+    /// empty backup) set this. Anything else attempting such a write is
+    /// treated as state corruption and refused.
+    private var allowEmptyRosterWrite = false
+
     static let dataURL: URL = {
         let fm = FileManager.default
         let dir = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -96,14 +102,24 @@ final class AppStore: ObservableObject {
         // Rotate a one-generation safety copy before every write — but ONLY if
         // the current on-disk file actually decodes. A corrupt data.json must
         // never overwrite a good .bak.
+        var onDisk: AppData?
         if let existing = try? Data(contentsOf: Self.dataURL) {
             let dec = JSONDecoder()
             dec.dateDecodingStrategy = .iso8601
-            if (try? dec.decode(AppData.self, from: existing)) != nil {
+            onDisk = try? dec.decode(AppData.self, from: existing)
+            if onDisk != nil {
                 try? fm.removeItem(at: Self.backupURL)
                 try? fm.copyItem(at: Self.dataURL, to: Self.backupURL)
             }
         }
+        // Last line of defense: never silently replace a roster with nothing.
+        // An empty write is only honored when an explicit user action armed it.
+        if data.clients.isEmpty, let onDisk, !onDisk.clients.isEmpty, !allowEmptyRosterWrite {
+            NSLog("PeakWeek: REFUSED suspicious empty-roster write over %d client(s)",
+                  onDisk.clients.count)
+            return
+        }
+        allowEmptyRosterWrite = false
         try? raw.write(to: Self.dataURL, options: .atomic)
     }
 
@@ -114,6 +130,7 @@ final class AppStore: ObservableObject {
         dec.dateDecodingStrategy = .iso8601
         guard let decoded = try? dec.decode(AppData.self, from: raw) else { return false }
         loadFailed = false
+        allowEmptyRosterWrite = decoded.clients.isEmpty   // restoring an empty backup is explicit
         data = decoded
         return true
     }
@@ -141,6 +158,9 @@ final class AppStore: ObservableObject {
     func addClient(_ c: Client) { data.clients.append(c) }
 
     func deleteClient(_ id: UUID) {
+        if data.clients.count == 1, data.clients[0].id == id {
+            allowEmptyRosterWrite = true      // deleting the LAST client is explicit
+        }
         data.clients.removeAll { $0.id == id }
         // Retire any pending queue entries so the badge stays honest; keep
         // terminal history for the record.
@@ -356,6 +376,7 @@ final class AppStore: ObservableObject {
         dec.dateDecodingStrategy = .iso8601
         guard let decoded = try? dec.decode(AppData.self, from: raw) else { return false }
         loadFailed = false          // a good backup un-freezes writes
+        allowEmptyRosterWrite = decoded.clients.isEmpty   // restoring an empty backup is explicit
         data = decoded
         return true
     }

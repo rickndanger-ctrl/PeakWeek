@@ -145,7 +145,7 @@ struct WeekView: View {
                 TextField("e.g. Keep the pause squats honest — full 2-count. Video your last set of comp squats.",
                           text: $week.note, axis: .vertical)
                     .lineLimit(2...4)
-                    .squareFieldStyle()
+                    .textFieldStyle(.roundedBorder)
             }
             if week.phase == .meet {
                 MeetCard(client: client)
@@ -188,7 +188,7 @@ struct DayCard: View {
                     .font(.caption)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(SquareOutlineButtonStyle())
+            .buttonStyle(.bordered)
             .padding(.top, 4)
         }
         .padding(12)
@@ -273,12 +273,12 @@ struct SlotRow: View {
                                               settings: client.settings) {
                     Text("→ \(Engine.loadString(load, unit: client.unit))")
                         .font(.system(.caption, design: .monospaced)).bold()
-                        .foregroundStyle(Theme.plateYellow)
+                        .foregroundStyle(.primary)
                 }
                 Spacer(minLength: 4)
                 Text("RPE").font(.caption2).foregroundStyle(.secondary)
                 TextField("", value: $slot.rpe, format: .number)
-                    .squareFieldStyle()
+                    .textFieldStyle(.roundedBorder)
                     .font(.system(.caption, design: .monospaced))
                     .multilineTextAlignment(.center)
                     .frame(width: 40)
@@ -320,7 +320,7 @@ struct SlotRow: View {
 
     private func numField(_ value: Binding<Int>, width: CGFloat) -> some View {
         TextField("", value: value, format: .number)
-            .squareFieldStyle()
+            .textFieldStyle(.roundedBorder)
             .font(.system(.caption, design: .monospaced))
             .multilineTextAlignment(.center)
             .frame(width: width)
@@ -350,7 +350,7 @@ struct NewExercisePopover: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("New Library Exercise").font(.headline)
             TextField("Exercise name", text: $name)
-                .squareFieldStyle()
+                .textFieldStyle(.roundedBorder)
                 .frame(width: 240)
             Picker("Group", selection: $pool) {
                 ForEach(LiftPool.allCases) { p in Text(p.groupLabel).tag(p) }
@@ -360,7 +360,7 @@ struct NewExercisePopover: View {
                 HStack {
                     Text("Load modifier")
                     TextField("", value: $modPct, format: .number)
-                        .squareFieldStyle().frame(width: 56)
+                        .textFieldStyle(.roundedBorder).frame(width: 56)
                         .onChange(of: modPct) { v in modPct = min(120, max(30, v)) }
                     Text("% of comp-lift 1RM").foregroundStyle(.secondary)
                 }
@@ -425,7 +425,7 @@ struct MeetCard: View {
                 if profile.risk != .standard {
                     Text(profile.risk.label.uppercased())
                         .font(.system(size: 8, weight: .black)).kerning(0.5)
-                        .foregroundStyle(Theme.plateYellow)
+                        .foregroundStyle(.orange)
                 }
             }
             row("Opener ~\(p(eff.opener))%", a.opener, color: Theme.chalk)
