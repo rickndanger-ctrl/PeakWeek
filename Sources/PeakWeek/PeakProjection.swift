@@ -24,13 +24,14 @@ struct PeakProjection {
         /// Evidence window in days-out (inclusive).
         var window: ClosedRange<Int>
         var ok: Bool { window.contains(daysOut) }
+        /// Plain coach-speak, no jargon: what happened and what ideal looks like.
         var detail: String {
-            let range = "\(window.lowerBound)–\(window.upperBound) d"
-            if ok { return "\(daysOut) d out · in window (\(range))" }
-            let drift = daysOut < window.lowerBound
-                ? "\(window.lowerBound - daysOut) d too close to the meet"
-                : "\(daysOut - window.upperBound) d too far out"
-            return "\(daysOut) d out · outside \(range) — \(drift)"
+            let sweet = "sweet spot is \(window.lowerBound)–\(window.upperBound) days before the meet"
+            if ok { return "\(daysOut) days out — right where it should be" }
+            if daysOut < window.lowerBound {
+                return "\(daysOut) day\(daysOut == 1 ? "" : "s") out — cutting it close; \(sweet)"
+            }
+            return "\(daysOut) days out — earlier than ideal; \(sweet)"
         }
     }
 
@@ -96,16 +97,18 @@ struct PeakProjection {
                                 window: windows[.cessation]!))
         }
 
-        // Meet placement: the meet should land at the END of the final week.
+        // Meet placement: healthy = the back half of the final week, or the
+        // day right after it (the classic Monday meet after a Sunday-ended
+        // week). Only genuinely early or drifted placements get a note.
         var placementNote: String?
         if let last = program.weeks.last {
             let finalStart = DeliverySchedule.weekStart(startDate: startDate,
                                                         weekNum: last.num, calendar: calendar)
             let offset = calendar.dateComponents([.day], from: finalStart, to: meet).day ?? 0
-            if offset < 0 || offset > 6 {
-                placementNote = "The meet date falls OUTSIDE the program's final week — re-date day one (Plan from meet date aligns this automatically)."
+            if offset < 0 || offset > 7 {
+                placementNote = "The meet date doesn't line up with this program's final week. Easiest fix: click Plan from meet date — it re-dates day one so everything lands right."
             } else if offset < 4 {
-                placementNote = "The meet lands on day \(offset + 1) of the final week — early. Best: re-date day one so the meet falls at the week's end (Plan from meet date does this)."
+                placementNote = "The meet falls early in the final week, which squeezes the last few rest days. Easiest fix: click Plan from meet date to re-date day one."
             }
         }
 

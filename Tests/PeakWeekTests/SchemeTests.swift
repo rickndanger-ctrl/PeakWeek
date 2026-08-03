@@ -203,14 +203,25 @@ final class SchemeTests: XCTestCase {
         XCTAssertEqual(by[.cessation]?.ok, true)
     }
 
-    func testProjectionFlagsEarlyMeetPlacement() {
+    func testProjectionMeetPlacementRules() {
         let cal = Calendar.current
-        let start = cal.date(from: DateComponents(year: 2026, month: 8, day: 10))!
-        // Meet on the MONDAY of the final week (day 1) — early placement.
-        let meet = cal.date(from: DateComponents(year: 2026, month: 10, day: 26))!
+        func d(_ y: Int, _ m: Int, _ day: Int) -> Date {
+            cal.date(from: DateComponents(year: y, month: m, day: day))!
+        }
+        let start = d(2026, 8, 10)
         let p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
-        let proj = PeakProjection.compute(program: p, startDate: start, meetDate: meet)!
-        XCTAssertNotNil(proj.meetPlacementNote)
+        // Meet on the MONDAY of the final week (day 1) — genuinely early: note.
+        XCTAssertNotNil(PeakProjection.compute(program: p, startDate: start,
+                                               meetDate: d(2026, 10, 26))!.meetPlacementNote)
+        // Meet on the final Sunday (day 7 of week 12): aligned, no note.
+        XCTAssertNil(PeakProjection.compute(program: p, startDate: start,
+                                            meetDate: d(2026, 11, 1))!.meetPlacementNote)
+        // Monday meet the DAY AFTER the final week ends: normal, no note.
+        XCTAssertNil(PeakProjection.compute(program: p, startDate: start,
+                                            meetDate: d(2026, 11, 2))!.meetPlacementNote)
+        // A week past the program: note.
+        XCTAssertNotNil(PeakProjection.compute(program: p, startDate: start,
+                                               meetDate: d(2026, 11, 9))!.meetPlacementNote)
     }
 
     func testProjectionOnlyForMeetTrackPrograms() {

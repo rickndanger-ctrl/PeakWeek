@@ -734,46 +734,73 @@ struct ClientView: View {
 
     // MARK: peak projection
 
+    @State private var showPeakDetails = false
+
     @ViewBuilder
     private func peakProjectionPanel(_ program: Program) -> some View {
         if let meet = client.meetDate, let start = client.startDate,
            let projection = PeakProjection.compute(program: program, startDate: start,
                                                    meetDate: meet) {
+            let flagged = projection.events.filter { !$0.ok }
             VStack(alignment: .leading, spacing: 8) {
+                // One plain verdict — the whole story in a sentence.
                 HStack(spacing: 8) {
-                    Image(systemName: projection.allInWindow ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: projection.allInWindow ? "checkmark.seal.fill" : "info.circle.fill")
                         .foregroundStyle(projection.allInWindow ? Theme.plateGreen : .orange)
-                    Text("PEAK PROJECTION")
+                    Text("PEAK CHECK")
                         .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
-                    Text(projection.allInWindow
-                         ? "every milestone sits inside its evidence window"
-                         : "check the flagged spacing below")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
-                    ForEach(projection.events) { e in
-                        GridRow {
-                            Image(systemName: e.ok ? "checkmark.circle" : "exclamationmark.circle")
-                                .foregroundStyle(e.ok ? Theme.plateGreen : .orange)
-                                .font(.caption)
-                            Text(e.kind.rawValue).font(.caption).fontWeight(.semibold)
-                            Text(e.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
-                                .font(.system(.caption, design: .monospaced))
-                            Text(e.detail).font(.caption).foregroundStyle(e.ok ? .secondary : .primary)
-                        }
-                    }
+                    Text(verdict(projection, flagged: flagged))
+                        .font(.caption).fontWeight(.medium)
                 }
                 if let note = projection.meetPlacementNote {
-                    Label(note, systemImage: "calendar.badge.exclamationmark")
-                        .font(.caption).foregroundStyle(.orange)
+                    Text(note).font(.caption).foregroundStyle(.orange)
                 }
-                Text("Windows assume typical fatigue clearance (~12-day decay). Deadlift needs the longest runway, bench the shortest — the model derives the calendar, the bar decides the day.")
-                    .font(.system(size: 9)).foregroundStyle(.secondary)
+                DisclosureGroup(isExpanded: $showPeakDetails) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ForEach(projection.events) { e in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Image(systemName: e.ok ? "checkmark.circle" : "arrow.left.arrow.right.circle")
+                                    .foregroundStyle(e.ok ? Theme.plateGreen : .orange)
+                                    .font(.caption)
+                                Text(e.kind.rawValue).font(.caption).fontWeight(.semibold)
+                                    .frame(width: 130, alignment: .leading)
+                                Text(e.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .frame(width: 76, alignment: .leading)
+                                Text(e.detail).font(.caption)
+                                    .foregroundStyle(e.ok ? .secondary : .primary)
+                            }
+                        }
+                        Text("Sweet spots come from taper research at typical recovery speed. Deadlift needs the longest runway, bench the shortest. The plan sets the calendar — the bar decides the day.")
+                            .font(.system(size: 9)).foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+                    .padding(.top, 6)
+                } label: {
+                    Text(showPeakDetails ? "Hide the dates" : "Show the dates")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             .padding(14)
             .background(Theme.iron2, in: Rectangle())
             .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
         }
+    }
+
+    private func verdict(_ p: PeakProjection, flagged: [PeakProjection.Event]) -> String {
+        if p.allInWindow {
+            return "Timing looks right — every key session lands where the research says it should."
+        }
+        if flagged.isEmpty { return "Check the meet date note below." }
+        let allEarly = flagged.allSatisfy { $0.daysOut > $0.window.upperBound }
+        let allLate = flagged.allSatisfy { $0.daysOut < $0.window.lowerBound }
+        if allEarly {
+            return "The heavy work lands earlier than ideal — fine on a short prep, just know she'll be VERY fresh on the platform."
+        }
+        if allLate {
+            return "The heavy work is cutting close to the meet — she may carry fatigue onto the platform."
+        }
+        return "\(flagged.count) of \(p.events.count) key sessions land outside their ideal windows — dates below."
     }
 
     // MARK: barbell timeline (signature)
