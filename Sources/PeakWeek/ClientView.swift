@@ -128,6 +128,7 @@ struct ClientView: View {
                                 in: client.setupPhase.minWeeks...client.setupPhase.maxWeeks) {
                             Text("\(clampedWeeks) weeks").monospacedDigit()
                         }
+                        .disabled(client.setupPhase == .full && client.blockPlan != nil)
                     }
                     labeled("Days / week") {
                         Picker("", selection: $client.fiveDay) {
@@ -137,6 +138,10 @@ struct ClientView: View {
                         .pickerStyle(.segmented).labelsHidden().frame(width: 150)
                     }
                 }
+            }
+
+            if client.setupPhase == .full {
+                phaseLengthsPanel
             }
 
             HStack(spacing: 14) {
@@ -436,6 +441,61 @@ struct ClientView: View {
         return "\(display) \(ampm)"
     }
 
+    // MARK: custom phase lengths
+
+    private var planBinding: Binding<BlockPlan> {
+        Binding(
+            get: { client.blockPlan ?? BlockPlan() },
+            set: { client.blockPlan = $0 }
+        )
+    }
+
+    private var phaseLengthsPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: Binding(
+                get: { client.blockPlan != nil },
+                set: { on in
+                    if on {
+                        // Start from what the automatic split would produce.
+                        let auto = Engine.allocateBlocks(clampedWeeks)
+                        var plan = BlockPlan()
+                        plan.acc = auto.first { $0.phase == .acc }?.weeks ?? 4
+                        plan.deloadAfterAcc = auto.contains { $0.phase == .deload }
+                        plan.trans = auto.first { $0.phase == .trans }?.weeks ?? 4
+                        plan.real = auto.first { $0.phase == .real }?.weeks ?? 3
+                        client.blockPlan = plan
+                    } else {
+                        client.blockPlan = nil
+                    }
+                }
+            )) {
+                Text("CUSTOM PHASE LENGTHS")
+                    .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+            }
+            .toggleStyle(.switch)
+
+            if client.blockPlan != nil {
+                HStack(spacing: 18) {
+                    Stepper(value: planBinding.acc, in: 1...10) {
+                        Text("Volume \(planBinding.acc.wrappedValue) wk").monospacedDigit()
+                    }
+                    Toggle("Deload after volume", isOn: planBinding.deloadAfterAcc)
+                    Stepper(value: planBinding.trans, in: 1...10) {
+                        Text("Strength \(planBinding.trans.wrappedValue) wk").monospacedDigit()
+                    }
+                    Stepper(value: planBinding.real, in: 2...5) {
+                        Text("Peaking \(planBinding.real.wrappedValue) wk").monospacedDigit()
+                    }
+                    Text("= \(planBinding.wrappedValue.total) weeks total")
+                        .font(.caption).fontWeight(.bold).monospacedDigit()
+                }
+                .font(.caption)
+                Text("Peaking includes meet week. You can also insert extra deloads anywhere after generating — use the ⋯ menu on any week.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private func maxField(_ value: Binding<Double>) -> some View {
         // Show at most 1 decimal; stored value keeps full precision so unit
         // conversions round-trip exactly.
@@ -453,11 +513,13 @@ struct ClientView: View {
     }
 
     private func generate() {
+        let plan = client.setupPhase == .full ? client.blockPlan : nil
         client.program = Engine.buildProgram(startPhase: client.setupPhase,
-                                             totalWeeks: clampedWeeks,
+                                             totalWeeks: plan?.total ?? clampedWeeks,
                                              fiveDay: client.fiveDay,
                                              library: store.data.exerciseLibrary,
-                                             excluded: client.settings.excludedExerciseIDs ?? [])
+                                             excluded: client.settings.excludedExerciseIDs ?? [],
+                                             blockPlan: plan)
         // Old-program queue entries must not survive into the new program.
         store.retireStaleQueued(clientID: client.id, currentStamp: client.program?.createdAt)
         if client.startDate == nil {
@@ -554,7 +616,10 @@ struct ClientView: View {
                         onCopy: { copyWeek(program.weeks[wIdx], program: program) },
                         onSendNow: client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty
                             ? nil
-                            : { store.sendNow(clientID: client.id, weekNum: program.weeks[wIdx].num) }
+                            : { store.sendNow(clientID: client.id, weekNum: program.weeks[wIdx].num) },
+                        onInsertDeload: { after in insertDeload(at: after ? wIdx + 1 : wIdx) },
+                        onRemoveDeload: program.weeks[wIdx].phase == .deload
+                            ? { removeDeload(at: wIdx) } : nil
                     )
                 }
             }
@@ -583,6 +648,32 @@ struct ClientView: View {
                 if open { expandedWeeks.insert(id) } else { expandedWeeks.remove(id) }
             }
         )
+    }
+
+    // MARK: structural edits — the schedule, numbering, and delivery
+    // bookkeeping all follow automatically.
+
+    private func insertDeload(at index: Int) {
+        guard var program = client.program else { return }
+        let week = Engine.makeDeloadWeek(fiveDay: program.fiveDay,
+                                         library: store.data.exerciseLibrary,
+                                         excluded: client.settings.excludedExerciseIDs ?? [])
+        program.insert(week: week, at: index)
+        // Send records for weeks at/after the insertion point shift up by one.
+        store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,
+                                fromWeek: index + 1, by: 1)
+        client.program = program
+    }
+
+    private func removeDeload(at index: Int) {
+        guard var program = client.program,
+              program.weeks.indices.contains(index),
+              program.weeks[index].phase == .deload else { return }
+        let removedNum = program.weeks[index].num
+        program.removeWeek(at: index)
+        store.adjustSendRecords(clientID: client.id, programStamp: program.createdAt,
+                                fromWeek: removedNum + 1, by: -1, removedWeek: removedNum)
+        client.program = program
     }
 
     private func copyWeek(_ week: Week, program: Program) {

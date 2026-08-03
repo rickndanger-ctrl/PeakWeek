@@ -324,6 +324,25 @@ final class AppStore: ObservableObject {
         data.sendLog[idx].programStamp = outcome.programStamp
     }
 
+    /// Structural program edit (deload inserted/removed at week `fromWeek`):
+    /// shift this program's send-log records so history stays aligned with the
+    /// renumbered weeks. Queued records for a REMOVED week are retired.
+    func adjustSendRecords(clientID: UUID, programStamp: Date?,
+                           fromWeek: Int, by delta: Int, removedWeek: Int? = nil) {
+        for i in data.sendLog.indices where data.sendLog[i].clientID == clientID
+            && (data.sendLog[i].programStamp == nil || data.sendLog[i].programStamp == programStamp) {
+            if let removed = removedWeek, data.sendLog[i].weekNum == removed {
+                if case .queued = data.sendLog[i].status {
+                    data.sendLog[i].status = .skipped("week removed from program")
+                }
+                continue
+            }
+            if data.sendLog[i].weekNum >= fromWeek {
+                data.sendLog[i].weekNum += delta
+            }
+        }
+    }
+
     /// Called when a client's program is regenerated: anything still awaiting
     /// review for the OLD program is retired so it can't be approved into a
     /// stale or duplicate send.

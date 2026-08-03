@@ -276,37 +276,67 @@ enum Engine {
 
     /// Builds a program with slots resolved against the coach's exercise
     /// library. `excluded` exercises are substituted at generation time with
-    /// the first available exercise from the same pool.
+    /// the first available exercise from the same pool. A `blockPlan` overrides
+    /// the automatic phase allocation for full preps.
     static func buildProgram(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
-                             library: ExerciseLibrary, excluded: Set<UUID> = []) -> Program {
-        var program = buildProgramLegacy(startPhase: startPhase, totalWeeks: totalWeeks, fiveDay: fiveDay)
+                             library: ExerciseLibrary, excluded: Set<UUID> = [],
+                             blockPlan: BlockPlan? = nil) -> Program {
+        var program = buildProgramLegacy(startPhase: startPhase, totalWeeks: totalWeeks,
+                                         fiveDay: fiveDay, blockPlan: blockPlan)
         for wi in program.weeks.indices {
-            for di in program.weeks[wi].days.indices {
-                for si in program.weeks[wi].days[di].slots.indices {
-                    var slot = program.weeks[wi].days[di].slots[si]
-                    guard slot.custom == nil else { continue }
-                    guard let idx = slot.exIdx,
-                          let seedHit = library.seeded("\(slot.pool.rawValue):\(idx)") else { continue }
-                    var chosen = seedHit
-                    if excluded.contains(chosen.id) || chosen.archived {
-                        if let sub = library[slot.pool].first(where: {
-                            !$0.archived && !excluded.contains($0.id)
-                        }) { chosen = sub }
-                    }
-                    slot.exerciseID = chosen.id
-                    program.weeks[wi].days[di].slots[si] = slot
-                }
-            }
+            resolveSlots(in: &program.weeks[wi], library: library, excluded: excluded)
         }
         return program
     }
 
+    /// Resolve a week's template slots ((pool, exIdx) seed refs) to library
+    /// UUIDs, substituting excluded/archived exercises within the same pool.
+    static func resolveSlots(in week: inout Week, library: ExerciseLibrary,
+                             excluded: Set<UUID>) {
+        for di in week.days.indices {
+            for si in week.days[di].slots.indices {
+                var slot = week.days[di].slots[si]
+                guard slot.custom == nil, slot.exerciseID == nil else { continue }
+                guard let idx = slot.exIdx,
+                      let seedHit = library.seeded("\(slot.pool.rawValue):\(idx)") else { continue }
+                var chosen = seedHit
+                if excluded.contains(chosen.id) || chosen.archived {
+                    if let sub = library[slot.pool].first(where: {
+                        !$0.archived && !excluded.contains($0.id)
+                    }) { chosen = sub }
+                }
+                slot.exerciseID = chosen.id
+                week.days[di].slots[si] = slot
+            }
+        }
+    }
+
+    /// A standalone deload week for insertion into an existing program.
+    /// Numbering/grouping is fixed up by Program.renumberAndRegroup().
+    static func makeDeloadWeek(fiveDay: Bool, library: ExerciseLibrary,
+                               excluded: Set<UUID> = []) -> Week {
+        var week = Week(num: 0, phase: .deload, weekInBlock: 1, blockLen: 1,
+                        days: dayTemplates(phase: .deload, t: 0, weeksOut: nil, fiveDay: fiveDay))
+        resolveSlots(in: &week, library: library, excluded: excluded)
+        return week
+    }
+
     /// The original index-referenced builder. Templates still speak (pool, index)
     /// against the seed catalogue; resolution to library UUIDs happens above.
-    static func buildProgramLegacy(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool) -> Program {
+    static func buildProgramLegacy(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
+                                   blockPlan: BlockPlan? = nil) -> Program {
         let rawBlocks: [Block]
         switch startPhase {
-        case .full: rawBlocks = allocateBlocks(totalWeeks)
+        case .full:
+            if let plan = blockPlan {
+                var b = [Block(phase: .acc, weeks: max(1, plan.acc))]
+                if plan.deloadAfterAcc { b.append(Block(phase: .deload, weeks: 1)) }
+                b.append(Block(phase: .trans, weeks: max(1, plan.trans)))
+                b.append(Block(phase: .real, weeks: max(2, plan.real)))
+                rawBlocks = b
+            } else {
+                rawBlocks = allocateBlocks(totalWeeks)
+            }
         case .offseason: rawBlocks = allocateOffSeason(totalWeeks)
         case .real: rawBlocks = [Block(phase: .real, weeks: min(4, max(3, totalWeeks)))]
         case .acc: rawBlocks = [Block(phase: .acc, weeks: totalWeeks)]
@@ -341,7 +371,9 @@ enum Engine {
             }
         }
 
-        return Program(startPhase: startPhase, totalWeeks: totalWeeks, fiveDay: fiveDay,
+        // With a custom block plan the true total is the plan's sum, not the arg.
+        let actualTotal = rawBlocks.reduce(0) { $0 + $1.weeks }
+        return Program(startPhase: startPhase, totalWeeks: actualTotal, fiveDay: fiveDay,
                        createdAt: Date(), blocks: blocks, weeks: weeks)
     }
 

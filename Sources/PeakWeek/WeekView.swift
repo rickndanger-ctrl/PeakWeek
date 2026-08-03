@@ -1,29 +1,6 @@
 import SwiftUI
 import CoreTransferable
 
-// MARK: - Week delivery transferable
-
-/// Lets the share sheet produce the PDF lazily — only rendered when the coach
-/// actually picks a destination (Messages, Mail, AirDrop…).
-struct WeekPDFTransfer: Transferable {
-    let client: Client
-    let program: Program
-    let week: Week
-    let library: ExerciseLibrary
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(exportedContentType: .pdf) { item in
-            guard let url = WeekExporter.writeTempPDF(client: item.client,
-                                                     program: item.program,
-                                                     week: item.week,
-                                                     library: item.library) else {
-                throw CocoaError(.fileWriteUnknown)
-            }
-            return SentTransferredFile(url)
-        }
-    }
-}
-
 // MARK: - Week
 
 struct WeekView: View {
@@ -35,7 +12,10 @@ struct WeekView: View {
     let copied: Bool
     let onCopy: () -> Void
     var onSendNow: (() -> Void)? = nil
+    var onInsertDeload: ((_ after: Bool) -> Void)? = nil
+    var onRemoveDeload: (() -> Void)? = nil
     @State private var confirmSendNow = false
+    @State private var confirmRemoveDeload = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,10 +59,17 @@ struct WeekView: View {
                 ShareLink(item: weekText) {
                     Label("Send as text…", systemImage: "message")
                 }
-                ShareLink(item: WeekPDFTransfer(client: client, program: program, week: week,
-                                                library: store.data.exerciseLibrary),
-                          preview: SharePreview("\(client.name) — Week \(week.num)")) {
-                    Label("Send as PDF…", systemImage: "doc.richtext")
+                // A concrete file URL — NOT a lazy Transferable. Messages
+                // silently degrades custom Transferables to their text
+                // preview; a real file on disk always attaches as a PDF.
+                // Rendered when the menu opens (this week only, ~ms).
+                if let url = WeekExporter.writeTempPDF(client: client, program: program,
+                                                      week: week,
+                                                      library: store.data.exerciseLibrary) {
+                    ShareLink(item: url,
+                              preview: SharePreview("\(client.name) — Week \(week.num)")) {
+                        Label("Send as PDF…", systemImage: "doc.richtext")
+                    }
                 }
                 Divider()
                 Button("Save PDF…") {
@@ -101,12 +88,38 @@ struct WeekView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .padding(.trailing, 14)
+            .padding(.trailing, 6)
             .help("Send this week's plan to \(client.name)")
             .confirmationDialog(
                 "Send Week \(week.num) to \(client.delivery.recipient) via \(client.delivery.method.label) right now?",
                 isPresented: $confirmSendNow, titleVisibility: .visible) {
                 Button("Send") { onSendNow?() }
+            }
+
+            if onInsertDeload != nil || onRemoveDeload != nil {
+                Menu {
+                    if let insert = onInsertDeload {
+                        Button("Insert deload week before this week") { insert(false) }
+                        Button("Insert deload week after this week") { insert(true) }
+                    }
+                    if onRemoveDeload != nil {
+                        Divider()
+                        Button("Remove this deload week", role: .destructive) {
+                            confirmRemoveDeload = true
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .padding(.trailing, 14)
+                .help("Restructure: insert or remove deload weeks — numbering and the delivery schedule adjust automatically")
+                .confirmationDialog(
+                    "Remove this deload week? Later weeks move up and the schedule shifts a week earlier.",
+                    isPresented: $confirmRemoveDeload, titleVisibility: .visible) {
+                    Button("Remove", role: .destructive) { onRemoveDeload?() }
+                }
             }
         }
     }

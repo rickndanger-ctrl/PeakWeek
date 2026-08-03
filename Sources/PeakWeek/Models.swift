@@ -139,6 +139,30 @@ struct Block: Codable, Hashable {
     var weeks: Int
 }
 
+/// Coach-chosen phase lengths for a full meet prep. nil on a client means the
+/// engine's automatic allocation (factory behavior, unchanged).
+struct BlockPlan: Codable, Hashable {
+    var acc: Int = 4              // volume weeks
+    var deloadAfterAcc: Bool = true
+    var trans: Int = 4            // strength weeks
+    var real: Int = 3             // peaking weeks INCLUDING meet week
+
+    var total: Int { acc + (deloadAfterAcc ? 1 : 0) + trans + real }
+
+    init() {}
+    init(acc: Int, deloadAfterAcc: Bool, trans: Int, real: Int) {
+        self.acc = acc; self.deloadAfterAcc = deloadAfterAcc
+        self.trans = trans; self.real = real
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        acc = try c.decodeIfPresent(Int.self, forKey: .acc) ?? 4
+        deloadAfterAcc = try c.decodeIfPresent(Bool.self, forKey: .deloadAfterAcc) ?? true
+        trans = try c.decodeIfPresent(Int.self, forKey: .trans) ?? 4
+        real = try c.decodeIfPresent(Int.self, forKey: .real) ?? 3
+    }
+}
+
 struct Program: Codable, Hashable {
     var startPhase: StartPhase
     var totalWeeks: Int
@@ -146,6 +170,47 @@ struct Program: Codable, Hashable {
     var createdAt: Date
     var blocks: [Block]
     var weeks: [Week]
+
+    // MARK: structural editing (deload insertion/removal)
+
+    /// Insert a week at `index`; everything downstream adjusts: numbering,
+    /// block grouping, per-week block coordinates, totals.
+    mutating func insert(week: Week, at index: Int) {
+        let i = min(max(0, index), weeks.count)
+        weeks.insert(week, at: i)
+        renumberAndRegroup()
+    }
+
+    /// Remove the week at `index` (callers restrict this to deload weeks so
+    /// real training content can't be destroyed by a structural edit).
+    mutating func removeWeek(at index: Int) {
+        guard weeks.indices.contains(index) else { return }
+        weeks.remove(at: index)
+        renumberAndRegroup()
+    }
+
+    /// Recompute week numbers, block-run coordinates (weekInBlock/blockLen),
+    /// the blocks array (run-length grouping of phases), and totalWeeks.
+    mutating func renumberAndRegroup() {
+        for i in weeks.indices { weeks[i].num = i + 1 }
+        totalWeeks = weeks.count
+
+        var runs: [(phase: Phase, range: Range<Int>)] = []
+        var start = 0
+        for i in weeks.indices {
+            if i + 1 == weeks.count || weeks[i + 1].phase != weeks[i].phase {
+                runs.append((weeks[start].phase, start..<(i + 1)))
+                start = i + 1
+            }
+        }
+        blocks = runs.map { Block(phase: $0.phase, weeks: $0.range.count) }
+        for run in runs {
+            for (offset, wi) in run.range.enumerated() {
+                weeks[wi].weekInBlock = offset + 1
+                weeks[wi].blockLen = run.range.count
+            }
+        }
+    }
 }
 
 struct Maxes: Codable, Hashable {
@@ -186,15 +251,17 @@ struct Client: Codable, Identifiable, Hashable {
     var meetDate: Date? = nil             // optional: drives weeks-out display
     var delivery: DeliveryPrefs = DeliveryPrefs()
     var settings: ClientSettings = ClientSettings()
+    var blockPlan: BlockPlan? = nil       // nil = automatic phase allocation
 
     init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
          setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
          program: Program? = nil, startDate: Date? = nil, meetDate: Date? = nil,
-         delivery: DeliveryPrefs = DeliveryPrefs(), settings: ClientSettings = ClientSettings()) {
+         delivery: DeliveryPrefs = DeliveryPrefs(), settings: ClientSettings = ClientSettings(),
+         blockPlan: BlockPlan? = nil) {
         self.id = id; self.name = name; self.unit = unit; self.maxes = maxes
         self.setupPhase = setupPhase; self.setupWeeks = setupWeeks; self.fiveDay = fiveDay
         self.program = program; self.startDate = startDate; self.meetDate = meetDate
-        self.delivery = delivery; self.settings = settings
+        self.delivery = delivery; self.settings = settings; self.blockPlan = blockPlan
     }
 
     // Tolerant decoding: fields added after v1 fall back to defaults so old
@@ -213,6 +280,7 @@ struct Client: Codable, Identifiable, Hashable {
         meetDate = try c.decodeIfPresent(Date.self, forKey: .meetDate)
         delivery = try c.decodeIfPresent(DeliveryPrefs.self, forKey: .delivery) ?? DeliveryPrefs()
         settings = try c.decodeIfPresent(ClientSettings.self, forKey: .settings) ?? ClientSettings()
+        blockPlan = try c.decodeIfPresent(BlockPlan.self, forKey: .blockPlan)
     }
 }
 
