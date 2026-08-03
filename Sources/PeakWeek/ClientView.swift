@@ -1087,13 +1087,11 @@ struct ClientView: View {
         }
         if !replaceTargets.isEmpty || !insertPoints.isEmpty {
             Menu {
-                if client.meetDate != nil {
-                    replaceSection(program, replaceTargets)
-                    insertSection(program, insertPoints)
-                } else {
-                    insertSection(program, insertPoints)
-                    replaceSection(program, replaceTargets)
-                }
+                // Coach's preferred model: trading a week leads — it's the
+                // cleaner mental model (the deload absorbs into the plan).
+                // Inserting stays available for when adding length is the point.
+                replaceSection(program, replaceTargets)
+                insertSection(program, insertPoints)
             } label: {
                 Label("Add deload…", systemImage: "plus.rectangle")
                     .font(.caption)
