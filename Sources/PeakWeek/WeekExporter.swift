@@ -81,41 +81,6 @@ enum WeekExporter {
         return url
     }
 
-    // MARK: full-program export
-
-    /// Every week's text in one message — the whole block, front-loaded.
-    static func programText(client: Client, program: Program, library: ExerciseLibrary) -> String {
-        program.weeks.map {
-            Engine.weekToText(client: client, program: program, week: $0, library: library)
-        }.joined(separator: "\n\n————————————————\n\n")
-    }
-
-    static func writeTempProgramPDF(client: Client, program: Program,
-                                    library: ExerciseLibrary) -> URL? {
-        guard let data = WeekPDFLayout.renderProgram(client: client, program: program,
-                                                     library: library) else { return nil }
-        let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("PeakWeekShare", isDirectory: true)
-            .appendingPathComponent(client.id.uuidString.prefix(8).description, isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let safe = client.name.replacingOccurrences(of: "/", with: "-")
-        let url = dir.appendingPathComponent("\(safe) — Full Program.pdf")
-        do { try data.write(to: url, options: .atomic) } catch { return nil }
-        return url
-    }
-
-    static func saveProgramPDF(client: Client, program: Program, library: ExerciseLibrary) {
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.pdf]
-        let safe = client.name.replacingOccurrences(of: "/", with: "-")
-        panel.nameFieldStringValue = "\(safe) — Full Program.pdf"
-        panel.title = "Export Full Program as PDF"
-        guard panel.runModal() == .OK, let url = panel.url,
-              let data = WeekPDFLayout.renderProgram(client: client, program: program,
-                                                     library: library) else { return }
-        try? data.write(to: url, options: .atomic)
-    }
-
     /// Save-panel export for coaches who file PDFs manually.
     static func savePDF(client: Client, program: Program, week: Week, library: ExerciseLibrary) {
         let panel = NSSavePanel()

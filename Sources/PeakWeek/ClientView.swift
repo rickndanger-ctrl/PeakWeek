@@ -175,10 +175,6 @@ struct ClientView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.plateRed)
 
-                if client.program != nil {
-                    sendProgramMenu
-                }
-
                 Text("5-day adds a second squat day to volume + strength blocks. Peaking and deload stay at 4 days — the taper works by cutting workload.")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -192,52 +188,6 @@ struct ClientView: View {
         }
         .padding(20)
         .background(Theme.iron2, in: Rectangle())
-    }
-
-    // MARK: full-program send
-
-    @State private var confirmSendProgram = false
-
-    /// The whole program, on demand — weekly auto-sends stay untouched. Some
-    /// lifters want the full map up front; the weekly rhythm continues either way.
-    private var sendProgramMenu: some View {
-        Menu {
-            if let program = client.program {
-                ShareLink(item: WeekExporter.programText(client: client, program: program,
-                                                         library: store.data.exerciseLibrary)) {
-                    Label("Send as text…", systemImage: "message")
-                }
-                if let url = WeekExporter.writeTempProgramPDF(client: client, program: program,
-                                                              library: store.data.exerciseLibrary) {
-                    ShareLink(item: url,
-                              preview: SharePreview("\(client.name) — Full Program")) {
-                        Label("Send as PDF…", systemImage: "doc.richtext")
-                    }
-                }
-                Divider()
-                Button("Save PDF…") {
-                    WeekExporter.saveProgramPDF(client: client, program: program,
-                                                library: store.data.exerciseLibrary)
-                }
-                if !client.delivery.recipient.trimmingCharacters(in: .whitespaces).isEmpty {
-                    Divider()
-                    Button("Send now to \(client.delivery.recipient) (\(client.delivery.method.label))…") {
-                        confirmSendProgram = true
-                    }
-                }
-            }
-        } label: {
-            Label("Send program", systemImage: "square.and.arrow.up.on.square")
-                .fontWeight(.semibold)
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Send the ENTIRE program whenever you want — all \(client.program?.weeks.count ?? 0) weeks in one document. Weekly auto-sends keep running on their own schedule.")
-        .confirmationDialog(
-            "Send the full \(client.program?.weeks.count ?? 0)-week program to \(client.delivery.recipient) via \(client.delivery.method.label) right now?",
-            isPresented: $confirmSendProgram, titleVisibility: .visible) {
-            Button("Send") { store.sendProgramNow(clientID: client.id) }
-        }
     }
 
     // MARK: coaching options

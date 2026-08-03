@@ -193,37 +193,6 @@ enum WeekPDFLayout {
         return data as Data
     }
 
-    /// Full-program PDF: every week in order, each starting on a fresh page
-    /// (the per-week flow still paginates its own overflow). Same layout the
-    /// weekly PDFs use — the client sees one consistent document.
-    static func renderProgram(client: Client, program: Program,
-                              library: ExerciseLibrary) -> Data? {
-        guard !program.weeks.isEmpty else { return nil }
-        let data = NSMutableData()
-        guard let consumer = CGDataConsumer(data: data as CFMutableData) else { return nil }
-        var mediaBox = pageRect
-        guard let ctx = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else { return nil }
-        let r = Renderer(ctx: ctx)
-        for week in program.weeks {
-            r.beginPage()
-            header(r, client: client, program: program, week: week)
-            columnLegend(r)
-            for day in week.days {
-                dayBlock(r, day: day, client: client, library: library)
-            }
-            if !week.note.isEmpty {
-                notesBlock(r, note: week.note)
-            }
-            if week.phase == .meet {
-                attemptsBlock(r, client: client)
-            }
-            footer(r)
-            r.endPage()
-        }
-        ctx.closePDF()
-        return data as Data
-    }
-
     // MARK: sections
 
     private static func header(_ r: Renderer, client: Client, program: Program, week: Week) {

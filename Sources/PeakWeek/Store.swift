@@ -307,41 +307,6 @@ final class AppStore: ObservableObject {
         }
     }
 
-    /// Immediate manual send of the ENTIRE program — every week in one
-    /// document, whenever the coach wants it. Logged as weekNum 0 ("FULL" in
-    /// the delivery log). Deliberately outside the weekly schedule: it never
-    /// marks weeks covered, never touches queued records, and weekly
-    /// auto-sends keep running on their own cadence.
-    func sendProgramNow(clientID: UUID, now: Date = Date()) {
-        guard let client = data.clients.first(where: { $0.id == clientID }),
-              let program = client.program else { return }
-        func record(_ status: SendStatus) -> SendRecord {
-            SendRecord(clientID: client.id, clientName: client.name, weekNum: 0,
-                       date: now, method: client.delivery.method, status: status,
-                       programStamp: program.createdAt)
-        }
-        var attachment: URL?
-        if client.delivery.format != .text {
-            attachment = WeekExporter.writeTempProgramPDF(client: client, program: program,
-                                                          library: data.exerciseLibrary)
-            if attachment == nil {
-                data.sendLog.append(record(.failed("PDF generation failed")))
-                return
-            }
-        }
-        let body = client.delivery.format == .pdf ? nil
-            : WeekExporter.programText(client: client, program: program,
-                                       library: data.exerciseLibrary)
-        let result = SendBridge.send(via: client.delivery.method,
-                                     to: client.delivery.recipient,
-                                     subject: "\(client.name) — full training program",
-                                     text: body, attachment: attachment)
-        switch result {
-        case .success: data.sendLog.append(record(.sent))
-        case .failure(let err): data.sendLog.append(record(.failed(err.localizedDescription)))
-        }
-    }
-
     /// Immediate manual send from a week's Send menu.
     func sendNow(clientID: UUID, weekNum: Int) {
         guard let client = data.clients.first(where: { $0.id == clientID }) else { return }
@@ -400,14 +365,6 @@ final class AppStore: ObservableObject {
         guard data.sendLog[idx].programStamp == nil || data.sendLog[idx].programStamp == currentStamp else {
             data.sendLog[idx].status = .skipped("program changed since this failed")
             data.sendLog[idx].date = Date()
-            return
-        }
-        // weekNum 0 = a full-program send: retry through the same whole-
-        // program path, never the weekly one (there is no "week 0" to render).
-        if data.sendLog[idx].weekNum == 0 {
-            let failedID = data.sendLog[idx].id
-            data.sendLog.removeAll { $0.id == failedID }
-            sendProgramNow(clientID: client.id)
             return
         }
         let outcome = performSend(client: client, weekNum: data.sendLog[idx].weekNum)

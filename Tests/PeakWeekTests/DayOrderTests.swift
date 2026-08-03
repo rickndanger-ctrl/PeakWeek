@@ -117,30 +117,4 @@ final class DayOrderTests: XCTestCase {
         XCTAssertEqual(round.dayOrder, [2, 1, 0, 3])
     }
 
-    // MARK: - full-program export
-
-    func testProgramTextContainsEveryWeek() {
-        let p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
-        let client = Client(name: "Full", maxes: Maxes(squat: 405, bench: 275, deadlift: 495),
-                            program: p, startDate: date("2026-01-05"))
-        let text = WeekExporter.programText(client: client, program: p, library: lib)
-        for w in p.weeks {
-            XCTAssertTrue(text.contains("WEEK \(w.num)") || text.contains("Week \(w.num)"),
-                          "week \(w.num) missing from the full-program text")
-        }
-    }
-
-    func testProgramPDFRendersAllWeeks() {
-        let p = Engine.buildProgram(startPhase: .full, totalWeeks: 12, fiveDay: false, library: lib)
-        let client = Client(name: "Full", maxes: Maxes(squat: 405, bench: 275, deadlift: 495),
-                            program: p, startDate: date("2026-01-05"))
-        let data = WeekPDFLayout.renderProgram(client: client, program: p, library: lib)
-        XCTAssertNotNil(data)
-        // One page per week minimum (weeks may spill onto extra pages; shared
-        // font resources mean total bytes are NOT linear in week count).
-        let s = String(decoding: data!, as: UTF8.self)
-        let pages = s.components(separatedBy: "/Type /Page").count - 1
-        XCTAssertGreaterThanOrEqual(pages, p.weeks.count,
-                                    "at least one page per week")
-    }
 }

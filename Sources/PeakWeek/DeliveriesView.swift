@@ -97,9 +97,7 @@ struct DeliveriesView: View {
                         ForEach(history.prefix(50)) { rec in
                             HStack(spacing: 10) {
                                 statusIcon(rec.status)
-                                Text(rec.weekNum == 0
-                                     ? "\(rec.clientName) — Full program"
-                                     : "\(rec.clientName) — Week \(rec.weekNum)")
+                                Text("\(rec.clientName) — Week \(rec.weekNum)")
                                     .fontWeight(.medium)
                                 Text(rec.status.label)
                                     .font(.caption).foregroundStyle(.secondary)
