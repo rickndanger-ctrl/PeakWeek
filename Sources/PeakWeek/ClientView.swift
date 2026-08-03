@@ -141,6 +141,10 @@ struct ClientView: View {
                 }
             }
 
+            if client.setupPhase == .full || client.setupPhase == .offseason {
+                trainingStyleRow
+            }
+
             if client.setupPhase == .full {
                 phaseLengthsPanel
             }
@@ -571,6 +575,45 @@ struct ClientView: View {
         return "\(display) \(ampm)"
     }
 
+    // MARK: training style (always visible — the coach's scheme switch)
+
+    private var trainingStyleRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TRAINING STYLE")
+                .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+            HStack(spacing: 18) {
+                Picker("Volume block", selection: $client.accScheme) {
+                    Text("Classic linear").tag(PhaseScheme.linear)
+                    Text("RPE-anchored").tag(PhaseScheme.rpeAnchored)
+                    Text("Undulating (DUP)").tag(PhaseScheme.dup)
+                }
+                .fixedSize()
+                .help("Classic: the factory ramp (6s at 67→75%).\n\nRPE-anchored: same shape, honest entry — 6s at 72→80% (8s 69→75%) so a trained lifter's first week is stimulus, not ramp-in. Adjustable band below.\n\nUndulating (DUP): each lift gets a volume day, a speed day, and a strength day across the week — freshest option for trained lifters.")
+                if client.accScheme == .rpeAnchored {
+                    HStack(spacing: 4) {
+                        Text("Band").font(.caption2).foregroundStyle(.secondary)
+                        OptionalNumberField(placeholder: "72", value: $client.accBandLo, width: 44)
+                        Text("→").foregroundStyle(.secondary)
+                        OptionalNumberField(placeholder: "80", value: $client.accBandHi, width: 44)
+                        Text("%").font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .help("Entry → top %% for the sixes (bench eights derive automatically). Match the entry to what the lifter is coming from: fresh off hypertrophy ≈ 68, hardened meet-prep lifter ≈ 74. Blank = 72→80.")
+                }
+                Picker("Strength block", selection: $client.transScheme) {
+                    Text("Classic linear").tag(PhaseScheme.linear)
+                    Text("Wave (3-week)").tag(PhaseScheme.wave)
+                }
+                .fixedSize()
+                .help("Classic: the factory ramp (4s at 77→86%).\n\nWave: reps fall and weight rises for three weeks, then the bar drops back and the next wave starts heavier — same final-week weights (86/85/87), but the drop-backs shed fatigue. Best for lifters whose week 5–6 always collapses.")
+            }
+            .font(.caption)
+            Text(client.program == nil
+                 ? "Styles apply when you Generate."
+                 : "Style changes apply when you Regenerate — the current program keeps its style until then.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
     // MARK: custom phase lengths
 
     private var planBinding: Binding<BlockPlan> {
@@ -620,37 +663,6 @@ struct ClientView: View {
                     }
                     Text("= \(planBinding.wrappedValue.total) weeks total")
                         .font(.caption).fontWeight(.bold).monospacedDigit()
-                }
-                .font(.caption)
-                // Manual scheme selection — never applied automatically.
-                HStack(spacing: 18) {
-                    if planBinding.acc.wrappedValue > 0 {
-                        Picker("Volume scheme", selection: planBinding.accScheme) {
-                            Text("Linear (classic)").tag(PhaseScheme.linear)
-                            Text("Linear — RPE-anchored").tag(PhaseScheme.rpeAnchored)
-                            Text("Undulating (DUP)").tag(PhaseScheme.dup)
-                        }
-                        .fixedSize()
-                        .help("RPE-anchored: comp-lift volume work starts where a trained lifter actually works — 6s at 72→80% (8s at 69→75%), RPE ~6.5 entering, ~8.5 leaving — instead of the classic soft ramp-in (6 @ 67% ≈ RPE 4). Adjust the band to match the program the lifter is coming from. Variations stay factory.\n\nUndulating: each lift sees a volume day, a speed day, and a strength day across the week — evidence on par with linear, with a freshness edge for trained lifters.")
-                        if planBinding.accScheme.wrappedValue == .rpeAnchored {
-                            HStack(spacing: 4) {
-                                Text("Band").font(.caption2).foregroundStyle(.secondary)
-                                OptionalNumberField(placeholder: "72", value: planBinding.accBandLo, width: 44)
-                                Text("→").foregroundStyle(.secondary)
-                                OptionalNumberField(placeholder: "80", value: planBinding.accBandHi, width: 44)
-                                Text("%").font(.caption2).foregroundStyle(.secondary)
-                            }
-                            .help("Entry → top %% for the sixes (bench eights derive automatically). Match the entry to where the lifter is coming from: fresh off hypertrophy ≈ 68, hardened meet-prep lifter ≈ 74. Blank = 72→80.")
-                        }
-                    }
-                    Picker("Strength scheme", selection: planBinding.transScheme) {
-                        Text("Linear (classic)").tag(PhaseScheme.linear)
-                        Text("Wave (3-week)").tag(PhaseScheme.wave)
-                    }
-                    .fixedSize()
-                    .help("Wave: reps fall and weight rises for three weeks, then the bar drops back and the next wave starts heavier. Same final-week weights as linear (86/85/87), different route — the drop-backs shed fatigue. Best for lifters whose week 5–6 always collapses.")
-                    Text("Regenerate to apply scheme changes.")
-                        .font(.caption).foregroundStyle(.secondary)
                 }
                 .font(.caption)
                 Text("Peaking includes meet week. After generating you can add one recovery week between strength and peaking — the button under the timeline (deload rows carry a − control to undo).")
@@ -707,9 +719,32 @@ struct ClientView: View {
             pendingDayOne = nil
         }
         meetPlanSummary = nil
-        let plan = client.setupPhase == .full ? client.blockPlan : nil
+        // Training styles ride on a generation plan. When the coach picked a
+        // non-linear style without custom lengths, mirror the automatic split
+        // (mirroring == factory allocation — locked by golden tests) so the
+        // styles have a carrier.
+        var plan = client.setupPhase == .full ? client.blockPlan : nil
+        let stylesChosen = client.accScheme != .linear || client.transScheme != .linear
+        if plan == nil, stylesChosen,
+           client.setupPhase == .full || client.setupPhase == .offseason {
+            if client.setupPhase == .full {
+                let auto = Engine.allocateBlocks(clampedWeeks)
+                plan = BlockPlan(
+                    acc: auto.first { $0.phase == .acc }?.weeks ?? 4,
+                    deloadAfterAcc: auto.contains { $0.phase == .deload },
+                    trans: auto.first { $0.phase == .trans }?.weeks ?? 4,
+                    real: auto.first { $0.phase == .real }?.weeks ?? 3)
+            } else {
+                plan = BlockPlan()   // off-season: blocks come from its allocator; plan only carries styles
+            }
+        }
+        plan?.accScheme = client.accScheme
+        plan?.transScheme = client.transScheme
+        plan?.accBandLo = client.accBandLo
+        plan?.accBandHi = client.accBandHi
+        let usesPlanLengths = client.setupPhase == .full && client.blockPlan != nil
         client.program = Engine.buildProgram(startPhase: client.setupPhase,
-                                             totalWeeks: plan?.total ?? clampedWeeks,
+                                             totalWeeks: usesPlanLengths ? (plan?.total ?? clampedWeeks) : clampedWeeks,
                                              fiveDay: client.fiveDay,
                                              library: store.data.exerciseLibrary,
                                              excluded: client.settings.excludedExerciseIDs ?? [],

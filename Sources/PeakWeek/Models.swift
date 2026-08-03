@@ -311,16 +311,24 @@ struct Client: Codable, Identifiable, Hashable {
     var delivery: DeliveryPrefs = DeliveryPrefs()
     var settings: ClientSettings = ClientSettings()
     var blockPlan: BlockPlan? = nil       // nil = automatic phase allocation
+    /// Training styles — top-level coach choices, independent of custom
+    /// lengths. Copied onto the generation plan at Generate time.
+    var accScheme: PhaseScheme = .linear
+    var transScheme: PhaseScheme = .linear
+    var accBandLo: Double? = nil          // RPE-anchored entry override
+    var accBandHi: Double? = nil
 
     init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
          setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
          program: Program? = nil, startDate: Date? = nil, meetDate: Date? = nil,
          delivery: DeliveryPrefs = DeliveryPrefs(), settings: ClientSettings = ClientSettings(),
-         blockPlan: BlockPlan? = nil) {
+         blockPlan: BlockPlan? = nil,
+         accScheme: PhaseScheme = .linear, transScheme: PhaseScheme = .linear) {
         self.id = id; self.name = name; self.unit = unit; self.maxes = maxes
         self.setupPhase = setupPhase; self.setupWeeks = setupWeeks; self.fiveDay = fiveDay
         self.program = program; self.startDate = startDate; self.meetDate = meetDate
         self.delivery = delivery; self.settings = settings; self.blockPlan = blockPlan
+        self.accScheme = accScheme; self.transScheme = transScheme
     }
 
     // Tolerant decoding: fields added after v1 fall back to defaults so old
@@ -340,6 +348,12 @@ struct Client: Codable, Identifiable, Hashable {
         delivery = try c.decodeIfPresent(DeliveryPrefs.self, forKey: .delivery) ?? DeliveryPrefs()
         settings = try c.decodeIfPresent(ClientSettings.self, forKey: .settings) ?? ClientSettings()
         blockPlan = try c.decodeIfPresent(BlockPlan.self, forKey: .blockPlan)
+        accScheme = try c.decodeIfPresent(PhaseScheme.self, forKey: .accScheme)
+            ?? blockPlan?.accScheme ?? .linear      // migrate earlier plan-level choices
+        transScheme = try c.decodeIfPresent(PhaseScheme.self, forKey: .transScheme)
+            ?? blockPlan?.transScheme ?? .linear
+        accBandLo = try c.decodeIfPresent(Double.self, forKey: .accBandLo) ?? blockPlan?.accBandLo
+        accBandHi = try c.decodeIfPresent(Double.self, forKey: .accBandHi) ?? blockPlan?.accBandHi
     }
 }
 
