@@ -283,6 +283,72 @@ final class DeliveryTests: XCTestCase {
         guard case .failure(.emptyRecipient) = r else { return XCTFail("expected emptyRecipient") }
     }
 
+    // MARK: - each week sends ITS OWN schedule
+
+    func testEveryWeekSendsItsOwnSchedule() {
+        // The chain the coach relies on: the calendar decides which week is
+        // current → dueSend targets exactly that week → the rendered content
+        // is exactly that week's days. Walk the whole program.
+        let c = makeClient(weekday: 1, hour: 18)   // Sunday-evening sends
+        let program = c.program!
+        for week in program.weeks {
+            // Mid-week moment inside week N (Wednesday noon).
+            let ws = DeliverySchedule.weekStart(startDate: monday, weekNum: week.num)
+            let midWeek = cal.date(byAdding: .day, value: 2, to: ws)!.addingTimeInterval(12 * 3600)
+            XCTAssertEqual(DeliverySchedule.currentWeek(now: midWeek, startDate: monday,
+                                                        program: program), week.num)
+            // No records yet → the due send for that moment is THIS week.
+            let due = DeliverySchedule.dueSend(now: midWeek, startDate: monday,
+                                              program: program, prefs: c.delivery, records: [])
+            XCTAssertEqual(due?.weekNum, week.num,
+                           "week \(week.num): the due send targets the current week")
+            // And the rendered message is that week's schedule, day for day.
+            let text = Engine.weekToText(client: c, program: program, week: week, library: lib)
+            XCTAssertTrue(text.uppercased().contains("WEEK \(week.num)"),
+                          "week \(week.num) header present")
+            for day in week.days {
+                XCTAssertTrue(text.contains(day.title),
+                              "week \(week.num) text carries '\(day.title)'")
+            }
+        }
+    }
+
+    // MARK: - send timing vs day one
+
+    func testSendLandsOnDayOneDetection() {
+        // Monday-anchored weeks (monday fixture): a Monday send (weekday 2)
+        // lands ON day one; any other day lands ahead of it.
+        var prefs = DeliveryPrefs()
+        prefs.weekday = 2
+        XCTAssertTrue(DeliverySchedule.sendLandsOnDayOne(startDate: monday, prefs: prefs))
+        prefs.weekday = 1   // Sunday — the evening before
+        XCTAssertFalse(DeliverySchedule.sendLandsOnDayOne(startDate: monday, prefs: prefs))
+        prefs.weekday = 6   // Friday before
+        XCTAssertFalse(DeliverySchedule.sendLandsOnDayOne(startDate: monday, prefs: prefs))
+
+        // The math behind the warning: a same-day send's moment is ON OR
+        // AFTER the week's 00:00 start; any other day's moment is BEFORE it.
+        prefs.weekday = 2; prefs.hour = 14
+        let sameDay = DeliverySchedule.sendMoment(startDate: monday, weekNum: 2, prefs: prefs)
+        XCTAssertGreaterThanOrEqual(sameDay,
+            DeliverySchedule.weekStart(startDate: monday, weekNum: 2))
+        prefs.weekday = 1; prefs.hour = 18
+        let dayBefore = DeliverySchedule.sendMoment(startDate: monday, weekNum: 2, prefs: prefs)
+        XCTAssertLessThan(dayBefore,
+            DeliverySchedule.weekStart(startDate: monday, weekNum: 2))
+    }
+
+    func testDayOneDetectionFollowsAnchorNotMonday() {
+        // A Wednesday-anchored lifter: Wednesday sends land on day one;
+        // Monday sends are safely early.
+        let wednesday = date(2026, 8, 12)
+        var prefs = DeliveryPrefs()
+        prefs.weekday = 4   // Wednesday
+        XCTAssertTrue(DeliverySchedule.sendLandsOnDayOne(startDate: wednesday, prefs: prefs))
+        prefs.weekday = 2   // Monday
+        XCTAssertFalse(DeliverySchedule.sendLandsOnDayOne(startDate: wednesday, prefs: prefs))
+    }
+
     // MARK: - migration: v1 data.json (no delivery fields) still decodes
 
     func testV1DataStillDecodes() throws {

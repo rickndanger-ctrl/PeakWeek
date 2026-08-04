@@ -154,6 +154,16 @@ enum DeliverySchedule {
         return calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
     }
 
+    /// True when the configured send lands ON the week's day-one weekday —
+    /// meaning the plan arrives the day it's meant to START, not before it.
+    /// (Any other send day lands in the week BEFORE by construction.) The
+    /// coach gets warned so a morning lifter never trains day 1 blind.
+    static func sendLandsOnDayOne(startDate: Date, prefs: DeliveryPrefs,
+                                  calendar: Calendar = .current) -> Bool {
+        let anchor = calendar.component(.weekday, from: calendar.startOfDay(for: startDate))
+        return min(7, max(1, prefs.weekday)) == anchor
+    }
+
     /// Which program week contains `now` (1-based), or nil outside the program.
     static func currentWeek(now: Date, startDate: Date, program: Program,
                             calendar: Calendar = .current) -> Int? {

@@ -464,6 +464,7 @@ struct ClientView: View {
                 }
             }
             deliveryStatusLine
+            sendTimingHint
             Text(client.delivery.requireReview
                  ? "Due weeks queue up for your approval — check the paper-plane icon in the toolbar."
                  : "Due weeks send without asking. The send log keeps a record of every delivery.")
@@ -536,6 +537,31 @@ struct ClientView: View {
             label += " (\(d.formatted(.dateTime.month(.abbreviated).day())))"
         }
         return label
+    }
+
+    /// Warns when the auto-send is timed to land ON day one instead of ahead
+    /// of it — the plan must be in the lifter's hands before the first
+    /// session of the week, and only the coach knows what time they train.
+    @ViewBuilder
+    private var sendTimingHint: some View {
+        if client.delivery.autoSend, let start = client.startDate, client.program != nil,
+           DeliverySchedule.sendLandsOnDayOne(startDate: start, prefs: client.delivery) {
+            let cal = Calendar.current
+            let anchor = cal.component(.weekday, from: cal.startOfDay(for: start))
+            let symbols = DateFormatter().weekdaySymbols ?? []
+            let dayName = symbols.indices.contains(anchor - 1) ? symbols[anchor - 1] : "day one"
+            let prevName = symbols.indices.contains((anchor + 5) % 7) ? symbols[(anchor + 5) % 7] : "the day before"
+            let hour = min(23, max(0, client.delivery.hour))
+            let hourStr = hour == 0 ? "midnight" : hour < 12 ? "\(hour) AM"
+                : hour == 12 ? "noon" : "\(hour - 12) PM"
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: "clock.badge.exclamationmark")
+                    .foregroundStyle(.orange).font(.caption)
+                Text("Each week starts on a \(dayName) — and the send goes out that same \(dayName) at \(hourStr). If \(client.name) trains earlier that day, the new week arrives late. Switch SEND ON to \(prevName) (evening) to always be a step ahead.")
+                    .font(.caption).foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     /// Live confidence line: which program week today falls in, and exactly
