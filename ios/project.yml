@@ -1,0 +1,30 @@
+name: PeakWeekClient
+options:
+  bundleIdPrefix: com.peakweek
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+packages:
+  PeakWeekCore:
+    path: ..
+targets:
+  PeakWeekClient:
+    type: application
+    platform: iOS
+    sources:
+      - PeakWeekClient
+    dependencies:
+      - package: PeakWeekCore
+        product: PeakWeekCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.peakweek.client
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: PeakWeek
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
