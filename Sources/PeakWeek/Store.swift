@@ -54,11 +54,14 @@ final class AppStore: ObservableObject {
     init() {
         load()
         // Automated delivery: catch up shortly after launch, then check hourly.
+        // The inbound sync poll rides the same cadence.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
             self?.runDeliveryPass()
+            self?.syncNow()
         }
         deliveryTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             self?.runDeliveryPass()
+            self?.syncNow()
         }
         // Flush any debounced save before quitting.
         terminateObserver = NotificationCenter.default.addObserver(
@@ -312,7 +315,12 @@ final class AppStore: ObservableObject {
                                      subject: "\(client.name) — Week \(weekNum) training plan",
                                      text: body, attachment: attachment)
         switch result {
-        case .success: return record(.sent)
+        case .success:
+            // The client app mirrors exactly what was SENT — one week, the
+            // latest only. Fire-and-forget; iMessage stays the channel of record.
+            SyncService.publishWeek(client: client, program: program, week: week,
+                                    library: data.exerciseLibrary)
+            return record(.sent)
         case .failure(let err): return record(.failed(err.localizedDescription))
         }
     }
@@ -384,6 +392,17 @@ final class AppStore: ObservableObject {
     /// New (unreviewed) inbox rows — drives the toolbar badge.
     var newInboxCount: Int {
         data.inboxLog.filter { $0.state == .new }.count
+    }
+
+    /// Kick one inbound sync pass (poll → ingest → videos → ack) plus the
+    /// local video retention sweep. Fire-and-forget; everything idempotent.
+    func syncNow() {
+        guard SyncService.isConfigured else { return }
+        Task.detached(priority: .utility) { [weak self] in
+            guard let self else { return }
+            _ = await SyncService.pollInbox(store: self)
+            SyncService.cleanupVideoStorage()
+        }
     }
 
     /// Immediate manual send from a week's Send menu.

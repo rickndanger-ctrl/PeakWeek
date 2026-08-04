@@ -48,10 +48,36 @@ struct GeneralSettingsView: View {
             }
             Text("Backups: automatic .bak before every save, plus manual Backup/Restore in the toolbar Data menu.")
                 .font(.caption).foregroundStyle(.secondary)
+            Divider().padding(.vertical, 8)
+            LabeledContent("Client app sync") {
+                HStack(spacing: 8) {
+                    Image(systemName: SyncService.isConfigured
+                          ? "checkmark.circle.fill" : "xmark.circle")
+                        .foregroundStyle(SyncService.isConfigured ? Theme.plateGreen : .secondary)
+                    Text(SyncService.isConfigured
+                         ? "Connected (coach key in Keychain)"
+                         : "Not configured")
+                        .font(.caption)
+                    Button("Test connection") {
+                        syncTestResult = nil
+                        Task { syncTestResult = await SyncService.testConnection() }
+                    }
+                    .font(.caption)
+                    if let ok = syncTestResult {
+                        Text(ok ? "✓ pipe answering" : "✗ no answer — check network")
+                            .font(.caption)
+                            .foregroundStyle(ok ? Theme.plateGreen : .red)
+                    }
+                }
+            }
+            Text("The pipe carries client-app submissions in and published weeks out. Pair a lifter's phone from their delivery panel; unpair there any time.")
+                .font(.caption).foregroundStyle(.secondary)
         }
         .padding(24)
         .frame(maxWidth: 480)
     }
+
+    @State private var syncTestResult: Bool?
 }
 
 // MARK: - Exercise library editor

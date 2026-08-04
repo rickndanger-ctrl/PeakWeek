@@ -24,7 +24,19 @@ struct InboxView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Client Inbox").font(.title2).bold()
+            HStack {
+                Text("Client Inbox").font(.title2).bold()
+                Spacer()
+                if SyncService.isConfigured {
+                    Button {
+                        store.syncNow()
+                    } label: {
+                        Label("Check now", systemImage: "arrow.clockwise").font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .help("Poll the pipe right now instead of waiting for the hourly pass")
+                }
+            }
             if store.data.inboxLog.isEmpty {
                 Text("Nothing yet. When a lifter logs a result from the client app, it lands in their Trends & Log automatically and shows up here for your eyes — flagged if anything looks off.")
                     .font(.caption).foregroundStyle(.secondary)

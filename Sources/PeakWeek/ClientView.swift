@@ -465,6 +465,23 @@ struct ClientView: View {
             }
             deliveryStatusLine
             sendTimingHint
+            if SyncService.isConfigured {
+                HStack(spacing: 10) {
+                    Button {
+                        showPairing = true
+                    } label: {
+                        Label("Pair iPhone app…", systemImage: "iphone.badge.play")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .help("Connect \(client.name)'s phone — results they log land in your inbox automatically. Auto-messages keep working either way.")
+                    Text("App users log results straight into Trends & Log. Texts stay on for everyone.")
+                        .font(.system(size: 9)).foregroundStyle(.secondary)
+                }
+                .sheet(isPresented: $showPairing) {
+                    PairingSheet(client: client)
+                }
+            }
             Text(client.delivery.requireReview
                  ? "Due weeks queue up for your approval — check the paper-plane icon in the toolbar."
                  : "Due weeks send without asking. The send log keeps a record of every delivery.")
@@ -745,6 +762,7 @@ struct ClientView: View {
     // MARK: day order
 
     @State private var confirmApplyDayOrder = false
+    @State private var showPairing = false
 
     /// Factory identity of each day position — what the day IS regardless of
     /// where the lifter puts it in their week.
