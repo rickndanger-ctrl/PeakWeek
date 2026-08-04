@@ -2,16 +2,16 @@ import Foundation
 
 // MARK: - Core enums
 
-enum Unit: String, Codable, CaseIterable, Identifiable {
+public enum Unit: String, Codable, CaseIterable, Identifiable {
     case lb, kg
-    var id: String { rawValue }
-    var step: Double { self == .kg ? 2.5 : 5 }
+    public var id: String { rawValue }
+    public var step: Double { self == .kg ? 2.5 : 5 }
 }
 
-enum Phase: String, Codable {
+public enum Phase: String, Codable {
     case acc, trans, real, deload, meet, hyp
 
-    var label: String {
+    public var label: String {
         switch self {
         case .acc: return "Accumulation"
         case .trans: return "Transmutation"
@@ -21,7 +21,7 @@ enum Phase: String, Codable {
         case .hyp: return "Hypertrophy"
         }
     }
-    var sub: String {
+    public var sub: String {
         switch self {
         case .acc: return "Volume · Hypertrophy"
         case .trans: return "Strength"
@@ -31,7 +31,7 @@ enum Phase: String, Codable {
         case .hyp: return "Muscle · Off-Season"
         }
     }
-    var blurb: String {
+    public var blurb: String {
         switch self {
         case .acc: return "Build muscle and work capacity. Highest volume of the plan — moderate loads, big sets, plenty of variation and accessory work. Main-lift load climbs linearly every week."
         case .trans: return "Convert new muscle into maximal strength. Reps drop to 3–5, volume comes down ~30%, exercise selection narrows toward the comp lifts. Load climbs ~2–3% per week."
@@ -43,11 +43,11 @@ enum Phase: String, Codable {
     }
 }
 
-enum StartPhase: String, Codable, CaseIterable, Identifiable {
+public enum StartPhase: String, Codable, CaseIterable, Identifiable {
     case full, acc, trans, real, offseason, hypertrophy
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var label: String {
+    public var label: String {
         switch self {
         case .full: return "Full meet prep (all 3 phases)"
         case .acc: return "Accumulation only (volume)"
@@ -57,7 +57,7 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .hypertrophy: return "Hypertrophy off-season (build)"
         }
     }
-    var minWeeks: Int {
+    public var minWeeks: Int {
         switch self {
         case .full: return 10
         case .acc, .trans: return 4
@@ -65,7 +65,7 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .offseason, .hypertrophy: return 8
         }
     }
-    var maxWeeks: Int {
+    public var maxWeeks: Int {
         switch self {
         case .full: return 16
         case .acc, .trans: return 6
@@ -73,7 +73,7 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
         case .offseason, .hypertrophy: return 12
         }
     }
-    var defaultWeeks: Int {
+    public var defaultWeeks: Int {
         switch self {
         case .full: return 12
         case .acc, .trans: return 5
@@ -86,10 +86,10 @@ enum StartPhase: String, Codable, CaseIterable, Identifiable {
 
 /// Per-phase progression scheme — the coach picks these MANUALLY (never
 /// auto-applied). Linear is the factory behavior.
-enum PhaseScheme: String, Codable, CaseIterable, Identifiable {
+public enum PhaseScheme: String, Codable, CaseIterable, Identifiable {
     case linear, wave, dup, rpeAnchored
-    var id: String { rawValue }
-    var label: String {
+    public var id: String { rawValue }
+    public var label: String {
         switch self {
         case .linear: return "Linear (classic)"
         case .wave: return "Wave (3-week waves)"
@@ -99,10 +99,10 @@ enum PhaseScheme: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-enum LiftPool: String, Codable, CaseIterable, Identifiable {
+public enum LiftPool: String, Codable, CaseIterable, Identifiable {
     case squat, bench, deadlift, quads, hams, back, press, core, arms
-    var id: String { rawValue }
-    var groupLabel: String {
+    public var id: String { rawValue }
+    public var groupLabel: String {
         switch self {
         case .squat: return "SQUAT"
         case .bench: return "BENCH"
@@ -119,44 +119,54 @@ enum LiftPool: String, Codable, CaseIterable, Identifiable {
 
 // MARK: - Exercise catalogue
 
-struct Exercise {
-    let name: String
-    let mod: Double?   // load modifier vs comp-lift 1RM; nil = accessory (RPE only)
+public struct Exercise {
+    public let name: String
+    public let mod: Double?   // load modifier vs comp-lift 1RM; nil = accessory (RPE only)
 }
 
 // MARK: - Program structures (all Codable, saved to disk)
 
-struct Slot: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var pool: LiftPool
-    var exIdx: Int? = nil         // legacy seed index; migrated to exerciseID on load
-    var exerciseID: UUID? = nil   // canonical library reference
-    var custom: String? = nil     // non-nil = free-typed exercise name
-    var sets: Int
-    var reps: Int
-    var pct: Double? = nil        // nil = accessory (no % / no computed load)
-    var rpe: Double
-    var note: String? = nil       // optional per-slot coach cue
-    var filmThis: Bool? = nil     // "film this set" flag
+public struct Slot: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var pool: LiftPool
+    public var exIdx: Int? = nil         // legacy seed index; migrated to exerciseID on load
+    public var exerciseID: UUID? = nil   // canonical library reference
+    public var custom: String? = nil     // non-nil = free-typed exercise name
+    public var sets: Int
+    public var reps: Int
+    public var pct: Double? = nil        // nil = accessory (no % / no computed load)
+    public var rpe: Double
+    public var note: String? = nil       // optional per-slot coach cue
+    public var filmThis: Bool? = nil     // "film this set" flag
+
+    public init(id: UUID = UUID(), pool: LiftPool, exIdx: Int? = nil,
+                exerciseID: UUID? = nil, custom: String? = nil,
+                sets: Int, reps: Int, pct: Double? = nil, rpe: Double,
+                note: String? = nil, filmThis: Bool? = nil) {
+        self.id = id; self.pool = pool; self.exIdx = exIdx
+        self.exerciseID = exerciseID; self.custom = custom
+        self.sets = sets; self.reps = reps; self.pct = pct; self.rpe = rpe
+        self.note = note; self.filmThis = filmThis
+    }
 }
 
-struct DayPlan: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var title: String
-    var slots: [Slot]
+public struct DayPlan: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var title: String
+    public var slots: [Slot]
     /// Which factory template position this day was born as (0 = squat day,
     /// 1 = bench day, …). Stable across reordering — day-order preferences
     /// are ABSOLUTE (keyed to this), never relative to the current sequence.
     /// nil on pre-existing saved days; inferred from the title's "Day N"
     /// number on first reorder, then stamped.
-    var factoryIndex: Int? = nil
+    public var factoryIndex: Int? = nil
 
-    init(id: UUID = UUID(), title: String, slots: [Slot], factoryIndex: Int? = nil) {
+    public init(id: UUID = UUID(), title: String, slots: [Slot], factoryIndex: Int? = nil) {
         self.id = id; self.title = title; self.slots = slots
         self.factoryIndex = factoryIndex
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
@@ -165,48 +175,69 @@ struct DayPlan: Codable, Identifiable, Hashable {
     }
 }
 
-struct Week: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var num: Int
-    var phase: Phase
-    var weekInBlock: Int
-    var blockLen: Int
-    var note: String = ""
-    var days: [DayPlan]
+public struct Week: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var num: Int
+    public var phase: Phase
+    public var weekInBlock: Int
+    public var blockLen: Int
+    public var note: String = ""
+    public var days: [DayPlan]
+
+    public init(id: UUID = UUID(), num: Int, phase: Phase, weekInBlock: Int,
+                blockLen: Int, note: String = "", days: [DayPlan]) {
+        self.id = id; self.num = num; self.phase = phase
+        self.weekInBlock = weekInBlock; self.blockLen = blockLen
+        self.note = note; self.days = days
+    }
 }
 
-struct Block: Codable, Hashable {
-    var phase: Phase
-    var weeks: Int
+public struct Block: Codable, Hashable {
+    public var phase: Phase
+    public var weeks: Int
+
+    public init(phase: Phase, weeks: Int) {
+        self.phase = phase; self.weeks = weeks
+    }
 }
 
 /// Coach-chosen phase lengths for a full meet prep. nil on a client means the
 /// engine's automatic allocation (factory behavior, unchanged).
-struct BlockPlan: Codable, Hashable {
-    var acc: Int = 4              // volume weeks
-    var deloadAfterAcc: Bool = true
-    var trans: Int = 4            // strength weeks
-    var real: Int = 3             // peaking weeks INCLUDING meet week
+public struct BlockPlan: Codable, Hashable {
+    public var acc: Int = 4              // volume weeks
+    public var deloadAfterAcc: Bool = true
+    public var trans: Int = 4            // strength weeks
+    public var real: Int = 3             // peaking weeks INCLUDING meet week
     /// Manual scheme choices (composability: schemes attach to phases).
-    var accScheme: PhaseScheme = .linear
-    var transScheme: PhaseScheme = .linear
+    public var accScheme: PhaseScheme = .linear
+    public var transScheme: PhaseScheme = .linear
     /// RPE-anchored band override — the coach matches the entry point to
     /// whatever program the lifter is transitioning FROM (nil = 72→80 sixes;
     /// bench eights derive as entry−3 → top−5).
-    var accBandLo: Double? = nil
-    var accBandHi: Double? = nil
+    public var accBandLo: Double? = nil
+    public var accBandHi: Double? = nil
+
+    public init(acc: Int = 4, deloadAfterAcc: Bool = true, trans: Int = 4,
+                real: Int = 3, accScheme: PhaseScheme = .linear,
+                transScheme: PhaseScheme = .linear,
+                accBandLo: Double? = nil, accBandHi: Double? = nil) {
+        self.acc = acc; self.deloadAfterAcc = deloadAfterAcc
+        self.trans = trans; self.real = real
+        self.accScheme = accScheme; self.transScheme = transScheme
+        self.accBandLo = accBandLo; self.accBandHi = accBandHi
+    }
 
     // The deload only exists when there's a volume block for it to follow.
-    var total: Int { acc + (acc > 0 && deloadAfterAcc ? 1 : 0) + trans + real }
+    public var total: Int { acc + (acc > 0 && deloadAfterAcc ? 1 : 0) + trans + real }
 
-    init() {}
-    init(acc: Int, deloadAfterAcc: Bool, trans: Int, real: Int,
+    public init() {}
+    public init(acc: Int, deloadAfterAcc: Bool, trans: Int, real: Int,
          accScheme: PhaseScheme = .linear, transScheme: PhaseScheme = .linear) {
         self.acc = acc; self.deloadAfterAcc = deloadAfterAcc
         self.trans = trans; self.real = real
         self.accScheme = accScheme; self.transScheme = transScheme
     }
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         acc = try c.decodeIfPresent(Int.self, forKey: .acc) ?? 4
         deloadAfterAcc = try c.decodeIfPresent(Bool.self, forKey: .deloadAfterAcc) ?? true
@@ -219,13 +250,20 @@ struct BlockPlan: Codable, Hashable {
     }
 }
 
-struct Program: Codable, Hashable {
-    var startPhase: StartPhase
-    var totalWeeks: Int
-    var fiveDay: Bool
-    var createdAt: Date
-    var blocks: [Block]
-    var weeks: [Week]
+public struct Program: Codable, Hashable {
+    public var startPhase: StartPhase
+    public var totalWeeks: Int
+    public var fiveDay: Bool
+    public var createdAt: Date
+    public var blocks: [Block]
+    public var weeks: [Week]
+
+    public init(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
+                createdAt: Date, blocks: [Block], weeks: [Week]) {
+        self.startPhase = startPhase; self.totalWeeks = totalWeeks
+        self.fiveDay = fiveDay; self.createdAt = createdAt
+        self.blocks = blocks; self.weeks = weeks
+    }
 
     // MARK: bulk slot editing
 
@@ -235,7 +273,7 @@ struct Program: Codable, Hashable {
     /// progression ramp survives an exercise swap or volume change.
     /// Returns how many weeks were updated.
     @discardableResult
-    mutating func applySlotToRemainingWeeks(fromWeek weekNum: Int,
+    public mutating func applySlotToRemainingWeeks(fromWeek weekNum: Int,
                                             dayIndex: Int, slotIndex: Int) -> Int {
         guard let wIdx = weeks.firstIndex(where: { $0.num == weekNum }),
               weeks[wIdx].days.indices.contains(dayIndex),
@@ -264,7 +302,7 @@ struct Program: Codable, Hashable {
     }
 
     /// Dry-run: how many later same-phase weeks the apply would touch.
-    func remainingWeeksForSlot(fromWeek weekNum: Int, dayIndex: Int, slotIndex: Int) -> Int {
+    public func remainingWeeksForSlot(fromWeek weekNum: Int, dayIndex: Int, slotIndex: Int) -> Int {
         guard let wIdx = weeks.firstIndex(where: { $0.num == weekNum }),
               weeks[wIdx].days.indices.contains(dayIndex),
               weeks[wIdx].days[dayIndex].slots.indices.contains(slotIndex) else { return 0 }
@@ -286,7 +324,7 @@ struct Program: Codable, Hashable {
     /// Weeks with fewer days than the order (e.g. 4-day realization for a
     /// 5-day lifter) use the induced sub-order. Returns weeks touched.
     @discardableResult
-    mutating func applyDayOrder(_ order: [Int]) -> Int {
+    public mutating func applyDayOrder(_ order: [Int]) -> Int {
         guard order.count > 1, Set(order) == Set(0..<order.count) else { return 0 }
         var touched = 0
         for wi in weeks.indices where weeks[wi].phase != .meet {
@@ -329,7 +367,7 @@ struct Program: Codable, Hashable {
     /// Stamp each day's factory identity from its position. Called at BUILD
     /// time only, when every week is still in factory order — never after a
     /// reorder. Existing stamps are preserved.
-    mutating func stampFactoryDayIndices() {
+    public mutating func stampFactoryDayIndices() {
         for wi in weeks.indices {
             for di in weeks[wi].days.indices where weeks[wi].days[di].factoryIndex == nil {
                 weeks[wi].days[di].factoryIndex = di
@@ -338,7 +376,7 @@ struct Program: Codable, Hashable {
     }
 
     /// The N in a system-written "Day N — …" title, if present.
-    static func titleDayNumber(_ title: String) -> Int? {
+    public static func titleDayNumber(_ title: String) -> Int? {
         guard let match = title.range(of: #"^Day \d+"#, options: .regularExpression)
         else { return nil }
         return Int(title[match].dropFirst(4))
@@ -348,7 +386,7 @@ struct Program: Codable, Hashable {
 
     /// Coach rule: deload weeks are NEVER back-to-back. True when inserting a
     /// deload at `index` keeps that invariant.
-    func canInsertDeload(at index: Int) -> Bool {
+    public func canInsertDeload(at index: Int) -> Bool {
         let i = min(max(0, index), weeks.count)
         if i > 0, weeks[i - 1].phase == .deload { return false }
         if i < weeks.count, weeks[i].phase == .deload { return false }
@@ -357,14 +395,14 @@ struct Program: Codable, Hashable {
 
     /// The transmutation → realization boundary (index of the first
     /// realization week) — where a pre-meet deload belongs.
-    var realizationBoundary: Int? {
+    public var realizationBoundary: Int? {
         weeks.firstIndex { $0.phase == .real }
     }
 
     /// Insert a deload week, refusing any position that would create two
     /// deloads in a row. Returns whether the insertion happened.
     @discardableResult
-    mutating func insertDeload(week: Week, at index: Int) -> Bool {
+    public mutating func insertDeload(week: Week, at index: Int) -> Bool {
         guard week.phase == .deload, canInsertDeload(at: index) else { return false }
         insert(week: week, at: index)
         return true
@@ -372,7 +410,7 @@ struct Program: Codable, Hashable {
 
     /// Insert a week at `index`; everything downstream adjusts: numbering,
     /// block grouping, per-week block coordinates, totals.
-    mutating func insert(week: Week, at index: Int) {
+    public mutating func insert(week: Week, at index: Int) {
         let i = min(max(0, index), weeks.count)
         weeks.insert(week, at: i)
         renumberAndRegroup()
@@ -385,7 +423,7 @@ struct Program: Codable, Hashable {
     /// Refused for realization (the taper is never traded), meet week,
     /// existing deloads, and anywhere it would stack two deloads in a row.
     @discardableResult
-    mutating func replaceWeekWithDeload(at index: Int, deload: Week) -> Bool {
+    public mutating func replaceWeekWithDeload(at index: Int, deload: Week) -> Bool {
         guard weeks.indices.contains(index),
               deload.phase == .deload,
               ![.deload, .meet, .real].contains(weeks[index].phase),
@@ -401,7 +439,7 @@ struct Program: Codable, Hashable {
 
     /// Remove the week at `index` (callers restrict this to deload weeks so
     /// real training content can't be destroyed by a structural edit).
-    mutating func removeWeek(at index: Int) {
+    public mutating func removeWeek(at index: Int) {
         guard weeks.indices.contains(index) else { return }
         weeks.remove(at: index)
         renumberAndRegroup()
@@ -409,7 +447,7 @@ struct Program: Codable, Hashable {
 
     /// Recompute week numbers, block-run coordinates (weekInBlock/blockLen),
     /// the blocks array (run-length grouping of phases), and totalWeeks.
-    mutating func renumberAndRegroup() {
+    public mutating func renumberAndRegroup() {
         for i in weeks.indices { weeks[i].num = i + 1 }
         totalWeeks = weeks.count
 
@@ -431,12 +469,16 @@ struct Program: Codable, Hashable {
     }
 }
 
-struct Maxes: Codable, Hashable {
-    var squat: Double = 0
-    var bench: Double = 0
-    var deadlift: Double = 0
+public struct Maxes: Codable, Hashable {
+    public var squat: Double = 0
+    public var bench: Double = 0
+    public var deadlift: Double = 0
 
-    func value(for pool: LiftPool) -> Double {
+    public init(squat: Double = 0, bench: Double = 0, deadlift: Double = 0) {
+        self.squat = squat; self.bench = bench; self.deadlift = deadlift
+    }
+
+    public func value(for pool: LiftPool) -> Double {
         switch pool {
         case .squat: return squat
         case .bench: return bench
@@ -445,11 +487,11 @@ struct Maxes: Codable, Hashable {
         }
     }
 
-    static let lbPerKg = 2.204622621848776
+    public static let lbPerKg = 2.204622621848776
 
     /// Exact unit conversion (no rounding — display formats; loads round at
     /// prescription time). Round-tripping lb→kg→lb returns the original values.
-    func converted(from old: Unit, to new: Unit) -> Maxes {
+    public func converted(from old: Unit, to new: Unit) -> Maxes {
         guard old != new else { return self }
         let f = new == .kg ? 1 / Self.lbPerKg : Self.lbPerKg
         return Maxes(squat: squat * f, bench: bench * f, deadlift: deadlift * f)
@@ -459,7 +501,7 @@ struct Maxes: Codable, Hashable {
 /// Where a log entry came from: typed in by the coach, or submitted by the
 /// lifter through the client app pipeline. nil decodes as .coach — every
 /// entry that existed before the pipeline was coach-entered by definition.
-enum LogSource: String, Codable {
+public enum LogSource: String, Codable {
     case coach, client
 }
 
@@ -468,29 +510,29 @@ enum LogSource: String, Codable {
 /// the CLIENT, not inside the program, so the history survives regeneration
 /// and program deletion: the trend belongs to the lifter, not to any one
 /// program.
-struct LiftLogEntry: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var date: Date
-    var lift: LiftPool                 // .squat / .bench / .deadlift
-    var exerciseName: String? = nil    // display name; nil reads as the comp lift
-    var loadMod: Double? = nil         // library modifier at log time — normalizes variation e1RM
-    var load: Double                   // stored in the client's unit (converted on unit toggle)
-    var reps: Int
-    var rpe: Double? = nil             // nil = lifter didn't report effort
-    var cleanSingle: Bool = false      // coach's reference-max standard: a crisp 1RM single
-    var prescribedPct: Double? = nil   // what the program asked for (drift detection)
-    var prescribedRPE: Double? = nil
-    var weekNum: Int? = nil            // provenance when logged from a program slot
-    var programStamp: Date? = nil
-    var note: String = ""
+public struct LiftLogEntry: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var date: Date
+    public var lift: LiftPool                 // .squat / .bench / .deadlift
+    public var exerciseName: String? = nil    // display name; nil reads as the comp lift
+    public var loadMod: Double? = nil         // library modifier at log time — normalizes variation e1RM
+    public var load: Double                   // stored in the client's unit (converted on unit toggle)
+    public var reps: Int
+    public var rpe: Double? = nil             // nil = lifter didn't report effort
+    public var cleanSingle: Bool = false      // coach's reference-max standard: a crisp 1RM single
+    public var prescribedPct: Double? = nil   // what the program asked for (drift detection)
+    public var prescribedRPE: Double? = nil
+    public var weekNum: Int? = nil            // provenance when logged from a program slot
+    public var programStamp: Date? = nil
+    public var note: String = ""
     /// Pipeline provenance: who entered it (nil = coach, pre-pipeline),
     /// the client-generated submission ID (the end-to-end idempotency key),
     /// and any anomaly flags raised at ingest ("load above stored max", …).
-    var source: LogSource? = nil
-    var submissionID: UUID? = nil
-    var flags: [String]? = nil
+    public var source: LogSource? = nil
+    public var submissionID: UUID? = nil
+    public var flags: [String]? = nil
 
-    init(id: UUID = UUID(), date: Date, lift: LiftPool, exerciseName: String? = nil,
+    public init(id: UUID = UUID(), date: Date, lift: LiftPool, exerciseName: String? = nil,
          loadMod: Double? = nil, load: Double, reps: Int, rpe: Double? = nil,
          cleanSingle: Bool = false, prescribedPct: Double? = nil,
          prescribedRPE: Double? = nil, weekNum: Int? = nil,
@@ -506,7 +548,7 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
         self.source = source; self.submissionID = submissionID; self.flags = flags
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         date = try c.decode(Date.self, forKey: .date)
@@ -529,7 +571,7 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
 
     /// True when the set was a variation (load modifier ≠ 1), so its comp-lift
     /// e1RM is an estimate through the modifier, not a direct measurement.
-    var isVariation: Bool {
+    public var isVariation: Bool {
         guard let m = loadMod else { return false }
         return abs(m - 1) > 0.0001
     }
@@ -540,7 +582,7 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
     /// below the table floor stands as itself — reporting an easy RPE must
     /// never yield less than reporting none. Multi-rep sets without a usable
     /// RPE can't be estimated honestly.
-    var compE1RM: Double? {
+    public var compE1RM: Double? {
         let mod = loadMod ?? 1
         guard mod > 0, load > 0 else { return nil }
         if let rpe, let e = Engine.e1RM(load: load, reps: reps, rpe: rpe) { return e / mod }
@@ -548,7 +590,7 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
     }
 
     /// Exact unit conversion, mirroring Maxes.converted (lossless round-trip).
-    func converted(from old: Unit, to new: Unit) -> LiftLogEntry {
+    public func converted(from old: Unit, to new: Unit) -> LiftLogEntry {
         guard old != new else { return self }
         var e = self
         e.load = load * (new == .kg ? 1 / Maxes.lbPerKg : Maxes.lbPerKg)
@@ -556,34 +598,34 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
     }
 }
 
-struct Client: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var name: String
-    var unit: Unit = .lb
-    var maxes: Maxes = Maxes()
-    var setupPhase: StartPhase = .full
-    var setupWeeks: Int = 12
-    var fiveDay: Bool = false
-    var program: Program? = nil
-    var startDate: Date? = nil            // Monday of program week 1
-    var meetDate: Date? = nil             // optional: drives weeks-out display
-    var delivery: DeliveryPrefs = DeliveryPrefs()
-    var settings: ClientSettings = ClientSettings()
-    var blockPlan: BlockPlan? = nil       // nil = automatic phase allocation
+public struct Client: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var name: String
+    public var unit: Unit = .lb
+    public var maxes: Maxes = Maxes()
+    public var setupPhase: StartPhase = .full
+    public var setupWeeks: Int = 12
+    public var fiveDay: Bool = false
+    public var program: Program? = nil
+    public var startDate: Date? = nil            // Monday of program week 1
+    public var meetDate: Date? = nil             // optional: drives weeks-out display
+    public var delivery: DeliveryPrefs = DeliveryPrefs()
+    public var settings: ClientSettings = ClientSettings()
+    public var blockPlan: BlockPlan? = nil       // nil = automatic phase allocation
     /// Training styles — top-level coach choices, independent of custom
     /// lengths. Copied onto the generation plan at Generate time.
-    var accScheme: PhaseScheme = .linear
-    var transScheme: PhaseScheme = .linear
-    var accBandLo: Double? = nil          // RPE-anchored entry override
-    var accBandHi: Double? = nil
+    public var accScheme: PhaseScheme = .linear
+    public var transScheme: PhaseScheme = .linear
+    public var accBandLo: Double? = nil          // RPE-anchored entry override
+    public var accBandHi: Double? = nil
     /// Logged top-set results — the lifter's history, independent of any program.
-    var logs: [LiftLogEntry] = []
+    public var logs: [LiftLogEntry] = []
     /// Training-day order preference: a permutation of day positions (e.g.
     /// [2,1,0,3] = deadlift day first). nil = factory order. Meet week never
     /// reorders — platform-week structure (primers early, rest late) is doctrine.
-    var dayOrder: [Int]? = nil
+    public var dayOrder: [Int]? = nil
 
-    init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
+    public init(id: UUID = UUID(), name: String, unit: Unit = .lb, maxes: Maxes = Maxes(),
          setupPhase: StartPhase = .full, setupWeeks: Int = 12, fiveDay: Bool = false,
          program: Program? = nil, startDate: Date? = nil, meetDate: Date? = nil,
          delivery: DeliveryPrefs = DeliveryPrefs(), settings: ClientSettings = ClientSettings(),
@@ -598,7 +640,7 @@ struct Client: Codable, Identifiable, Hashable {
 
     // Tolerant decoding: fields added after v1 fall back to defaults so old
     // data.json files (and backups) always open.
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(UUID.self, forKey: .id)
         name = try c.decode(String.self, forKey: .name)
@@ -624,16 +666,16 @@ struct Client: Codable, Identifiable, Hashable {
     }
 }
 
-struct AppData: Codable {
-    var schemaVersion: Int = 3      // absent in v1 files → decodes as 1
-    var clients: [Client] = []
-    var sendLog: [SendRecord] = []
-    var exerciseLibrary: ExerciseLibrary = .seeded()
+public struct AppData: Codable {
+    public var schemaVersion: Int = 3      // absent in v1 files → decodes as 1
+    public var clients: [Client] = []
+    public var sendLog: [SendRecord] = []
+    public var exerciseLibrary: ExerciseLibrary = .seeded()
     /// Client-app submissions as they arrived — the inbound audit trail,
     /// mirroring sendLog on the outbound side.
-    var inboxLog: [IngestRecord] = []
+    public var inboxLog: [IngestRecord] = []
 
-    init(clients: [Client] = [], sendLog: [SendRecord] = [],
+    public init(clients: [Client] = [], sendLog: [SendRecord] = [],
          exerciseLibrary: ExerciseLibrary = .seeded(),
          inboxLog: [IngestRecord] = []) {
         self.clients = clients
@@ -642,7 +684,7 @@ struct AppData: Codable {
         self.inboxLog = inboxLog
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         clients = try c.decodeIfPresent([Client].self, forKey: .clients) ?? []

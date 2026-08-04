@@ -8,48 +8,48 @@ import Foundation
 /// - Deload and meet weeks are excluded — light weeks say nothing.
 /// - A stall is a CONVERSATION, not a scheme swap: this type surfaces the
 ///   signal and prompts a check-in. It never prescribes a fix.
-enum Trends {
+public enum Trends {
 
-    struct Point: Identifiable, Hashable {
-        let id: UUID
-        let date: Date
-        let e1RM: Double          // comp-normalized
-        let isVariation: Bool     // estimated through a load modifier
-        let cleanSingle: Bool
+    public struct Point: Identifiable, Hashable {
+        public let id: UUID
+        public let date: Date
+        public let e1RM: Double          // comp-normalized
+        public let isVariation: Bool     // estimated through a load modifier
+        public let cleanSingle: Bool
     }
 
-    struct BlockBest: Identifiable, Hashable {
-        let id: Int               // ordinal position of the block in the program
-        let label: String         // "Accumulation", "Transmutation", …
-        let best: Double
-        let count: Int            // logged points inside the block
+    public struct BlockBest: Identifiable, Hashable {
+        public let id: Int               // ordinal position of the block in the program
+        public let label: String         // "Accumulation", "Transmutation", …
+        public let best: Double
+        public let count: Int            // logged points inside the block
     }
 
-    enum Verdict: Hashable {
+    public enum Verdict: Hashable {
         case insufficient         // not enough data to judge a block honestly
         case up(Double)           // pct change, latest block vs the one before
         case flat(Double)
         case down(Double)
     }
 
-    struct LiftTrend {
-        let lift: LiftPool
-        let points: [Point]
-        let blockBests: [BlockBest]
-        let verdict: Verdict
-        let rpeDrift: Double?     // mean(reported − prescribed) over recent paired sets
-        let checkIn: Bool         // stall doctrine: time for a whole-picture conversation
+    public struct LiftTrend {
+        public let lift: LiftPool
+        public let points: [Point]
+        public let blockBests: [BlockBest]
+        public let verdict: Verdict
+        public let rpeDrift: Double?     // mean(reported − prescribed) over recent paired sets
+        public let checkIn: Bool         // stall doctrine: time for a whole-picture conversation
     }
 
     /// Minimum logged points a block needs before its best is trusted for a
     /// block-over-block comparison. One point can be a bad day; two is a trend.
-    static let minPointsPerBlock = 2
+    public static let minPointsPerBlock = 2
 
     /// Reported RPE arriving this much above prescribed (average of the last
     /// paired sets) reads as fatigue masking — "cross-check wellness first".
-    static let driftThreshold = 0.75
+    public static let driftThreshold = 0.75
 
-    static func compute(lift: LiftPool, logs: [LiftLogEntry],
+    public static func compute(lift: LiftPool, logs: [LiftLogEntry],
                         program: Program?, startDate: Date?,
                         calendar: Calendar = .current) -> LiftTrend {
         let entries = logs.filter { $0.lift == lift }.sorted { $0.date < $1.date }

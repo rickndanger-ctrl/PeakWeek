@@ -4,17 +4,17 @@ import Foundation
 /// AUTO-LOG EVERYTHING, flag what looks off — the coach reviews, the data is
 /// never held hostage. Pure function, entry already converted to the
 /// client's unit.
-enum AnomalyCheck {
+public enum AnomalyCheck {
 
     // Named thresholds — tuning happens here, nowhere else.
-    static let e1RMSpikeFactor = 1.08        // vs best recent comp point
-    static let e1RMNoHistoryFactor = 1.15    // vs stored max, when history is thin
-    static let overMaxFactor = 1.05          // load vs stored max × modifier
-    static let recentWindowDays = 90.0
-    static let unitMixTolerance = 0.05       // ±5% around the kg/lb-confused value
-    static let medianSampleSize = 5
+    public static let e1RMSpikeFactor = 1.08        // vs best recent comp point
+    public static let e1RMNoHistoryFactor = 1.15    // vs stored max, when history is thin
+    public static let overMaxFactor = 1.05          // load vs stored max × modifier
+    public static let recentWindowDays = 90.0
+    public static let unitMixTolerance = 0.05       // ±5% around the kg/lb-confused value
+    public static let medianSampleSize = 5
 
-    static func check(entry: LiftLogEntry, client: Client,
+    public static func check(entry: LiftLogEntry, client: Client,
                       now: Date = Date()) -> [String] {
         var flags: [String] = []
         let maxVal = client.maxes.value(for: entry.lift)

@@ -5,20 +5,20 @@ import Foundation
 // coaches add/rename/archive entries and edit load modifiers. Slots reference
 // exercises by stable UUID so edits never corrupt saved programs.
 
-struct LibraryExercise: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var seedKey: String?      // "squat:0" … for built-ins; nil for coach-added
-    var name: String
-    var mod: Double?          // load modifier vs comp 1RM; nil = accessory (RPE-only)
-    var archived: Bool = false
+public struct LibraryExercise: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var seedKey: String?      // "squat:0" … for built-ins; nil for coach-added
+    public var name: String
+    public var mod: Double?          // load modifier vs comp 1RM; nil = accessory (RPE-only)
+    public var archived: Bool = false
 
-    init(id: UUID = UUID(), seedKey: String? = nil, name: String,
+    public init(id: UUID = UUID(), seedKey: String? = nil, name: String,
          mod: Double? = nil, archived: Bool = false) {
         self.id = id; self.seedKey = seedKey; self.name = name
         self.mod = mod; self.archived = archived
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(UUID.self, forKey: .id)
         seedKey = try c.decodeIfPresent(String.self, forKey: .seedKey)
@@ -28,18 +28,22 @@ struct LibraryExercise: Codable, Identifiable, Hashable {
     }
 }
 
-struct PoolEntries: Codable, Hashable, Identifiable {
-    var pool: LiftPool
-    var exercises: [LibraryExercise]
-    var id: LiftPool { pool }
+public struct PoolEntries: Codable, Hashable, Identifiable {
+    public var pool: LiftPool
+    public var exercises: [LibraryExercise]
+    public var id: LiftPool { pool }
 }
 
-struct ExerciseLibrary: Codable, Hashable {
-    var entries: [PoolEntries]
+public struct ExerciseLibrary: Codable, Hashable {
+    public var entries: [PoolEntries]
+
+    public init(entries: [PoolEntries]) {
+        self.entries = entries
+    }
 
     /// Built from the engine's seed catalogue, preserving exact order so
     /// (pool, index) references map 1:1 onto seeded UUIDs.
-    static func seeded() -> ExerciseLibrary {
+    public static func seeded() -> ExerciseLibrary {
         var out: [PoolEntries] = []
         for pool in LiftPool.allCases {
             let seeds = Engine.pools[pool] ?? []
@@ -53,7 +57,7 @@ struct ExerciseLibrary: Codable, Hashable {
 
     // MARK: lookup
 
-    subscript(pool: LiftPool) -> [LibraryExercise] {
+    public subscript(pool: LiftPool) -> [LibraryExercise] {
         get { entries.first { $0.pool == pool }?.exercises ?? [] }
         set {
             if let i = entries.firstIndex(where: { $0.pool == pool }) {
@@ -64,18 +68,18 @@ struct ExerciseLibrary: Codable, Hashable {
         }
     }
 
-    func exercise(id: UUID) -> LibraryExercise? {
+    public func exercise(id: UUID) -> LibraryExercise? {
         for e in entries {
             if let hit = e.exercises.first(where: { $0.id == id }) { return hit }
         }
         return nil
     }
 
-    func pool(of id: UUID) -> LiftPool? {
+    public func pool(of id: UUID) -> LiftPool? {
         entries.first { $0.exercises.contains { $0.id == id } }?.pool
     }
 
-    func seeded(_ key: String) -> LibraryExercise? {
+    public func seeded(_ key: String) -> LibraryExercise? {
         for e in entries {
             if let hit = e.exercises.first(where: { $0.seedKey == key }) { return hit }
         }
@@ -84,7 +88,7 @@ struct ExerciseLibrary: Codable, Hashable {
 
     /// Resolve a slot's exercise: canonical UUID first, then legacy (pool, exIdx)
     /// seed reference. Custom-text slots resolve to nil by design.
-    func resolve(_ slot: Slot) -> LibraryExercise? {
+    public func resolve(_ slot: Slot) -> LibraryExercise? {
         guard slot.custom == nil else { return nil }
         if let id = slot.exerciseID, let hit = exercise(id: id) { return hit }
         if let idx = slot.exIdx { return seeded("\(slot.pool.rawValue):\(idx)") }
@@ -94,7 +98,7 @@ struct ExerciseLibrary: Codable, Hashable {
     /// Library upgrade: seed exercises added in newer app versions are merged
     /// into existing libraries (append-only, keyed by seedKey — coach edits,
     /// custom entries, and ordering are untouched).
-    mutating func mergeNewSeeds() {
+    public mutating func mergeNewSeeds() {
         for pool in LiftPool.allCases {
             let seeds = Engine.pools[pool] ?? []
             for (i, seed) in seeds.enumerated() {
@@ -107,7 +111,7 @@ struct ExerciseLibrary: Codable, Hashable {
     }
 
     /// Case-insensitive name lookup across all pools (unarchived preferred).
-    func findByName(_ name: String) -> LibraryExercise? {
+    public func findByName(_ name: String) -> LibraryExercise? {
         let needle = name.trimmingCharacters(in: .whitespaces).lowercased()
         guard !needle.isEmpty else { return nil }
         var archivedHit: LibraryExercise?
@@ -123,7 +127,7 @@ struct ExerciseLibrary: Codable, Hashable {
     /// if one exists (reviving it if archived), otherwise create it in `pool`
     /// as an accessory (RPE-only — set a load modifier in Settings for
     /// computed loads). Returns the canonical entry.
-    mutating func resolveOrCreate(named name: String, in pool: LiftPool) -> LibraryExercise? {
+    public mutating func resolveOrCreate(named name: String, in pool: LiftPool) -> LibraryExercise? {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         if let existing = findByName(trimmed) {
@@ -137,11 +141,11 @@ struct ExerciseLibrary: Codable, Hashable {
 
     // MARK: editing
 
-    mutating func add(_ ex: LibraryExercise, to pool: LiftPool) {
+    public mutating func add(_ ex: LibraryExercise, to pool: LiftPool) {
         self[pool] = self[pool] + [ex]
     }
 
-    mutating func update(_ ex: LibraryExercise) {
+    public mutating func update(_ ex: LibraryExercise) {
         for i in entries.indices {
             if let j = entries[i].exercises.firstIndex(where: { $0.id == ex.id }) {
                 entries[i].exercises[j] = ex
@@ -150,7 +154,7 @@ struct ExerciseLibrary: Codable, Hashable {
         }
     }
 
-    mutating func setArchived(_ id: UUID, _ flag: Bool) {
+    public mutating func setArchived(_ id: UUID, _ flag: Bool) {
         for i in entries.indices {
             if let j = entries[i].exercises.firstIndex(where: { $0.id == id }) {
                 entries[i].exercises[j].archived = flag
@@ -160,7 +164,7 @@ struct ExerciseLibrary: Codable, Hashable {
     }
 
     /// Hard delete — only for coach-added entries; built-ins archive instead.
-    mutating func remove(_ id: UUID) {
+    public mutating func remove(_ id: UUID) {
         for i in entries.indices {
             entries[i].exercises.removeAll { $0.id == id && $0.seedKey == nil }
         }

@@ -7,25 +7,25 @@ import Foundation
 // Methodology note: the two-factor model derives these CALENDAR RULES; it is
 // not a live fitness/fatigue simulator and is never presented as one.
 
-struct PeakProjection {
+public struct PeakProjection {
 
-    struct Event: Identifiable {
-        enum Kind: String {
+    public struct Event: Identifiable {
+        public enum Kind: String {
             case lastHeavySquat = "Last heavy squat"
             case lastHeavyBench = "Last heavy bench"
             case lastHeavyDeadlift = "Last heavy deadlift"
             case openers = "Opener singles"
             case cessation = "Full cessation"
         }
-        var id: String { kind.rawValue }
-        var kind: Kind
-        var date: Date
-        var daysOut: Int
+        public var id: String { kind.rawValue }
+        public var kind: Kind
+        public var date: Date
+        public var daysOut: Int
         /// Evidence window in days-out (inclusive).
-        var window: ClosedRange<Int>
-        var ok: Bool { window.contains(daysOut) }
+        public var window: ClosedRange<Int>
+        public var ok: Bool { window.contains(daysOut) }
         /// Plain coach-speak, no jargon: what happened and what ideal looks like.
-        var detail: String {
+        public var detail: String {
             let sweet = "sweet spot is \(window.lowerBound)–\(window.upperBound) days before the meet"
             if ok { return "\(daysOut) days out — right where it should be" }
             if daysOut < window.lowerBound {
@@ -35,15 +35,15 @@ struct PeakProjection {
         }
     }
 
-    var events: [Event]
+    public var events: [Event]
     /// Non-nil when the meet doesn't land at the end of the final week.
-    var meetPlacementNote: String?
+    public var meetPlacementNote: String?
 
-    var allInWindow: Bool { events.allSatisfy(\.ok) && meetPlacementNote == nil }
+    public var allInWindow: Bool { events.allSatisfy(\.ok) && meetPlacementNote == nil }
 
     /// Evidence windows (τ₂ = 12 d typical; per-lift recovery kinetics —
     /// deadlift needs the longest runway, bench the shortest).
-    static let windows: [Event.Kind: ClosedRange<Int>] = [
+    public static let windows: [Event.Kind: ClosedRange<Int>] = [
         .lastHeavyDeadlift: 8...16,
         .lastHeavySquat: 6...12,
         .lastHeavyBench: 4...9,
@@ -51,7 +51,7 @@ struct PeakProjection {
         .cessation: 2...7,
     ]
 
-    static func compute(program: Program, startDate: Date, meetDate: Date,
+    public static func compute(program: Program, startDate: Date, meetDate: Date,
                         calendar: Calendar = .current) -> PeakProjection? {
         guard program.startPhase == .full || program.startPhase == .real else { return nil }
         let meet = calendar.startOfDay(for: meetDate)

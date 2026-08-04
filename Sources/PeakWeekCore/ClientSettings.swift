@@ -4,23 +4,29 @@ import Foundation
 // Everything here defaults to nil / factory behavior: a client with no
 // settings programs EXACTLY like the engine always has.
 
-struct AttemptProfile: Codable, Hashable {
-    enum Risk: String, Codable, CaseIterable, Identifiable {
+public struct AttemptProfile: Codable, Hashable {
+    public enum Risk: String, Codable, CaseIterable, Identifiable {
         case conservative, standard, aggressive
-        var id: String { rawValue }
-        var label: String { rawValue.capitalized }
+        public var id: String { rawValue }
+        public var label: String { rawValue.capitalized }
     }
 
-    var risk: Risk = .standard
-    var opener: Double? = nil     // explicit % overrides beat the risk preset
-    var second: Double? = nil
-    var third: Double? = nil
+    public var risk: Risk = .standard
+    public var opener: Double? = nil     // explicit % overrides beat the risk preset
+    public var second: Double? = nil
+    public var third: Double? = nil
+
+    public init(risk: Risk = .standard, opener: Double? = nil,
+                second: Double? = nil, third: Double? = nil) {
+        self.risk = risk; self.opener = opener
+        self.second = second; self.third = third
+    }
 
     /// Preset percentages per risk level. Standard is the engine's trusted
     /// 91 / 97 / 101.5. Ranges per research (Report 1 §6.3).
     /// Overrides are clamped 80–115% here so a half-typed value in the UI can
     /// never produce an absurd attempt.
-    var effective: (opener: Double, second: Double, third: Double) {
+    public var effective: (opener: Double, second: Double, third: Double) {
         let base: (Double, Double, Double)
         switch risk {
         case .conservative: base = (89.5, 94.5, 100.0)
@@ -31,8 +37,8 @@ struct AttemptProfile: Codable, Hashable {
         return (clamp(opener) ?? base.0, clamp(second) ?? base.1, clamp(third) ?? base.2)
     }
 
-    init() {}
-    init(from decoder: Decoder) throws {
+    public init() {}
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         risk = try c.decodeIfPresent(Risk.self, forKey: .risk) ?? .standard
         opener = try c.decodeIfPresent(Double.self, forKey: .opener)
@@ -41,32 +47,43 @@ struct AttemptProfile: Codable, Hashable {
     }
 }
 
-struct LiftSettings: Codable, Hashable {
+public struct LiftSettings: Codable, Hashable {
     /// Program off a percentage of the entered 1RM (e.g. 95 = 95% training max).
-    var trainingMaxPct: Double? = nil
+    public var trainingMaxPct: Double? = nil
     /// Additive percentage-point offset for every prescription of this lift.
-    var intensityOffset: Double? = nil
+    public var intensityOffset: Double? = nil
+
+    public init(trainingMaxPct: Double? = nil, intensityOffset: Double? = nil) {
+        self.trainingMaxPct = trainingMaxPct; self.intensityOffset = intensityOffset
+    }
 }
 
-struct ClientSettings: Codable, Hashable {
-    var attempts: AttemptProfile? = nil
-    var perLift: [String: LiftSettings]? = nil      // keyed by pool rawValue
-    var excludedExerciseIDs: Set<UUID>? = nil
-    var notes: String? = nil
+public struct ClientSettings: Codable, Hashable {
+    public var attempts: AttemptProfile? = nil
+    public var perLift: [String: LiftSettings]? = nil      // keyed by pool rawValue
+    public var excludedExerciseIDs: Set<UUID>? = nil
+    public var notes: String? = nil
 
-    func lift(_ pool: LiftPool) -> LiftSettings {
+    public init(attempts: AttemptProfile? = nil,
+                perLift: [String: LiftSettings]? = nil,
+                excludedExerciseIDs: Set<UUID>? = nil, notes: String? = nil) {
+        self.attempts = attempts; self.perLift = perLift
+        self.excludedExerciseIDs = excludedExerciseIDs; self.notes = notes
+    }
+
+    public func lift(_ pool: LiftPool) -> LiftSettings {
         perLift?[pool.rawValue] ?? LiftSettings()
     }
 
-    var isCustomized: Bool {
+    public var isCustomized: Bool {
         (attempts != nil && attempts != AttemptProfile())
         || perLift?.values.contains { $0.trainingMaxPct != nil || $0.intensityOffset != nil } == true
         || !(excludedExerciseIDs?.isEmpty ?? true)
         || !(notes?.isEmpty ?? true)
     }
 
-    init() {}
-    init(from decoder: Decoder) throws {
+    public init() {}
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         attempts = try c.decodeIfPresent(AttemptProfile.self, forKey: .attempts)
         perLift = try c.decodeIfPresent([String: LiftSettings].self, forKey: .perLift)

@@ -3,9 +3,9 @@ import Foundation
 // MARK: - Engine: pools, RPE table, program builder.
 // Direct port of the browser engine that passed the full test suite.
 
-enum Engine {
+public enum Engine {
 
-    static let pools: [LiftPool: [Exercise]] = [
+    public static let pools: [LiftPool: [Exercise]] = [
         .squat: [
             Exercise(name: "Competition Squat", mod: 1.0),
             Exercise(name: "Pause Squat", mod: 0.9),
@@ -86,7 +86,7 @@ enum Engine {
     ]
 
     /// RTS / Tuchscherer style: reps -> (RPE -> % of 1RM)
-    static let rpeTable: [(reps: Int, row: [(rpe: Double, pct: Int)])] = [
+    public static let rpeTable: [(reps: Int, row: [(rpe: Double, pct: Int)])] = [
         (1,  [(7, 89), (7.5, 91), (8, 92), (8.5, 94), (9, 96), (9.5, 98), (10, 100)]),
         (2,  [(7, 86), (7.5, 88), (8, 89), (8.5, 91), (9, 92), (9.5, 94), (10, 96)]),
         (3,  [(7, 84), (7.5, 85), (8, 86), (8.5, 88), (9, 89), (9.5, 91), (10, 92)]),
@@ -99,18 +99,18 @@ enum Engine {
 
     // MARK: helpers
 
-    static func roundLoad(_ x: Double, unit: Unit) -> Double {
+    public static func roundLoad(_ x: Double, unit: Unit) -> Double {
         let step = unit.step
         return max(step, (x / step).rounded() * step)
     }
 
-    static func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double { a + (b - a) * t }
+    public static func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double { a + (b - a) * t }
 
     /// e1RM from a top set (load × reps @ RPE) via the RTS table, interpolating
     /// between listed rep rows (7 ⇒ between 6 and 8) and half-RPE columns.
     /// This is the coach's reference max convention: program off the LAST
     /// BLOCK'S e1RM, not a months-old gym single.
-    static func e1RM(load: Double, reps: Int, rpe: Double) -> Double? {
+    public static func e1RM(load: Double, reps: Int, rpe: Double) -> Double? {
         guard load > 0, reps >= 1, reps <= 12, rpe >= 6.5, rpe <= 10 else { return nil }
         let clampedRPE = min(10, max(7, rpe))   // table floor is 7; 6.5 rounds up
 
@@ -144,14 +144,14 @@ enum Engine {
         return load / (percent / 100)
     }
 
-    static func loadString(_ x: Double, unit: Unit) -> String {
+    public static func loadString(_ x: Double, unit: Unit) -> String {
         let v = x == x.rounded() ? String(Int(x)) : String(format: "%.1f", x)
         return "\(v) \(unit.rawValue)"
     }
 
     // MARK: block allocation
 
-    static func allocateBlocks(_ n: Int) -> [Block] {
+    public static func allocateBlocks(_ n: Int) -> [Block] {
         let real = min(4, max(3, Int((Double(n) * 0.24).rounded())))
         let hasDeload = n >= 12
         let remaining = n - real - (hasDeload ? 1 : 0)
@@ -164,7 +164,7 @@ enum Engine {
         return blocks
     }
 
-    static func allocateOffSeason(_ n: Int) -> [Block] {
+    public static func allocateOffSeason(_ n: Int) -> [Block] {
         let hyp = Int((Double(n - 1) / 2).rounded())
         return [
             Block(phase: .acc, weeks: hyp),
@@ -181,7 +181,7 @@ enum Engine {
              pct: pct.map { $0.rounded() }, rpe: rpe)
     }
 
-    static func dayTemplates(phase: Phase, t: Double, weeksOut: Int?, fiveDay: Bool) -> [DayPlan] {
+    public static func dayTemplates(phase: Phase, t: Double, weeksOut: Int?, fiveDay: Bool) -> [DayPlan] {
         let S = slot
         switch phase {
         case .acc:
@@ -342,7 +342,7 @@ enum Engine {
     /// the bar drops back and the next wave starts 2.5% heavier. The block
     /// always ENDS on the full top wave, so realization chains unchanged.
     /// (Final-wave pins: SQ 79/82.5/86 · BP 78/81.5/85 · DL 80/83.5/87.)
-    static func waveOverride(week: Int, blockLen: Int, lift: LiftPool)
+    public static func waveOverride(week: Int, blockLen: Int, lift: LiftPool)
         -> (sets: Int, reps: Int, pct: Double, rpe: Double)? {
         guard blockLen >= 1, week >= 1, week <= blockLen else { return nil }
         let pins: [LiftPool: [Double]] = [
@@ -365,7 +365,7 @@ enum Engine {
     /// DUP accumulation: each lift sees different jobs across the week —
     /// volume (H), speed (P), strength (S) — with %-bands that progress by the
     /// same lerp discipline as the factory templates.
-    static func dupAccDays(week w: Int, blockLen N: Int, fiveDay: Bool) -> [DayPlan] {
+    public static func dupAccDays(week w: Int, blockLen N: Int, fiveDay: Bool) -> [DayPlan] {
         let S = slot
         func band(_ lo: Double, _ hi: Double) -> Double {
             N > 1 ? lerp(lo, hi, Double(w - 1) / Double(N - 1)) : lo
@@ -434,14 +434,14 @@ enum Engine {
 
     // MARK: - Hypertrophy off-season
 
-    enum HypWeek: Equatable {
+    public enum HypWeek: Equatable {
         case work(reps: Int, pct: Double)
         case deload
     }
 
     /// Explicit meso spine per total length (auditable, pinned by tests):
     /// reps step 12 → 10 → 8 while %s climb; deloads separate mesos.
-    static func hypSpine(totalWeeks: Int) -> [HypWeek] {
+    public static func hypSpine(totalWeeks: Int) -> [HypWeek] {
         func work(_ reps: Int, _ pcts: [Double]) -> [HypWeek] {
             pcts.map { .work(reps: reps, pct: $0) }
         }
@@ -462,7 +462,7 @@ enum Engine {
     /// Day templates for one hypertrophy week. Main variation carries the
     /// spine's sets×reps@%; secondary = 3×8 @ main−2; the first two
     /// accessories/day ramp 3→4 sets in meso weeks 3+.
-    static func hypDays(reps: Int, pct: Double, weekInMeso: Int, fiveDay: Bool) -> [DayPlan] {
+    public static func hypDays(reps: Int, pct: Double, weekInMeso: Int, fiveDay: Bool) -> [DayPlan] {
         let S = slot
         let accSets = weekInMeso >= 3 ? 4 : 3
         var days = [
@@ -521,7 +521,7 @@ enum Engine {
 
     /// Full training weeks available when week 1 starts on `startMonday` and
     /// the meet falls on `meetDate` (the meet lands inside the final week).
-    static func weeksAvailable(startMonday: Date, meetDate: Date,
+    public static func weeksAvailable(startMonday: Date, meetDate: Date,
                                calendar: Calendar = .current) -> Int {
         guard meetDate >= startMonday else { return 0 }
         let days = calendar.dateComponents([.day], from: startMonday, to: meetDate).day ?? 0
@@ -533,14 +533,14 @@ enum Engine {
     /// What kind of prep fits the runway. The coach's rule: pick up a lifter
     /// any distance out (minimum 3 weeks) and the app places them in the right
     /// phase for the time remaining.
-    struct MeetPlan: Equatable {
-        var phase: StartPhase
-        var weeks: Int
-        var blockPlan: BlockPlan?
-        var summary: String
+    public struct MeetPlan: Equatable {
+        public var phase: StartPhase
+        public var weeks: Int
+        public var blockPlan: BlockPlan?
+        public var summary: String
     }
 
-    static func meetPlan(availableWeeks: Int) -> MeetPlan? {
+    public static func meetPlan(availableWeeks: Int) -> MeetPlan? {
         switch availableWeeks {
         case ..<3:
             return nil                              // too close to program — coach handles by hand
@@ -578,7 +578,7 @@ enum Engine {
     /// library. `excluded` exercises are substituted at generation time with
     /// the first available exercise from the same pool. A `blockPlan` overrides
     /// the automatic phase allocation for full preps.
-    static func buildProgram(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
+    public static func buildProgram(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
                              library: ExerciseLibrary, excluded: Set<UUID> = [],
                              blockPlan: BlockPlan? = nil) -> Program {
         var program = buildProgramLegacy(startPhase: startPhase, totalWeeks: totalWeeks,
@@ -591,7 +591,7 @@ enum Engine {
 
     /// Resolve a week's template slots ((pool, exIdx) seed refs) to library
     /// UUIDs, substituting excluded/archived exercises within the same pool.
-    static func resolveSlots(in week: inout Week, library: ExerciseLibrary,
+    public static func resolveSlots(in week: inout Week, library: ExerciseLibrary,
                              excluded: Set<UUID>) {
         for di in week.days.indices {
             for si in week.days[di].slots.indices {
@@ -613,7 +613,7 @@ enum Engine {
 
     /// A standalone deload week for insertion into an existing program.
     /// Numbering/grouping is fixed up by Program.renumberAndRegroup().
-    static func makeDeloadWeek(fiveDay: Bool, library: ExerciseLibrary,
+    public static func makeDeloadWeek(fiveDay: Bool, library: ExerciseLibrary,
                                excluded: Set<UUID> = []) -> Week {
         var week = Week(num: 0, phase: .deload, weekInBlock: 1, blockLen: 1,
                         days: dayTemplates(phase: .deload, t: 0, weeksOut: nil, fiveDay: fiveDay))
@@ -624,7 +624,7 @@ enum Engine {
 
     /// The original index-referenced builder. Templates still speak (pool, index)
     /// against the seed catalogue; resolution to library UUIDs happens above.
-    static func buildProgramLegacy(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
+    public static func buildProgramLegacy(startPhase: StartPhase, totalWeeks: Int, fiveDay: Bool,
                                    blockPlan: BlockPlan? = nil) -> Program {
         let rawBlocks: [Block]
         switch startPhase {
@@ -724,7 +724,7 @@ enum Engine {
     }
 
     /// Hypertrophy off-season: meso-spine-driven builder (no meet week).
-    static func buildHypertrophy(totalWeeks: Int, fiveDay: Bool) -> Program {
+    public static func buildHypertrophy(totalWeeks: Int, fiveDay: Bool) -> Program {
         let spine = hypSpine(totalWeeks: totalWeeks)
         var weeks: [Week] = []
         var weekInMeso = 0
@@ -751,12 +751,12 @@ enum Engine {
 
     // MARK: derived values
 
-    static func slotName(_ slot: Slot, library: ExerciseLibrary) -> String {
+    public static func slotName(_ slot: Slot, library: ExerciseLibrary) -> String {
         if let c = slot.custom { return c.isEmpty ? "Custom exercise" : c }
         return library.resolve(slot)?.name ?? "Exercise"
     }
 
-    static func slotLoad(_ slot: Slot, maxes: Maxes, unit: Unit, library: ExerciseLibrary,
+    public static func slotLoad(_ slot: Slot, maxes: Maxes, unit: Unit, library: ExerciseLibrary,
                          settings: ClientSettings? = nil) -> Double? {
         guard slot.custom == nil, let pct = slot.pct,
               let ex = library.resolve(slot), let mod = ex.mod else { return nil }
@@ -772,7 +772,7 @@ enum Engine {
         return roundLoad(base * (effectivePct / 100) * mod, unit: unit)
     }
 
-    static func attempts(max: Double, unit: Unit,
+    public static func attempts(max: Double, unit: Unit,
                          profile: AttemptProfile? = nil) -> (opener: Double, second: Double, third: Double) {
         let p = (profile ?? AttemptProfile()).effective
         return (roundLoad(max * p.opener / 100, unit: unit),
@@ -782,7 +782,7 @@ enum Engine {
 
     // MARK: plain-text week export
 
-    static func weekToText(client: Client, program: Program, week: Week,
+    public static func weekToText(client: Client, program: Program, week: Week,
                            library: ExerciseLibrary) -> String {
         var L: [String] = []
         var header = "\(client.name.uppercased()) — WEEK \(week.num) of \(program.weeks.count) — \(week.phase.label.uppercased())"

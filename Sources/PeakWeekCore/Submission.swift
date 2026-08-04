@@ -5,24 +5,24 @@ import Foundation
 /// key: the server upserts on it, and ingest skips any submission whose id
 /// already appears in the client's log. The unit always travels EXPLICITLY;
 /// loads are never pre-converted in transit.
-struct Submission: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var clientID: UUID
-    var performedAt: Date
-    var lift: LiftPool                 // squat / bench / deadlift
-    var exerciseName: String? = nil    // nil = comp lift
-    var load: Double
-    var unit: Unit                     // the unit the lifter typed in
-    var reps: Int
-    var rpe: Double? = nil
-    var prescribedPct: Double? = nil   // carried from the published week's slot
-    var prescribedRPE: Double? = nil
-    var weekNum: Int? = nil
-    var programStamp: Date? = nil
-    var note: String? = nil
-    var videoFilename: String? = nil   // local filename once the video landed
+public struct Submission: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var clientID: UUID
+    public var performedAt: Date
+    public var lift: LiftPool                 // squat / bench / deadlift
+    public var exerciseName: String? = nil    // nil = comp lift
+    public var load: Double
+    public var unit: Unit                     // the unit the lifter typed in
+    public var reps: Int
+    public var rpe: Double? = nil
+    public var prescribedPct: Double? = nil   // carried from the published week's slot
+    public var prescribedRPE: Double? = nil
+    public var weekNum: Int? = nil
+    public var programStamp: Date? = nil
+    public var note: String? = nil
+    public var videoFilename: String? = nil   // local filename once the video landed
 
-    init(id: UUID = UUID(), clientID: UUID, performedAt: Date, lift: LiftPool,
+    public init(id: UUID = UUID(), clientID: UUID, performedAt: Date, lift: LiftPool,
          exerciseName: String? = nil, load: Double, unit: Unit, reps: Int,
          rpe: Double? = nil, prescribedPct: Double? = nil,
          prescribedRPE: Double? = nil, weekNum: Int? = nil,
@@ -36,7 +36,7 @@ struct Submission: Codable, Identifiable, Hashable {
         self.note = note; self.videoFilename = videoFilename
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         clientID = try c.decode(UUID.self, forKey: .clientID)

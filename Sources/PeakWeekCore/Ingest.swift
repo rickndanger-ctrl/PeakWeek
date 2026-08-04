@@ -3,25 +3,25 @@ import Foundation
 /// One row of the inbound audit trail: a client submission as it arrived and
 /// what happened to it. Mirrors SendRecord on the outbound side; drives the
 /// Inbox review UI.
-struct IngestRecord: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var submissionID: UUID
-    var clientID: UUID
-    var clientName: String
-    var date: Date                     // when it was ingested
-    var performedAt: Date              // when the lifter did the set
-    var summary: String                // "Deadlift 315×3 @8"
-    var flags: [String] = []
-    var videoFilename: String? = nil
-    var state: State = .new
+public struct IngestRecord: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var submissionID: UUID
+    public var clientID: UUID
+    public var clientName: String
+    public var date: Date                     // when it was ingested
+    public var performedAt: Date              // when the lifter did the set
+    public var summary: String                // "Deadlift 315×3 @8"
+    public var flags: [String] = []
+    public var videoFilename: String? = nil
+    public var state: State = .new
 
-    enum State: String, Codable {
+    public enum State: String, Codable {
         case new        // awaiting the coach's eyes
         case reviewed   // coach looked, data stands
         case dismissed  // coach rejected it — the log entry was removed
     }
 
-    init(id: UUID = UUID(), submissionID: UUID, clientID: UUID,
+    public init(id: UUID = UUID(), submissionID: UUID, clientID: UUID,
          clientName: String, date: Date, performedAt: Date, summary: String,
          flags: [String] = [], videoFilename: String? = nil,
          state: State = .new) {
@@ -32,7 +32,7 @@ struct IngestRecord: Codable, Identifiable, Hashable {
         self.state = state
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         submissionID = try c.decode(UUID.self, forKey: .submissionID)
@@ -47,10 +47,10 @@ struct IngestRecord: Codable, Identifiable, Hashable {
     }
 }
 
-enum Ingest {
+public enum Ingest {
     /// "Deadlift 315×3 @8" — the one-line human summary for inbox rows and
     /// notifications. Load shown in the CLIENT'S unit (post-conversion).
-    static func summary(for entry: LiftLogEntry, unit: Unit) -> String {
+    public static func summary(for entry: LiftLogEntry, unit: Unit) -> String {
         let name = entry.exerciseName ?? entry.lift.groupLabel.capitalized
         var s = "\(name) \(Engine.loadString(entry.load, unit: unit))×\(entry.reps)"
         if let r = entry.rpe {
@@ -62,7 +62,7 @@ enum Ingest {
     /// Build the log entry a submission becomes: load converted EXACTLY from
     /// the declared payload unit into the client's unit (same math as
     /// Maxes.converted — lossless round-trip), provenance stamped.
-    static func entry(from sub: Submission, clientUnit: Unit) -> LiftLogEntry {
+    public static func entry(from sub: Submission, clientUnit: Unit) -> LiftLogEntry {
         let load: Double
         if sub.unit == clientUnit {
             load = sub.load
