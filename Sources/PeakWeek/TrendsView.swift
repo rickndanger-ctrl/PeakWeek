@@ -178,6 +178,16 @@ struct TrendsPanel: View {
                     .foregroundStyle(Theme.plateGreen)
                     .help("Clean single — reference-max standard")
             }
+            if e.source == .client {
+                Image(systemName: "iphone").font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .help("Logged by the lifter from the client app")
+            }
+            if let flags = e.flags, !flags.isEmpty {
+                Image(systemName: "flag.fill").font(.system(size: 8))
+                    .foregroundStyle(.orange)
+                    .help(flags.joined(separator: " · "))
+            }
             Text(entryLabel(e)).font(.caption)
             if let v = e.compE1RM {
                 Text("e1RM \(Engine.loadString(Engine.roundLoad(v, unit: client.unit), unit: client.unit))\(e.isVariation ? " est." : "")")

@@ -58,6 +58,8 @@ struct ContentView: View {
     @State private var showNewClient = false
     @State private var restoreMessage: String?
     @State private var showDeliveries = false
+    @State private var showInbox = false
+    @State private var showSimulate = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,6 +89,12 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showDeliveries) {
             DeliveriesView()
+        }
+        .sheet(isPresented: $showInbox) {
+            InboxView()
+        }
+        .sheet(isPresented: $showSimulate) {
+            SimulateSubmissionSheet()
         }
         .alert(restoreMessage ?? "", isPresented: Binding(
             get: { restoreMessage != nil },
@@ -149,6 +157,22 @@ struct ContentView: View {
                 .help(store.queuedSends.isEmpty
                       ? "Delivery log"
                       : "\(store.queuedSends.count) plan(s) waiting for your approval")
+                Button { showInbox = true } label: {
+                    Label("Client Inbox", systemImage: "tray.and.arrow.down")
+                        .overlay(alignment: .topTrailing) {
+                            if store.newInboxCount > 0 {
+                                Text("\(store.newInboxCount)")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 3).padding(.vertical, 1)
+                                    .background(Color.orange)
+                                    .offset(x: 8, y: -6)
+                            }
+                        }
+                }
+                .help(store.newInboxCount == 0
+                      ? "Client submissions (already logged — review here)"
+                      : "\(store.newInboxCount) client submission(s) awaiting your eyes")
                 Menu {
                     Button("Backup all data…") { store.exportBackup() }
                     Button("Restore from backup…") {
@@ -166,6 +190,8 @@ struct ContentView: View {
                     Button("Reveal data file in Finder") {
                         NSWorkspace.shared.activateFileViewerSelecting([AppStore.dataURL])
                     }
+                    Divider()
+                    Button("Simulate client submission…") { showSimulate = true }
                 } label: { Label("Data", systemImage: "externaldrive") }
             }
         }

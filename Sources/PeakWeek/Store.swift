@@ -41,6 +41,16 @@ final class AppStore: ObservableObject {
         dataURL.deletingLastPathComponent().appendingPathComponent("data.json.bak")
     }
 
+    /// TEST-ONLY: an in-memory store that never reads or writes data.json and
+    /// starts no timers. Production code must never call this — the real
+    /// initializer below is the only path that touches disk.
+    init(inMemory: Bool) {
+        persistenceDisabled = true
+    }
+
+    /// One-way switch set only by the in-memory initializer.
+    private var persistenceDisabled = false
+
     init() {
         load()
         // Automated delivery: catch up shortly after launch, then check hourly.
@@ -83,7 +93,7 @@ final class AppStore: ObservableObject {
     /// Debounced save: the didSet fires on every keystroke; disk sees at most
     /// one write per second. saveNow() flushes immediately (quit, backup).
     private func scheduleSave() {
-        if loading { return }
+        if loading || persistenceDisabled { return }
         pendingSave?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.saveNow() }
         pendingSave = work
@@ -93,7 +103,7 @@ final class AppStore: ObservableObject {
     func saveNow() {
         pendingSave?.cancel()
         pendingSave = nil
-        if loading || loadFailed { return }   // never clobber a file we couldn't read
+        if loading || loadFailed || persistenceDisabled { return }   // never clobber a file we couldn't read
         let enc = JSONEncoder()
         enc.dateEncodingStrategy = .iso8601
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -305,6 +315,75 @@ final class AppStore: ObservableObject {
         case .success: return record(.sent)
         case .failure(let err): return record(.failed(err.localizedDescription))
         }
+    }
+
+    // MARK: - inbound pipeline (client-app submissions)
+
+    /// Ingest one client submission: convert units, run the anomaly check,
+    /// AUTO-LOG into the client's history (flagged or not — the coach
+    /// reviews, the data is never held hostage), record the audit row, and
+    /// notify on flags. Idempotent by submission ID; refuses to run while
+    /// the write freeze is active (ingested state would evaporate unsaved).
+    @discardableResult
+    func ingest(_ sub: Submission) -> IngestRecord? {
+        guard !loadFailed else { return nil }
+        guard let ci = data.clients.firstIndex(where: { $0.id == sub.clientID })
+        else {
+            NSLog("PeakWeek ingest: no client with id %@ — submission %@ skipped",
+                  sub.clientID.uuidString, sub.id.uuidString)
+            return nil
+        }
+        // Idempotency: this submission already landed (retry / re-delivery).
+        guard !data.clients[ci].logs.contains(where: { $0.submissionID == sub.id })
+        else { return nil }
+
+        var entry = Ingest.entry(from: sub, clientUnit: data.clients[ci].unit)
+        let flags = AnomalyCheck.check(entry: entry, client: data.clients[ci])
+        entry.flags = flags.isEmpty ? nil : flags
+
+        let record = IngestRecord(
+            submissionID: sub.id,
+            clientID: sub.clientID,
+            clientName: data.clients[ci].name,
+            date: Date(),
+            performedAt: sub.performedAt,
+            summary: Ingest.summary(for: entry, unit: data.clients[ci].unit),
+            flags: flags,
+            videoFilename: sub.videoFilename)
+
+        data.clients[ci].logs.append(entry)
+        data.inboxLog.append(record)
+
+        if !flags.isEmpty {
+            Notifier.flaggedSubmission(clientName: record.clientName,
+                                       summary: record.summary, flags: flags)
+        }
+        return record
+    }
+
+    /// Coach looked at a flagged (or any) submission — the data stands.
+    func markIngestReviewed(_ recordID: UUID) {
+        guard let idx = data.inboxLog.firstIndex(where: { $0.id == recordID }),
+              data.inboxLog[idx].state == .new else { return }
+        data.inboxLog[idx].state = .reviewed
+    }
+
+    /// Coach rejected a submission: the log entry it created is removed
+    /// (found by submission ID — defensive re-lookup, never a stored index)
+    /// and the audit row is kept as dismissed.
+    func rejectIngest(_ recordID: UUID) {
+        guard let idx = data.inboxLog.firstIndex(where: { $0.id == recordID }),
+              data.inboxLog[idx].state != .dismissed else { return }
+        let subID = data.inboxLog[idx].submissionID
+        if let ci = data.clients.firstIndex(where: { $0.id == data.inboxLog[idx].clientID }) {
+            data.clients[ci].logs.removeAll { $0.submissionID == subID }
+        }
+        data.inboxLog[idx].state = .dismissed
+    }
+
+    /// New (unreviewed) inbox rows — drives the toolbar badge.
+    var newInboxCount: Int {
+        data.inboxLog.filter { $0.state == .new }.count
     }
 
     /// Immediate manual send from a week's Send menu.

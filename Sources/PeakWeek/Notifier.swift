@@ -1,0 +1,42 @@
+import Foundation
+import AppKit
+import UserNotifications
+
+/// macOS notifications for the inbound pipeline. Flagged submissions notify;
+/// clean ones stay silent (the Inbox badge carries the ambient count).
+/// Authorization is requested LAZILY on the first flagged ingest — the
+/// permission prompt appears when it has context, never at launch.
+enum Notifier {
+
+    /// Test seam (same pattern as SendBridge.dryRunCapture): when set,
+    /// notifications are captured instead of posted, and no UserNotifications
+    /// machinery is touched — UNUserNotificationCenter cannot run inside a
+    /// bare test process.
+    static var capture: ((_ title: String, _ body: String) -> Void)?
+
+    static func flaggedSubmission(clientName: String, summary: String,
+                                  flags: [String]) {
+        post(title: "\(clientName) logged — worth a look",
+             body: "\(summary)\n\(flags.joined(separator: " · "))")
+    }
+
+    private static func post(title: String, body: String) {
+        if let capture {
+            capture(title, body)
+            return
+        }
+        // A real app context is required: bare `swift test`/`swift run`
+        // processes crash inside UNUserNotificationCenter.
+        guard Bundle.main.bundleIdentifier != nil, NSApp != nil else { return }
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            center.add(UNNotificationRequest(identifier: UUID().uuidString,
+                                             content: content, trigger: nil))
+        }
+    }
+}

@@ -456,10 +456,18 @@ struct Maxes: Codable, Hashable {
     }
 }
 
+/// Where a log entry came from: typed in by the coach, or submitted by the
+/// lifter through the client app pipeline. nil decodes as .coach — every
+/// entry that existed before the pipeline was coach-entered by definition.
+enum LogSource: String, Codable {
+    case coach, client
+}
+
 /// One logged top-set result — what the lifter actually did, texted in and
-/// entered by the coach. Lives on the CLIENT, not inside the program, so the
-/// history survives regeneration and program deletion: the trend belongs to
-/// the lifter, not to any one program.
+/// entered by the coach, or submitted straight from the client app. Lives on
+/// the CLIENT, not inside the program, so the history survives regeneration
+/// and program deletion: the trend belongs to the lifter, not to any one
+/// program.
 struct LiftLogEntry: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var date: Date
@@ -475,18 +483,27 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
     var weekNum: Int? = nil            // provenance when logged from a program slot
     var programStamp: Date? = nil
     var note: String = ""
+    /// Pipeline provenance: who entered it (nil = coach, pre-pipeline),
+    /// the client-generated submission ID (the end-to-end idempotency key),
+    /// and any anomaly flags raised at ingest ("load above stored max", …).
+    var source: LogSource? = nil
+    var submissionID: UUID? = nil
+    var flags: [String]? = nil
 
     init(id: UUID = UUID(), date: Date, lift: LiftPool, exerciseName: String? = nil,
          loadMod: Double? = nil, load: Double, reps: Int, rpe: Double? = nil,
          cleanSingle: Bool = false, prescribedPct: Double? = nil,
          prescribedRPE: Double? = nil, weekNum: Int? = nil,
-         programStamp: Date? = nil, note: String = "") {
+         programStamp: Date? = nil, note: String = "",
+         source: LogSource? = nil, submissionID: UUID? = nil,
+         flags: [String]? = nil) {
         self.id = id; self.date = date; self.lift = lift
         self.exerciseName = exerciseName; self.loadMod = loadMod
         self.load = load; self.reps = reps; self.rpe = rpe
         self.cleanSingle = cleanSingle
         self.prescribedPct = prescribedPct; self.prescribedRPE = prescribedRPE
         self.weekNum = weekNum; self.programStamp = programStamp; self.note = note
+        self.source = source; self.submissionID = submissionID; self.flags = flags
     }
 
     init(from decoder: Decoder) throws {
@@ -505,6 +522,9 @@ struct LiftLogEntry: Codable, Identifiable, Hashable {
         weekNum = try c.decodeIfPresent(Int.self, forKey: .weekNum)
         programStamp = try c.decodeIfPresent(Date.self, forKey: .programStamp)
         note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        source = try c.decodeIfPresent(LogSource.self, forKey: .source)
+        submissionID = try c.decodeIfPresent(UUID.self, forKey: .submissionID)
+        flags = try c.decodeIfPresent([String].self, forKey: .flags)
     }
 
     /// True when the set was a variation (load modifier ≠ 1), so its comp-lift
@@ -609,12 +629,17 @@ struct AppData: Codable {
     var clients: [Client] = []
     var sendLog: [SendRecord] = []
     var exerciseLibrary: ExerciseLibrary = .seeded()
+    /// Client-app submissions as they arrived — the inbound audit trail,
+    /// mirroring sendLog on the outbound side.
+    var inboxLog: [IngestRecord] = []
 
     init(clients: [Client] = [], sendLog: [SendRecord] = [],
-         exerciseLibrary: ExerciseLibrary = .seeded()) {
+         exerciseLibrary: ExerciseLibrary = .seeded(),
+         inboxLog: [IngestRecord] = []) {
         self.clients = clients
         self.sendLog = sendLog
         self.exerciseLibrary = exerciseLibrary
+        self.inboxLog = inboxLog
     }
 
     init(from decoder: Decoder) throws {
@@ -623,6 +648,7 @@ struct AppData: Codable {
         clients = try c.decodeIfPresent([Client].self, forKey: .clients) ?? []
         sendLog = try c.decodeIfPresent([SendRecord].self, forKey: .sendLog) ?? []
         exerciseLibrary = try c.decodeIfPresent(ExerciseLibrary.self, forKey: .exerciseLibrary) ?? .seeded()
+        inboxLog = try c.decodeIfPresent([IngestRecord].self, forKey: .inboxLog) ?? []
         exerciseLibrary.mergeNewSeeds()     // seed additions reach existing libraries
         migrateSlotReferences()
         schemaVersion = 3           // decoding IS the migration
