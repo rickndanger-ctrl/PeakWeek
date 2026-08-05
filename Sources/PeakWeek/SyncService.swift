@@ -165,19 +165,25 @@ enum SyncService {
         guard !frozen else { return 0 }
 
         let rows: [SubmissionRow]
+        let noteRows: [NoteRow]
         do {
             let (data, status) = try await request("admin/inbox")
             guard status == 200 else {
                 NSLog("PeakWeek sync: inbox returned %d", status)
                 return 0
             }
-            struct Wrapper: Codable { var submissions: [SubmissionRow] }
-            rows = try decoder.decode(Wrapper.self, from: data).submissions
+            struct Wrapper: Codable {
+                var submissions: [SubmissionRow]
+                var notes: [NoteRow]?
+            }
+            let wrapper = try decoder.decode(Wrapper.self, from: data)
+            rows = wrapper.submissions
+            noteRows = wrapper.notes ?? []
         } catch {
             NSLog("PeakWeek sync: inbox fetch failed — %@", String(describing: error))
             return 0
         }
-        guard !rows.isEmpty else { return 0 }
+        guard !rows.isEmpty || !noteRows.isEmpty else { return 0 }
 
         var ackIDs: [String] = []
         var ingested = 0
@@ -204,10 +210,34 @@ enum SyncService {
             ackIDs.append(row.id.uuidString)
         }
 
-        if !ackIDs.isEmpty {
-            _ = try? await request("admin/ack", method: "POST", body: ["ids": ackIDs])
+        // Notes: ingest (inbox row + notification), then ack.
+        var noteAckIDs: [String] = []
+        for n in noteRows {
+            let note = ClientNote(id: n.id, clientID: n.clientId,
+                                  body: n.body, createdAt: n.createdAt)
+            _ = await MainActor.run { store.ingestNote(note) }
+            noteAckIDs.append(n.id.uuidString)
+        }
+
+        if !ackIDs.isEmpty || !noteAckIDs.isEmpty {
+            _ = try? await request("admin/ack", method: "POST",
+                                   body: ["ids": ackIDs, "note_ids": noteAckIDs])
         }
         return ingested
+    }
+
+    /// Wire row for a client note.
+    struct NoteRow: Codable {
+        var id: UUID
+        var clientId: UUID
+        var body: String
+        var createdAt: Date
+
+        enum CodingKeys: String, CodingKey {
+            case id, body
+            case clientId = "client_id"
+            case createdAt = "created_at"
+        }
     }
 
     // MARK: publish (fire-and-forget on every successful send)

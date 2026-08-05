@@ -369,6 +369,30 @@ final class AppStore: ObservableObject {
         return record
     }
 
+    /// Ingest a free-text note from the client app: inbox row + notification,
+    /// no log entry (notes are messages, not data). Idempotent by note ID.
+    @discardableResult
+    func ingestNote(_ note: ClientNote) -> IngestRecord? {
+        guard !loadFailed else { return nil }
+        guard let ci = data.clients.firstIndex(where: { $0.id == note.clientID })
+        else { return nil }
+        guard !data.inboxLog.contains(where: { $0.submissionID == note.id })
+        else { return nil }
+        let record = IngestRecord(
+            submissionID: note.id,
+            clientID: note.clientID,
+            clientName: data.clients[ci].name,
+            date: Date(),
+            performedAt: note.createdAt,
+            summary: note.body,
+            state: .new,
+            kind: .note)
+        data.inboxLog.append(record)
+        // Notes always notify — they're deliberate communication.
+        Notifier.noteReceived(clientName: record.clientName, body: note.body)
+        return record
+    }
+
     /// Coach looked at a flagged (or any) submission — the data stands.
     func markIngestReviewed(_ recordID: UUID) {
         guard let idx = data.inboxLog.firstIndex(where: { $0.id == recordID }),

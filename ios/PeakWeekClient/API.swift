@@ -148,6 +148,12 @@ enum API {
                                body: ["id": submissionID.uuidString])
     }
 
+    static func postNote(id: UUID, body: String, token: String) async throws {
+        let (_, status) = try await request("notes", method: "POST", token: token,
+                                            body: ["id": id.uuidString, "body": body])
+        guard status == 200 else { throw APIError(message: "Note send failed (\(status)) — kept in your outbox.") }
+    }
+
     static func mine(token: String) async throws -> [MineRow] {
         let (data, status) = try await request("submissions/mine", token: token)
         guard status == 200 else { throw APIError(message: "Couldn't load history (\(status)).") }

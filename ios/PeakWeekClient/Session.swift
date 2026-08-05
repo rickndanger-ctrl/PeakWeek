@@ -48,6 +48,7 @@ final class Session: ObservableObject {
             let result = try await API.pair(code: code.trimmingCharacters(in: .whitespaces).uppercased(),
                                             deviceName: device)
             Keychain.setToken(result.token)
+            WeekWatch.requestNotificationPermission()
             client = result.client
             Self.saveJSON(result.client, "client.json")
             paired = true
@@ -66,6 +67,7 @@ final class Session: ObservableObject {
                 week = envelope.payload
                 weekPublishedAt = envelope.publishedAt
                 if let w = envelope.payload { Self.saveJSON(w, "week.json") }
+                WeekWatch.markSeen(publishedAt: envelope.publishedAt)
             }
             lastError = nil
         } catch {
@@ -81,6 +83,31 @@ final class Session: ObservableObject {
                 await outbox.flush(token: token)
             }
         }
+    }
+
+    func submitNote(_ body: String) {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        outbox.enqueueNote(PendingNote(body: trimmed))
+        Task {
+            if let token = Keychain.token() {
+                await outbox.flush(token: token)
+            }
+        }
+    }
+
+    // MARK: day check-offs (local only — a rhythm aid, not coach data)
+
+    @Published var doneDays: Set<String> = Session.loadJSON("done-days.json") ?? []
+
+    func dayKey(_ week: PublishedWeek, dayIndex: Int) -> String {
+        "\(Int(week.programStamp.timeIntervalSince1970))-\(week.weekNum)-\(dayIndex)"
+    }
+
+    func toggleDone(_ week: PublishedWeek, dayIndex: Int) {
+        let key = dayKey(week, dayIndex: dayIndex)
+        if doneDays.contains(key) { doneDays.remove(key) } else { doneDays.insert(key) }
+        Self.saveJSON(doneDays, "done-days.json")
     }
 
     // MARK: disk cache

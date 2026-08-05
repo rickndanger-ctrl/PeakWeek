@@ -20,6 +20,10 @@ enum Notifier {
              body: "\(summary)\n\(flags.joined(separator: " · "))")
     }
 
+    static func noteReceived(clientName: String, body: String) {
+        post(title: "Note from \(clientName)", body: String(body.prefix(160)))
+    }
+
     private static func post(title: String, body: String) {
         if let capture {
             capture(title, body)

@@ -4,6 +4,11 @@ import PeakWeekCore
 @main
 struct PeakWeekClientApp: App {
     @StateObject private var session = Session()
+    @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        WeekWatch.register()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +21,10 @@ struct PeakWeekClientApp: App {
             }
             .environmentObject(session)
             .tint(ClientTheme.accent)
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .background { WeekWatch.schedule() }
+            if phase == .active { Task { await session.refresh() } }
         }
     }
 }
