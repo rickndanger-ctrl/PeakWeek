@@ -21,8 +21,13 @@ targets:
       properties:
         CFBundleDisplayName: PeakWeek
         CFBundleIconName: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleURLName: com.peakweek.client
+            CFBundleURLSchemes: [peakweek]
         NSCameraUsageDescription: Record your sets to send to your coach.
         NSMicrophoneUsageDescription: Audio for your set videos.
         BGTaskSchedulerPermittedIdentifiers: [com.peakweek.client.refresh]
@@ -30,7 +35,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.peakweek.client
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "1.1"
         CURRENT_PROJECT_VERSION: "2"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
