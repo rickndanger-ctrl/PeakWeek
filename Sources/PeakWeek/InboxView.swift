@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 
 /// The inbound side of the delivery story: client-app submissions as they
 /// arrived. Everything already auto-logged — this is the REVIEW surface.
@@ -8,6 +9,7 @@ struct InboxView: View {
     @EnvironmentObject var store: AppStore
     @Environment(\.dismiss) private var dismiss
     @State private var confirmRejectID: UUID?
+    @State private var playingVideoURL: URL?
 
     private var fresh: [IngestRecord] {
         store.data.inboxLog.filter { $0.state == .new }
@@ -68,6 +70,23 @@ struct InboxView: View {
         }
         .padding(24)
         .frame(width: 540)
+        .sheet(isPresented: Binding(get: { playingVideoURL != nil },
+                                    set: { if !$0 { playingVideoURL = nil } })) {
+            if let url = playingVideoURL {
+                VStack(spacing: 10) {
+                    VideoPlayer(player: AVPlayer(url: url))
+                        .frame(width: 560, height: 400)
+                    HStack {
+                        Button("Open in QuickTime") { NSWorkspace.shared.open(url) }
+                            .buttonStyle(.bordered)
+                        Spacer()
+                        Button("Done") { playingVideoURL = nil }
+                            .keyboardShortcut(.defaultAction)
+                    }
+                }
+                .padding(16)
+            }
+        }
         .confirmationDialog(
             "Remove this entry from the lifter's log? The submission stays in history as rejected.",
             isPresented: Binding(get: { confirmRejectID != nil },
@@ -87,11 +106,27 @@ struct InboxView: View {
             stateIcon(rec)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text("\(rec.clientName) — \(rec.summary)").fontWeight(.medium)
-                    if rec.videoFilename != nil {
-                        Image(systemName: "video.fill").font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .help("Video attached")
+                    if rec.effectiveKind == .note {
+                        Text("\(rec.clientName):").fontWeight(.semibold)
+                        Text("“\(rec.summary)”").italic()
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text("\(rec.clientName) — \(rec.summary)").fontWeight(.medium)
+                    }
+                    if let filename = rec.videoFilename {
+                        Button {
+                            let url = SyncService.localVideoURL(
+                                clientID: rec.clientID,
+                                submissionID: rec.submissionID)
+                            if FileManager.default.fileExists(atPath: url.path) {
+                                playingVideoURL = url
+                            }
+                        } label: {
+                            Label("Play", systemImage: "play.rectangle.fill")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Watch \(filename)")
                     }
                 }
                 if !rec.flags.isEmpty {
@@ -103,11 +138,15 @@ struct InboxView: View {
             }
             Spacer()
             if actionable {
-                Button("Looks right") { store.markIngestReviewed(rec.id) }
-                    .buttonStyle(.bordered).font(.caption)
-                Button("Remove entry") { confirmRejectID = rec.id }
-                    .buttonStyle(.borderless).font(.caption)
-                    .foregroundStyle(.red)
+                Button(rec.effectiveKind == .note ? "Read it" : "Looks right") {
+                    store.markIngestReviewed(rec.id)
+                }
+                .buttonStyle(.bordered).font(.caption)
+                if rec.effectiveKind == .set {
+                    Button("Remove entry") { confirmRejectID = rec.id }
+                        .buttonStyle(.borderless).font(.caption)
+                        .foregroundStyle(.red)
+                }
             } else {
                 Text(rec.state == .reviewed ? "reviewed" : "rejected")
                     .font(.caption).foregroundStyle(.secondary)
@@ -124,9 +163,10 @@ struct InboxView: View {
     private func stateIcon(_ rec: IngestRecord) -> some View {
         switch rec.state {
         case .new:
-            Image(systemName: rec.flags.isEmpty
-                  ? "tray.and.arrow.down.fill" : "flag.fill")
-                .foregroundStyle(rec.flags.isEmpty ? Theme.plateGreen : .orange)
+            Image(systemName: rec.effectiveKind == .note ? "bubble.left.fill"
+                  : rec.flags.isEmpty ? "tray.and.arrow.down.fill" : "flag.fill")
+                .foregroundStyle(rec.effectiveKind == .note ? Theme.plateBlue
+                                 : rec.flags.isEmpty ? Theme.plateGreen : .orange)
         case .reviewed:
             Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.plateGreen)
         case .dismissed:

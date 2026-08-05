@@ -14,6 +14,10 @@ public struct IngestRecord: Codable, Identifiable, Hashable {
     public var flags: [String] = []
     public var videoFilename: String? = nil
     public var state: State = .new
+    /// What kind of inbound item: a logged SET (creates a log entry) or a
+    /// free-text NOTE to the coach (inbox-only, always notifies).
+    /// nil decodes as .set — every pre-notes record was a set.
+    public var kind: Kind? = nil
 
     public enum State: String, Codable {
         case new        // awaiting the coach's eyes
@@ -21,15 +25,22 @@ public struct IngestRecord: Codable, Identifiable, Hashable {
         case dismissed  // coach rejected it — the log entry was removed
     }
 
+    public enum Kind: String, Codable {
+        case set, note
+    }
+
+    /// Effective kind — nil (pre-notes records) reads as a set.
+    public var effectiveKind: Kind { kind ?? .set }
+
     public init(id: UUID = UUID(), submissionID: UUID, clientID: UUID,
          clientName: String, date: Date, performedAt: Date, summary: String,
          flags: [String] = [], videoFilename: String? = nil,
-         state: State = .new) {
+         state: State = .new, kind: Kind? = nil) {
         self.id = id; self.submissionID = submissionID; self.clientID = clientID
         self.clientName = clientName; self.date = date
         self.performedAt = performedAt; self.summary = summary
         self.flags = flags; self.videoFilename = videoFilename
-        self.state = state
+        self.state = state; self.kind = kind
     }
 
     public init(from decoder: Decoder) throws {
@@ -44,6 +55,22 @@ public struct IngestRecord: Codable, Identifiable, Hashable {
         flags = try c.decodeIfPresent([String].self, forKey: .flags) ?? []
         videoFilename = try c.decodeIfPresent(String.self, forKey: .videoFilename)
         state = try c.decodeIfPresent(State.self, forKey: .state) ?? .new
+        kind = try c.decodeIfPresent(Kind.self, forKey: .kind)
+    }
+}
+
+/// A free-text note from the client app — no lift attached. Wire type from
+/// the pipe; the id is client-generated and idempotent like submissions.
+public struct ClientNote: Codable, Identifiable, Hashable {
+    public var id: UUID
+    public var clientID: UUID
+    public var body: String
+    public var createdAt: Date
+
+    public init(id: UUID = UUID(), clientID: UUID, body: String,
+                createdAt: Date = Date()) {
+        self.id = id; self.clientID = clientID
+        self.body = body; self.createdAt = createdAt
     }
 }
 

@@ -181,6 +181,39 @@ final class IngestTests: XCTestCase {
         XCTAssertTrue(store.data.inboxLog.isEmpty)
     }
 
+    // MARK: - notes
+
+    func testNoteIngestCreatesInboxRowOnlyAndNotifies() {
+        let (store, cid) = makeStore()
+        var notified: [String] = []
+        Notifier.capture = { title, _ in notified.append(title) }
+        defer { Notifier.capture = nil }
+
+        let note = ClientNote(clientID: cid, body: "Elbow felt weird on bench warmups")
+        let rec = store.ingestNote(note)
+        XCTAssertNotNil(rec)
+        XCTAssertEqual(rec?.effectiveKind, .note)
+        XCTAssertTrue(store.data.clients[0].logs.isEmpty, "notes never touch the log")
+        XCTAssertEqual(store.data.inboxLog.count, 1)
+        XCTAssertEqual(notified.count, 1, "notes always notify")
+
+        // Idempotent by note id.
+        XCTAssertNil(store.ingestNote(note))
+        XCTAssertEqual(store.data.inboxLog.count, 1)
+    }
+
+    func testNoteKindDecodesTolerantly() throws {
+        // Pre-notes records (no kind field) read as sets.
+        let legacy = """
+        {"submissionID":"6F1E9F0A-2222-4444-8888-ABCDEF012345",
+        "clientID":"6F1E9F0A-2222-4444-8888-ABCDEF012345",
+        "summary":"Squat 400×5 @8"}
+        """
+        let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
+        let r = try dec.decode(IngestRecord.self, from: Data(legacy.utf8))
+        XCTAssertEqual(r.effectiveKind, .set)
+    }
+
     // MARK: - persistence
 
     func testProvenanceFieldsRoundTripAndOldDataDecodes() throws {

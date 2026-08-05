@@ -28,11 +28,20 @@ struct PendingSubmission: Codable, Identifiable, Hashable {
     }
 }
 
+/// A queued free-text note to the coach.
+struct PendingNote: Codable, Identifiable, Hashable {
+    var id: UUID = UUID()
+    var body: String
+    var createdAt: Date = Date()
+    var delivered: Bool = false
+}
+
 /// Persistent offline queue. Flush on demand, on foreground, and when the
 /// network comes back — the gym's dead corner must never eat a result.
 @MainActor
 final class OutboxStore: ObservableObject {
     @Published private(set) var items: [PendingSubmission] = []
+    @Published private(set) var notes: [PendingNote] = []
 
     private let monitor = NWPathMonitor()
     private var flushOnReconnect = false
@@ -41,11 +50,19 @@ final class OutboxStore: ObservableObject {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("outbox.json")
     }
+    private static var notesURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("outbox-notes.json")
+    }
 
     init() {
         if let data = try? Data(contentsOf: Self.fileURL) {
             let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
             items = (try? dec.decode([PendingSubmission].self, from: data)) ?? []
+        }
+        if let data = try? Data(contentsOf: Self.notesURL) {
+            let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
+            notes = (try? dec.decode([PendingNote].self, from: data)) ?? []
         }
         monitor.pathUpdateHandler = { [weak self] path in
             guard path.status == .satisfied else { return }
@@ -70,6 +87,18 @@ final class OutboxStore: ObservableObject {
         save()
     }
 
+    func enqueueNote(_ note: PendingNote) {
+        notes.append(note)
+        saveNotes()
+    }
+
+    private func saveNotes() {
+        let enc = JSONEncoder(); enc.dateEncodingStrategy = .iso8601
+        try? enc.encode(notes).write(to: Self.notesURL, options: .atomic)
+    }
+
+    var undeliveredNotes: [PendingNote] { notes.filter { !$0.delivered } }
+
     var undelivered: [PendingSubmission] {
         items.filter { $0.state != .delivered }
     }
@@ -77,6 +106,17 @@ final class OutboxStore: ObservableObject {
     /// Push everything undelivered. Item-by-item; a failure leaves the item
     /// queued and arms the reconnect trigger.
     func flush(token: String) async {
+        for idx in notes.indices where !notes[idx].delivered {
+            do {
+                try await API.postNote(id: notes[idx].id, body: notes[idx].body, token: token)
+                notes[idx].delivered = true
+                saveNotes()
+            } catch { flushOnReconnect = true }
+        }
+        if notes.count > 30 {
+            notes.removeAll { $0.delivered && $0.createdAt < Date().addingTimeInterval(-7 * 86400) }
+            saveNotes()
+        }
         for idx in items.indices where items[idx].state != .delivered {
             var item = items[idx]
             do {

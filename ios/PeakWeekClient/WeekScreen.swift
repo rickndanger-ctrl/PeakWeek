@@ -19,8 +19,8 @@ struct WeekScreen: View {
                 if let week = session.week {
                     VStack(alignment: .leading, spacing: 16) {
                         header(week)
-                        ForEach(Array(week.days.enumerated()), id: \.offset) { _, day in
-                            dayCard(day, unit: week.unit.rawValue)
+                        ForEach(Array(week.days.enumerated()), id: \.offset) { di, day in
+                            dayCard(day, week: week, dayIndex: di)
                         }
                         if !week.weekNote.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
@@ -65,14 +65,23 @@ struct WeekScreen: View {
                         blankLog = true
                     } label: { Image(systemName: "square.and.pencil") }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showNote = true
+                    } label: { Image(systemName: "bubble.left") }
+                }
             }
             .sheet(isPresented: $blankLog) {
                 LogFormView(prefill: nil, dayTitle: nil)
+            }
+            .sheet(isPresented: $showNote) {
+                NoteComposeView()
             }
         }
     }
 
     @State private var blankLog = false
+    @State private var showNote = false
 
     private func header(_ week: PublishedWeek) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -100,10 +109,24 @@ struct WeekScreen: View {
         }
     }
 
-    private func dayCard(_ day: PublishedWeek.Day, unit: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(day.title.uppercased())
-                .font(.system(size: 12, weight: .bold)).kerning(1)
+    private func dayCard(_ day: PublishedWeek.Day, week: PublishedWeek,
+                         dayIndex: Int) -> some View {
+        let done = session.doneDays.contains(session.dayKey(week, dayIndex: dayIndex))
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(day.title.uppercased())
+                    .font(.system(size: 12, weight: .bold)).kerning(1)
+                    .strikethrough(done, color: .secondary)
+                    .foregroundStyle(done ? .secondary : .primary)
+                Spacer()
+                Button {
+                    session.toggleDone(week, dayIndex: dayIndex)
+                } label: {
+                    Image(systemName: done ? "checkmark.square.fill" : "square")
+                        .foregroundStyle(done ? ClientTheme.plateGreen : .secondary)
+                }
+                .buttonStyle(.plain)
+            }
             ForEach(Array(day.lines.enumerated()), id: \.offset) { idx, line in
                 let loggable = day.loggables.first {
                     $0.slotIndex == idx

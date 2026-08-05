@@ -20,6 +20,7 @@ struct LogFormView: View {
     @State private var note = ""
     @State private var videoItem: PhotosPickerItem?
     @State private var videoLocalPath: String?
+    @State private var showCamera = false
     @State private var processingVideo = false
     @State private var loaded = false
 
@@ -68,9 +69,16 @@ struct LogFormView: View {
                 }
 
                 Section("Video (optional)") {
+                    if CameraPicker.isAvailable {
+                        Button {
+                            showCamera = true
+                        } label: {
+                            Label("Record this set", systemImage: "video.badge.plus")
+                        }
+                    }
                     PhotosPicker(selection: $videoItem, matching: .videos) {
-                        Label(videoLocalPath == nil ? "Attach a set video" : "Video attached ✓",
-                              systemImage: videoLocalPath == nil ? "video" : "checkmark.circle.fill")
+                        Label(videoLocalPath == nil ? "Attach from library" : "Video attached ✓",
+                              systemImage: videoLocalPath == nil ? "photo.on.rectangle" : "checkmark.circle.fill")
                     }
                     if processingVideo { ProgressView("Compressing…") }
                     if videoLocalPath != nil {
@@ -114,6 +122,25 @@ struct LogFormView: View {
                 } else {
                     unit = session.client?.unit ?? "lb"
                 }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraPicker { url in
+                    processingVideo = true
+                    Task {
+                        defer { processingVideo = false }
+                        if let compressed = try? await VideoCompressor.compress(url) {
+                            let dest = FileManager.default
+                                .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                                .appendingPathComponent("pending-\(UUID().uuidString).mp4")
+                            try? FileManager.default.createDirectory(
+                                at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+                            try? FileManager.default.moveItem(at: compressed, to: dest)
+                            videoLocalPath = dest.path
+                        }
+                        try? FileManager.default.removeItem(at: url)
+                    }
+                }
+                .ignoresSafeArea()
             }
             .onChange(of: videoItem) { item in
                 guard let item else { return }
