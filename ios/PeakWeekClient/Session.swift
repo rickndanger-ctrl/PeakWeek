@@ -58,6 +58,19 @@ final class Session: ObservableObject {
         }
     }
 
+    /// peakweek://pair?code=XXXXXXXX — the QR on the coach's pairing sheet.
+    /// Only meaningful before pairing; anything else is ignored.
+    func handleIncoming(_ url: URL) async {
+        guard !paired,
+              url.scheme?.lowercased() == "peakweek",
+              url.host?.lowercased() == "pair",
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              let code = items.first(where: { $0.name == "code" })?.value,
+              !code.isEmpty
+        else { return }
+        await pair(code: code)
+    }
+
     func refresh() async {
         guard let token = Keychain.token() else { return }
         await outbox.flush(token: token)

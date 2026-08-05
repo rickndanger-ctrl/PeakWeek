@@ -21,13 +21,18 @@ targets:
       properties:
         CFBundleDisplayName: PeakWeek
         CFBundleIconName: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleURLName: com.peakweek.client
+            CFBundleURLSchemes: [peakweek]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.peakweek.client
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "2"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"

@@ -16,6 +16,9 @@ struct PeakWeekClientApp: App {
             }
             .environmentObject(session)
             .tint(ClientTheme.accent)
+            .onOpenURL { url in
+                Task { await session.handleIncoming(url) }
+            }
         }
     }
 }
