@@ -38,28 +38,64 @@ enum Notifier {
     }
 
     /// Proves the whole path works, from Settings, before it matters.
-    static func test() {
-        post(title: "Peak Week notifications are on",
-             body: "This is what a failed send or a client note will look like.")
+    /// Reports back what ACTUALLY happened — "allowed" isn't the same as
+    /// "you'll see it": with the alert style set to None a notification is
+    /// accepted and then shown nowhere at all.
+    static func test(_ report: @escaping (String) -> Void) {
+        guard Bundle.main.bundleIdentifier != nil, NSApp != nil else {
+            report("Not running as a bundled app — notifications are unavailable.")
+            return
+        }
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized
+                    || settings.authorizationStatus == .provisional else {
+                DispatchQueue.main.async { report("Not allowed yet — turn it on in System Settings.") }
+                return
+            }
+            let silent = settings.alertStyle == .none
+                && settings.notificationCenterSetting != .enabled
+            post(title: "Peak Week notifications are on",
+                 body: "This is what a failed send or a client note will look like.") { error in
+                DispatchQueue.main.async {
+                    if let error {
+                        report("Rejected by macOS: \(error.localizedDescription)")
+                    } else if silent {
+                        report("Sent, but macOS is set to show it nowhere. In System Settings → Notifications → PeakWeek, pick Banners or Alerts.")
+                    } else if settings.alertStyle == .none {
+                        report("Sent — it went straight to Notification Center. Pick Banners for on-screen alerts.")
+                    } else {
+                        report("Sent — check the top-right of your screen.")
+                    }
+                }
+            }
+        }
     }
 
-    private static func post(title: String, body: String) {
+    private static func post(title: String, body: String,
+                             completion: ((Error?) -> Void)? = nil) {
         if let capture {
             capture(title, body)
+            completion?(nil)
             return
         }
         // A real app context is required: bare `swift test`/`swift run`
         // processes crash inside UNUserNotificationCenter.
-        guard Bundle.main.bundleIdentifier != nil, NSApp != nil else { return }
+        guard Bundle.main.bundleIdentifier != nil, NSApp != nil else {
+            completion?(nil)
+            return
+        }
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
+        center.requestAuthorization(options: [.alert, .sound]) { granted, err in
+            guard granted else { completion?(err); return }
             let content = UNMutableNotificationContent()
             content.title = title
             content.body = body
             content.sound = .default
             center.add(UNNotificationRequest(identifier: UUID().uuidString,
-                                             content: content, trigger: nil))
+                                             content: content, trigger: nil)) { error in
+                completion?(error)
+            }
         }
     }
 }

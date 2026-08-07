@@ -22,6 +22,7 @@ struct GeneralSettingsView: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginItemError: String?
     @State private var notifyStatus: UNAuthorizationStatus = .notDetermined
+    @State private var testResult: String?
 
     private var notifyIcon: String {
         switch notifyStatus {
@@ -100,9 +101,16 @@ struct GeneralSettingsView: View {
                     case .denied:
                         Button("Open System Settings") { openNotificationSettings() }
                     default:
-                        Button("Send a test") { Notifier.test() }
+                        Button("Send a test") {
+                            testResult = "Sending…"
+                            Notifier.test { testResult = $0 }
+                        }
                     }
                 }
+            }
+            if let testResult {
+                Text(testResult).font(.caption).foregroundStyle(Theme.plateBlue)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Text("Peak Week tells you when a client logs something odd, when they send a note, and — most importantly — when a weekly send FAILS. Failed sends don't retry on their own, so this is how you find out.")
                 .font(.caption).foregroundStyle(.secondary)
