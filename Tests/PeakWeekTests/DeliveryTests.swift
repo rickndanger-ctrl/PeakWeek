@@ -372,4 +372,81 @@ final class DeliveryTests: XCTestCase {
         let out = String(decoding: try enc.encode(data), as: UTF8.self)
         XCTAssertTrue(out.contains("\"schemaVersion\":3"), "current stamp persists on next save")
     }
+
+    // MARK: - which week the client app mirrors
+
+    /// Build a record for `week` under `program`'s stamp.
+    private func rec(_ client: Client, _ program: Program, _ week: Int,
+                     _ status: SendStatus, at date: Date,
+                     removed: Bool? = nil) -> SendRecord {
+        SendRecord(clientID: client.id, clientName: client.name, weekNum: week,
+                   date: date, method: .messages, status: status,
+                   programStamp: program.createdAt, weekRemoved: removed)
+    }
+
+    func testWasAttemptedTaxonomy() {
+        XCTAssertTrue(SendStatus.sent.wasAttempted)
+        XCTAssertTrue(SendStatus.failed("boom").wasAttempted,
+                      "a failed text is still the week she's meant to train")
+        XCTAssertFalse(SendStatus.queued.wasAttempted,
+                       "unapproved content was never committed to")
+        XCTAssertFalse(SendStatus.skipped("superseded").wasAttempted)
+    }
+
+    func testWeekToMirrorPicksNewestAttemptedWeek() {
+        let c = makeClient()
+        let p = c.program!
+        let log = [rec(c, p, 1, .sent, at: monday),
+                   rec(c, p, 2, .failed("Messages down"), at: monday.addingTimeInterval(7 * 86400))]
+        XCTAssertEqual(DeliverySchedule.weekToMirror(now: monday.addingTimeInterval(7 * 86400),
+                                                     program: p, records: log), 2,
+                       "the newest ATTEMPTED week wins, even though its text failed")
+    }
+
+    /// The doctrine guard: content the coach hasn't approved never reaches her.
+    func testWeekToMirrorIgnoresQueuedAndSkipped() {
+        let c = makeClient()
+        let p = c.program!
+        let log = [rec(c, p, 1, .sent, at: monday),
+                   rec(c, p, 2, .queued, at: monday.addingTimeInterval(7 * 86400)),
+                   rec(c, p, 3, .skipped("superseded"), at: monday.addingTimeInterval(14 * 86400))]
+        XCTAssertEqual(DeliverySchedule.weekToMirror(now: monday.addingTimeInterval(14 * 86400),
+                                                     program: p, records: log), 1,
+                       "a queued week must never mirror ahead of what was delivered")
+    }
+
+    func testWeekToMirrorIgnoresRemovedWeeksAndOtherPrograms() {
+        let c = makeClient()
+        let p = c.program!
+        var stale = rec(c, p, 5, .sent, at: monday)
+        stale.programStamp = monday.addingTimeInterval(-999)      // a previous program
+        let log = [rec(c, p, 1, .sent, at: monday),
+                   rec(c, p, 4, .sent, at: monday, removed: true),
+                   stale]
+        XCTAssertEqual(DeliverySchedule.weekToMirror(now: monday, program: p, records: log), 1)
+    }
+
+    func testWeekToMirrorIgnoresAncientHistory() {
+        let c = makeClient()
+        let p = c.program!
+        let log = [rec(c, p, 2, .sent, at: monday)]
+        let muchLater = monday.addingTimeInterval(120 * 86400)
+        XCTAssertNil(DeliverySchedule.weekToMirror(now: muchLater, program: p, records: log),
+                     "abandoned history must not resurrect into a fresh publish")
+    }
+
+    func testSendRecordPublishedAtDecodesTolerantly() throws {
+        // A record written before publishedAt existed must still decode.
+        let old = """
+        {"id":"11111111-2222-3333-4444-555555555555",
+         "clientID":"66666666-7777-8888-9999-000000000000",
+         "clientName":"Lauri","weekNum":2,
+         "date":"2026-08-10T16:00:00Z","method":"messages","status":{"sent":{}}}
+        """
+        let dec = JSONDecoder()
+        dec.dateDecodingStrategy = .iso8601
+        let r = try dec.decode(SendRecord.self, from: Data(old.utf8))
+        XCTAssertEqual(r.weekNum, 2)
+        XCTAssertNil(r.publishedAt, "absent means never mirrored — the pass will publish it")
+    }
 }

@@ -41,15 +41,22 @@ final class AppStore: ObservableObject {
         dataURL.deletingLastPathComponent().appendingPathComponent("data.json.bak")
     }
 
-    /// TEST-ONLY: an in-memory store that never reads or writes data.json and
-    /// starts no timers. Production code must never call this — the real
-    /// initializer below is the only path that touches disk.
+    /// TEST-ONLY: an in-memory store that never reads or writes data.json,
+    /// never reaches the network, and starts no timers. Production code must
+    /// never call this — the real initializer below is the only path that
+    /// touches disk.
     init(inMemory: Bool) {
         persistenceDisabled = true
+        networkDisabled = true
     }
 
     /// One-way switch set only by the in-memory initializer.
     private var persistenceDisabled = false
+
+    /// One-way switch set only by the in-memory initializer. A test process
+    /// finds a real coach token on this machine, so without this a test that
+    /// reached a publish path would POST to the live pipe.
+    private var networkDisabled = false
 
     init() {
         load()
@@ -250,6 +257,11 @@ final class AppStore: ObservableObject {
         if changed {
             data.sendLog = log
         }
+        // UNCONDITIONAL, not gated on `changed`: this is what turns publishing
+        // into a retry loop. An unconfirmed mirror from an earlier pass gets
+        // another attempt every hour until it lands.
+        reconcileAllPublishedWeeks(now: now)
+        nagAttention(now: now)
     }
 
     /// Retire queued review entries for a week that has been delivered by
@@ -314,13 +326,12 @@ final class AppStore: ObservableObject {
                                      to: client.delivery.recipient,
                                      subject: "\(client.name) — Week \(weekNum) training plan",
                                      text: body, attachment: attachment)
+        // Publishing to the client app deliberately does NOT happen here: the
+        // mirror follows the coach's DECISION about which week she trains, not
+        // whether AppleScript happened to succeed. See reconcilePublishedWeek.
+        // iMessage stays the channel of record.
         switch result {
-        case .success:
-            // The client app mirrors exactly what was SENT — one week, the
-            // latest only. Fire-and-forget; iMessage stays the channel of record.
-            SyncService.publishWeek(client: client, program: program, week: week,
-                                    library: data.exerciseLibrary)
-            return record(.sent)
+        case .success: return record(.sent)
         case .failure(let err): return record(.failed(err.localizedDescription))
         }
     }
@@ -362,9 +373,15 @@ final class AppStore: ObservableObject {
         data.clients[ci].logs.append(entry)
         data.inboxLog.append(record)
 
+        // Flags OR a note from the lifter. A note is always worth surfacing —
+        // "left hip pinched on rep 4" is the whole reason she has a voice in
+        // the app, and it must never sit silently in a log table.
+        let saidSomething = !entry.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         if !flags.isEmpty {
             Notifier.flaggedSubmission(clientName: record.clientName,
                                        summary: record.summary, flags: flags)
+        } else if saidSomething {
+            Notifier.noteReceived(clientName: record.clientName, body: entry.note)
         }
         return record
     }
@@ -437,6 +454,8 @@ final class AppStore: ObservableObject {
         Self.retireQueued(in: &log, clientID: clientID, weekNum: weekNum,
                           stamp: client.program?.createdAt, reason: "already sent manually")
         data.sendLog = log
+        reconcilePublishedWeek(clientID: clientID)
+        nagAttention()
     }
 
     /// Coach approved a queued send from the review sheet.
@@ -468,6 +487,8 @@ final class AppStore: ObservableObject {
         data.sendLog[idx].status = outcome.status
         data.sendLog[idx].date = outcome.date
         data.sendLog[idx].programStamp = outcome.programStamp
+        reconcilePublishedWeek(clientID: client.id)
+        nagAttention()
     }
 
     func dismissQueued(_ recordID: UUID) {
@@ -493,6 +514,8 @@ final class AppStore: ObservableObject {
         data.sendLog[idx].status = outcome.status
         data.sendLog[idx].date = outcome.date
         data.sendLog[idx].programStamp = outcome.programStamp
+        reconcilePublishedWeek(clientID: client.id)
+        nagAttention()
     }
 
     /// Structural program edit (deload inserted/removed at week `fromWeek`):
@@ -509,10 +532,14 @@ final class AppStore: ObservableObject {
                 // History stays, but a removed week's records must not cover
                 // the week that inherits its number.
                 data.sendLog[i].weekRemoved = true
+                data.sendLog[i].publishedAt = nil
                 continue
             }
             if data.sendLog[i].weekNum >= fromWeek {
                 data.sendLog[i].weekNum += delta
+                // The server still holds the OLD content under the old number;
+                // drop the confirmation so the mirror is rebuilt correctly.
+                data.sendLog[i].publishedAt = nil
             }
         }
     }
@@ -532,6 +559,144 @@ final class AppStore: ObservableObject {
 
     var queuedSends: [SendRecord] {
         data.sendLog.filter { if case .queued = $0.status { return true }; return false }
+    }
+
+    // MARK: - client-app mirror
+
+    /// Clients with a publish request in flight, so the hourly pass can't
+    /// stack duplicate requests on a slow connection.
+    private var publishInFlight: Set<UUID> = []
+
+    /// Make the client app's copy equal the week the coach most recently
+    /// DELIVERED (or tried to). Independent of whether the iMessage succeeded:
+    /// a text that failed is still the week she's meant to train, and leaving
+    /// her phone on last week is the worse failure.
+    ///
+    /// Idempotent — a confirmed publish is never repeated, an unconfirmed one
+    /// is retried on the next pass. Never publishes a queued (unapproved)
+    /// week, and never a week ahead of what was delivered.
+    func reconcilePublishedWeek(clientID: UUID, now: Date = Date()) {
+        guard !networkDisabled || SyncService.publishCapture != nil else { return }
+        guard !loadFailed else { return }
+        guard !publishInFlight.contains(clientID) else { return }
+        guard let client = data.clients.first(where: { $0.id == clientID }),
+              let program = client.program else { return }
+        let records = data.sendLog.filter { $0.clientID == clientID }
+        guard let weekNum = DeliverySchedule.weekToMirror(now: now, program: program,
+                                                          records: records),
+              let week = program.weeks.first(where: { $0.num == weekNum }) else { return }
+        // The records this publish would confirm. If any is already confirmed,
+        // the phone has this week — nothing to do.
+        let pending = records.filter {
+            $0.weekNum == weekNum && $0.programStamp == program.createdAt
+                && $0.status.wasAttempted && $0.weekRemoved != true
+        }
+        guard !pending.isEmpty, pending.allSatisfy({ $0.publishedAt == nil }) else { return }
+        let ids = Set(pending.map(\.id))
+        let library = data.exerciseLibrary
+
+        publishInFlight.insert(clientID)
+        Task { [weak self] in
+            let ok = await SyncService.publishWeek(client: client, program: program,
+                                                   week: week, library: library)
+            guard let self else { return }
+            await MainActor.run {
+                self.publishInFlight.remove(clientID)
+                guard ok else { return }        // leave unconfirmed; next pass retries
+                let stamp = Date()
+                // Defensive re-lookup by id — never a stored index.
+                for i in self.data.sendLog.indices where ids.contains(self.data.sendLog[i].id) {
+                    self.data.sendLog[i].publishedAt = stamp
+                }
+            }
+        }
+    }
+
+    func reconcileAllPublishedWeeks(now: Date = Date()) {
+        for client in data.clients {
+            reconcilePublishedWeek(clientID: client.id, now: now)
+        }
+    }
+
+    /// Coach-facing panic button: forget the confirmation for the week the
+    /// phone should be showing and publish it again. Deliberately takes no
+    /// week argument — if a different week belongs on her phone, deliver it.
+    func republishCurrentWeek(clientID: UUID, now: Date = Date()) {
+        guard let client = data.clients.first(where: { $0.id == clientID }),
+              let program = client.program,
+              let weekNum = DeliverySchedule.weekToMirror(
+                now: now, program: program,
+                records: data.sendLog.filter { $0.clientID == clientID }) else { return }
+        for i in data.sendLog.indices where data.sendLog[i].clientID == clientID
+            && data.sendLog[i].weekNum == weekNum
+            && data.sendLog[i].programStamp == program.createdAt {
+            data.sendLog[i].publishedAt = nil
+        }
+        reconcilePublishedWeek(clientID: clientID, now: now)
+    }
+
+    /// Which week the lifter's phone is confirmed to be showing, if any.
+    func mirrorState(clientID: UUID, now: Date = Date()) -> (week: Int, confirmedAt: Date?)? {
+        guard let client = data.clients.first(where: { $0.id == clientID }),
+              let program = client.program else { return nil }
+        let records = data.sendLog.filter { $0.clientID == clientID }
+        guard let weekNum = DeliverySchedule.weekToMirror(now: now, program: program,
+                                                          records: records) else { return nil }
+        let confirmed = records
+            .filter { $0.weekNum == weekNum && $0.programStamp == program.createdAt }
+            .compactMap(\.publishedAt).max()
+        return (weekNum, confirmed)
+    }
+
+    // MARK: - things the coach must act on
+
+    /// Anything blocking THIS week's delivery: an unapproved queue entry, or an
+    /// unresolved failure on the newest attempted week. (A failure two weeks
+    /// back stopped mattering once a later week went out.)
+    func attentionItems() -> [SendRecord] {
+        var out: [SendRecord] = queuedSends
+        for client in data.clients {
+            guard let program = client.program else { continue }
+            let records = data.sendLog.filter {
+                $0.clientID == client.id && $0.programStamp == program.createdAt
+                    && $0.weekRemoved != true
+            }
+            guard let newest = records.filter({ $0.status.wasAttempted }).map(\.weekNum).max()
+            else { continue }
+            let week = records.filter { $0.weekNum == newest }
+            // Resolved by a later successful send of the same week.
+            let anySent = week.contains { if case .sent = $0.status { return true }; return false }
+            guard !anySent else { continue }
+            out.append(contentsOf: week.filter {
+                if case .failed = $0.status { return true }; return false
+            })
+        }
+        return out
+    }
+
+    var attentionCount: Int { attentionItems().count }
+
+    /// In-memory on purpose: a relaunch re-nags about anything still
+    /// outstanding, and nothing new lands in data.json.
+    private var lastNagged: [UUID: Date] = [:]
+
+    /// First sighting notifies immediately; while it stays unresolved, at most
+    /// once a day. Ids that resolve are pruned, so a re-failure notifies again.
+    func nagAttention(now: Date = Date()) {
+        let items = attentionItems()
+        let live = Set(items.map(\.id))
+        lastNagged = lastNagged.filter { live.contains($0.key) }
+        for item in items {
+            if let last = lastNagged[item.id], now.timeIntervalSince(last) < 86_400 { continue }
+            lastNagged[item.id] = now
+            switch item.status {
+            case .failed(let why):
+                Notifier.sendFailed(clientName: item.clientName, weekNum: item.weekNum, reason: why)
+            case .queued:
+                Notifier.sendQueued(clientName: item.clientName, weekNum: item.weekNum)
+            default: break
+            }
+        }
     }
 
     // MARK: backup / restore

@@ -24,6 +24,19 @@ enum Notifier {
         post(title: "Note from \(clientName)", body: String(body.prefix(160)))
     }
 
+    /// An automated send did not reach the lifter. Loud on purpose: failures
+    /// are terminal, so nothing retries this without the coach.
+    static func sendFailed(clientName: String, weekNum: Int, reason: String) {
+        post(title: "Week \(weekNum) did NOT reach \(clientName)",
+             body: "\(reason)\nOpen Deliveries to retry.")
+    }
+
+    /// A send is sitting in the review queue. It will not go out on its own.
+    static func sendQueued(clientName: String, weekNum: Int) {
+        post(title: "Week \(weekNum) for \(clientName) is waiting for you",
+             body: "It won't send until you approve it in Deliveries.")
+    }
+
     private static func post(title: String, body: String) {
         if let capture {
             capture(title, body)

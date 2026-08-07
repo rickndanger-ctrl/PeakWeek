@@ -26,6 +26,25 @@ struct DeliveriesView: View {
             .sorted { $0.date > $1.date }
     }
 
+    /// Unresolved failures on the newest attempted week — the ones that still
+    /// mean a lifter is missing a plan right now.
+    private var failures: [SendRecord] {
+        store.attentionItems()
+            .filter { if case .failed = $0.status { return true }; return false }
+            .sorted { $0.date > $1.date }
+    }
+
+    /// Whether her phone got the week even though the text didn't.
+    private func mirrorNote(_ rec: SendRecord) -> String {
+        guard let state = store.mirrorState(clientID: rec.clientID),
+              state.week == rec.weekNum else {
+            return "Her app has NOT got this week yet."
+        }
+        return state.confirmedAt == nil
+            ? "Her app hasn't confirmed this week yet — still retrying."
+            : "Her app does have this week, so she isn't training blind."
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Deliveries").font(.title2).bold()
@@ -34,6 +53,33 @@ struct DeliveriesView: View {
                 Text("Nothing here yet. Turn on Auto-send for a client (with a recipient and a start date) and due weeks will show up — queued for review, or sent and logged.")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 420)
+            }
+
+            if !failures.isEmpty {
+                Text("NEEDS YOU")
+                    .font(.caption2).kerning(1.5).foregroundStyle(Theme.plateRed)
+                ForEach(failures) { rec in
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Theme.plateRed)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(rec.clientName) — Week \(rec.weekNum) didn't send")
+                                .fontWeight(.semibold)
+                            Text(rec.status.label)
+                                .font(.caption).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(mirrorNote(rec))
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if store.data.clients.contains(where: { $0.id == rec.clientID }) {
+                            Button("Retry") { store.retryFailed(rec.id) }
+                                .buttonStyle(.borderedProminent).tint(Theme.plateRed)
+                        }
+                    }
+                    .padding(10)
+                    .background(Theme.iron2, in: Rectangle())
+                }
             }
 
             if !queued.isEmpty {

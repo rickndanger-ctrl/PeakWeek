@@ -75,14 +75,19 @@ public struct ClientNote: Codable, Identifiable, Hashable {
 }
 
 public enum Ingest {
-    /// "Deadlift 315×3 @8" — the one-line human summary for inbox rows and
-    /// notifications. Load shown in the CLIENT'S unit (post-conversion).
+    /// "Deadlift 315×3 @8 — hips shot up" — the one-line human summary for
+    /// inbox rows and notifications. Load shown in the CLIENT'S unit
+    /// (post-conversion). A note the lifter attached to the set is appended:
+    /// it is the most coaching-relevant thing in the payload and must never
+    /// be buried.
     public static func summary(for entry: LiftLogEntry, unit: Unit) -> String {
         let name = entry.exerciseName ?? entry.lift.groupLabel.capitalized
         var s = "\(name) \(Engine.loadString(entry.load, unit: unit))×\(entry.reps)"
         if let r = entry.rpe {
             s += r == r.rounded() ? " @\(Int(r))" : String(format: " @%.1f", r)
         }
+        let note = entry.note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !note.isEmpty { s += " — \(note)" }
         return s
     }
 
