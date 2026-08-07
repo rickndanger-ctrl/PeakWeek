@@ -1,8 +1,23 @@
 import SwiftUI
 import PeakWeekCore
 
+/// iOS relaunches the app in the background when a background upload finishes.
+/// Without this hook the system never learns we're done draining events, and
+/// it throttles future transfers.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        guard identifier == VideoUploader.sessionID else { return completionHandler() }
+        Task { @MainActor in
+            VideoUploader.shared.backgroundCompletionHandler = completionHandler
+        }
+    }
+}
+
 @main
 struct PeakWeekClientApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var session = Session()
     @Environment(\.scenePhase) private var scenePhase
 

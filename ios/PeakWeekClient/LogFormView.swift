@@ -22,7 +22,25 @@ struct LogFormView: View {
     @State private var videoLocalPath: String?
     @State private var showCamera = false
     @State private var processingVideo = false
+    @State private var videoError: String?
     @State private var loaded = false
+
+    /// Move a processed clip into the app container so it survives restarts.
+    /// Returns nil if it couldn't be stored — which the caller must surface,
+    /// never swallow.
+    private func stashForUpload(_ compressed: URL) -> String? {
+        let dest = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("pending-\(UUID().uuidString).mp4")
+        try? FileManager.default.createDirectory(
+            at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+        do {
+            try FileManager.default.moveItem(at: compressed, to: dest)
+            return dest.path
+        } catch {
+            return nil
+        }
+    }
 
     private let rpeChoices: [Double?] = [nil] + stride(from: 6.5, through: 10, by: 0.5).map { $0 }
 
@@ -66,6 +84,8 @@ struct LogFormView: View {
                     } else {
                         Text("Top set")
                     }
+                } footer: {
+                    Text("Just your top set — the heaviest one that felt most telling. No need to log every set.")
                 }
 
                 Section("Video (optional)") {
@@ -81,11 +101,18 @@ struct LogFormView: View {
                               systemImage: videoLocalPath == nil ? "photo.on.rectangle" : "checkmark.circle.fill")
                     }
                     if processingVideo { ProgressView("Compressing…") }
+                    if let videoError {
+                        Label(videoError, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if videoLocalPath != nil {
                         Button("Remove video", role: .destructive) {
                             if let p = videoLocalPath { try? FileManager.default.removeItem(atPath: p) }
                             videoLocalPath = nil
                             videoItem = nil
+                            videoError = nil
                         }
                     }
                 }
@@ -128,16 +155,22 @@ struct LogFormView: View {
                     processingVideo = true
                     Task {
                         defer { processingVideo = false }
-                        if let compressed = try? await VideoCompressor.compress(url) {
-                            let dest = FileManager.default
-                                .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                                .appendingPathComponent("pending-\(UUID().uuidString).mp4")
-                            try? FileManager.default.createDirectory(
-                                at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
-                            try? FileManager.default.moveItem(at: compressed, to: dest)
-                            videoLocalPath = dest.path
+                        // The camera original is the ONLY copy — it is not in
+                        // her photo library. Never delete it before a
+                        // compressed version exists, and never fail silently:
+                        // she'd tap Send believing the video went with it.
+                        do {
+                            let compressed = try await VideoCompressor.compress(url)
+                            if let dest = stashForUpload(compressed) {
+                                videoLocalPath = dest
+                                try? FileManager.default.removeItem(at: url)
+                            } else {
+                                videoError = "Couldn't save the video on this phone."
+                            }
+                        } catch {
+                            videoError = (error as? APIError)?.message
+                                ?? "That video couldn't be processed."
                         }
-                        try? FileManager.default.removeItem(at: url)
                     }
                 }
                 .ignoresSafeArea()
@@ -145,23 +178,28 @@ struct LogFormView: View {
             .onChange(of: videoItem) { item in
                 guard let item else { return }
                 processingVideo = true
+                videoError = nil
                 Task {
                     defer { processingVideo = false }
-                    guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+                    guard let data = try? await item.loadTransferable(type: Data.self) else {
+                        videoError = "Couldn't read that video from your library."
+                        return
+                    }
                     let raw = FileManager.default.temporaryDirectory
                         .appendingPathComponent("raw-\(UUID().uuidString).mov")
                     try? data.write(to: raw)
-                    if let compressed = try? await VideoCompressor.compress(raw) {
-                        // Move into the app container so it survives restarts.
-                        let dest = FileManager.default
-                            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                            .appendingPathComponent("pending-\(UUID().uuidString).mp4")
-                        try? FileManager.default.createDirectory(
-                            at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
-                        try? FileManager.default.moveItem(at: compressed, to: dest)
-                        videoLocalPath = dest.path
+                    defer { try? FileManager.default.removeItem(at: raw) }
+                    do {
+                        let compressed = try await VideoCompressor.compress(raw)
+                        if let dest = stashForUpload(compressed) {
+                            videoLocalPath = dest
+                        } else {
+                            videoError = "Couldn't save the video on this phone."
+                        }
+                    } catch {
+                        videoError = (error as? APIError)?.message
+                            ?? "That video couldn't be processed."
                     }
-                    try? FileManager.default.removeItem(at: raw)
                 }
             }
         }
