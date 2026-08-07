@@ -37,6 +37,12 @@ enum Notifier {
              body: "It won't send until you approve it in Deliveries.")
     }
 
+    /// Proves the whole path works, from Settings, before it matters.
+    static func test() {
+        post(title: "Peak Week notifications are on",
+             body: "This is what a failed send or a client note will look like.")
+    }
+
     private static func post(title: String, body: String) {
         if let capture {
             capture(title, body)

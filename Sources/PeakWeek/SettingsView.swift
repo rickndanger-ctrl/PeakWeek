@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import UserNotifications
 
 // MARK: - Settings window (⌘,)
 
@@ -20,6 +21,49 @@ struct SettingsView: View {
 struct GeneralSettingsView: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginItemError: String?
+    @State private var notifyStatus: UNAuthorizationStatus = .notDetermined
+
+    private var notifyIcon: String {
+        switch notifyStatus {
+        case .authorized, .provisional, .ephemeral: return "checkmark.circle.fill"
+        case .denied: return "bell.slash.fill"
+        default: return "bell"
+        }
+    }
+    private var notifyColor: Color {
+        switch notifyStatus {
+        case .authorized, .provisional, .ephemeral: return Theme.plateGreen
+        case .denied: return Theme.plateRed
+        default: return .secondary
+        }
+    }
+    private var notifyLabel: String {
+        switch notifyStatus {
+        case .authorized, .provisional, .ephemeral: return "On — you'll hear about failed sends and client notes"
+        case .denied: return "Off — failed sends will be silent"
+        default: return "Not set up yet"
+        }
+    }
+
+    private func refreshNotifyStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { s in
+            DispatchQueue.main.async { notifyStatus = s.authorizationStatus }
+        }
+    }
+
+    private func requestNotifications() {
+        UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .sound]) { _, _ in
+                refreshNotifyStatus()
+            }
+    }
+
+    private func openNotificationSettings() {
+        // Once denied, macOS won't re-prompt — the switch lives in System Settings.
+        let id = Bundle.main.bundleIdentifier ?? ""
+        let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(id)")
+        if let url { NSWorkspace.shared.open(url) }
+    }
 
     var body: some View {
         Form {
@@ -36,10 +80,32 @@ struct GeneralSettingsView: View {
                 }
             Text("Scheduled weekly sends only go out while Peak Week is running — opening at login means Monday-morning plans never get missed. (Login items require the copy in /Applications.)")
                 .font(.caption).foregroundStyle(.secondary)
-                .onAppear { launchAtLogin = SMAppService.mainApp.status == .enabled }
+                .onAppear {
+                    launchAtLogin = SMAppService.mainApp.status == .enabled
+                    refreshNotifyStatus()
+                }
             if let err = loginItemError {
                 Text(err).font(.caption).foregroundStyle(.red)
             }
+            Divider().padding(.vertical, 8)
+            LabeledContent("Notifications") {
+                HStack(spacing: 8) {
+                    Image(systemName: notifyIcon)
+                        .foregroundStyle(notifyColor)
+                    Text(notifyLabel).font(.caption)
+                    Spacer()
+                    switch notifyStatus {
+                    case .notDetermined:
+                        Button("Turn on…") { requestNotifications() }
+                    case .denied:
+                        Button("Open System Settings") { openNotificationSettings() }
+                    default:
+                        Button("Send a test") { Notifier.test() }
+                    }
+                }
+            }
+            Text("Peak Week tells you when a client logs something odd, when they send a note, and — most importantly — when a weekly send FAILS. Failed sends don't retry on their own, so this is how you find out.")
+                .font(.caption).foregroundStyle(.secondary)
             Divider().padding(.vertical, 8)
             LabeledContent("Data file") {
                 Button("Reveal in Finder") {
