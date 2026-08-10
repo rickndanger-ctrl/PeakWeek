@@ -481,6 +481,7 @@ struct ClientView: View {
                 .sheet(isPresented: $showPairing) {
                     PairingSheet(client: client)
                 }
+                mirrorStatusLine
             }
             Text(client.delivery.requireReview
                  ? "Due weeks queue up for your approval — check the paper-plane icon in the toolbar."
@@ -578,6 +579,34 @@ struct ClientView: View {
                     .font(.caption).foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    /// What her phone is actually showing, plus the panic button. The mirror
+    /// follows what was DELIVERED, so this can be correct even when a text
+    /// failed — and that's exactly when the coach most wants to see it.
+    @ViewBuilder
+    private var mirrorStatusLine: some View {
+        if let state = store.mirrorState(clientID: client.id) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: state.confirmedAt == nil
+                      ? "iphone.slash" : "iphone.gen3.badge.play")
+                    .font(.caption)
+                    .foregroundStyle(state.confirmedAt == nil ? .orange : .secondary)
+                if let at = state.confirmedAt {
+                    Text("Phone app shows Week \(state.week) — confirmed \(at.formatted(date: .abbreviated, time: .shortened)).")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Phone app hasn't confirmed Week \(state.week) yet — retrying every hour.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                Button("Re-send to app") {
+                    store.republishCurrentWeek(clientID: client.id)
+                }
+                .buttonStyle(.link).font(.caption)
+                .help("Push this week to \(client.name)'s app again. Does not send another text.")
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

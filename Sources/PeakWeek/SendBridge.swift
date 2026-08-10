@@ -22,6 +22,11 @@ enum SendBridge {
     /// scripts are captured here instead of executed.
     static var dryRunCapture: ((String) -> Void)?
 
+    /// Tests force the captured transport's outcome; the default keeps every
+    /// existing dry-run test on the success path. Only consulted while
+    /// `dryRunCapture` is installed.
+    static var dryRunOutcome: Result<Void, SendError> = .success(())
+
     // MARK: public API
 
     static func send(via method: DeliveryMethod, to recipient: String,
@@ -86,7 +91,7 @@ enum SendBridge {
     private static func run(_ source: String) -> Result<Void, SendError> {
         if let capture = dryRunCapture {
             capture(source)
-            return .success(())
+            return dryRunOutcome
         }
         var error: NSDictionary?
         guard let script = NSAppleScript(source: source) else {

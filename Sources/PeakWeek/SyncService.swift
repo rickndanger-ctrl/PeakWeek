@@ -240,34 +240,50 @@ enum SyncService {
         }
     }
 
-    // MARK: publish (fire-and-forget on every successful send)
+    // MARK: publish (driven by Store.reconcilePublishedWeek)
 
+    /// TEST SEAM (same shape as SendBridge.dryRunCapture / Notifier.capture):
+    /// when set, nothing touches the network and the closure decides the
+    /// outcome. Checked BEFORE `isConfigured` so tests are deterministic on a
+    /// machine that has a real coach token sitting on disk.
+    static var publishCapture: ((_ clientID: UUID, _ weekNum: Int, _ stamp: Date?) -> Bool)?
+
+    /// Mirror one week to the client app. Returns true only on a confirmed
+    /// HTTP 200 — the caller records that confirmation and stops retrying.
+    /// A false here is never fatal: publishing is an idempotent upsert, so the
+    /// next reconcile pass simply tries again.
+    @discardableResult
     static func publishWeek(client: Client, program: Program, week: Week,
-                            library: ExerciseLibrary) {
-        guard isConfigured else { return }
+                            library: ExerciseLibrary) async -> Bool {
+        if let capture = publishCapture {
+            return capture(client.id, week.num, program.createdAt)
+        }
+        // Not an error: sync may not be set up yet. Reporting false (rather
+        // than a silent success) means configuring it later back-fills.
+        guard isConfigured else { return false }
         let published = Engine.weekToPublished(client: client, program: program,
                                                week: week, library: library)
-        Task.detached(priority: .utility) {
-            do {
-                let enc = JSONEncoder()
-                enc.dateEncodingStrategy = .iso8601
-                let payloadData = try enc.encode(published)
-                let payload = try JSONSerialization.jsonObject(with: payloadData)
-                let iso = ISO8601DateFormatter()
-                let body: [String: Any] = [
-                    "client_id": client.id.uuidString,
-                    "name": client.name,
-                    "unit": client.unit.rawValue,
-                    "week_num": week.num,
-                    "program_stamp": iso.string(from: program.createdAt),
-                    "payload": payload,
-                ]
-                let (_, status) = try await request("admin/publish-week",
-                                                    method: "POST", body: body)
-                if status != 200 { NSLog("PeakWeek sync: publish returned %d", status) }
-            } catch {
-                NSLog("PeakWeek sync: publish failed — %@", String(describing: error))
-            }
+        do {
+            let enc = JSONEncoder()
+            enc.dateEncodingStrategy = .iso8601
+            let payloadData = try enc.encode(published)
+            let payload = try JSONSerialization.jsonObject(with: payloadData)
+            let iso = ISO8601DateFormatter()
+            let body: [String: Any] = [
+                "client_id": client.id.uuidString,
+                "name": client.name,
+                "unit": client.unit.rawValue,
+                "week_num": week.num,
+                "program_stamp": iso.string(from: program.createdAt),
+                "payload": payload,
+            ]
+            let (_, status) = try await request("admin/publish-week",
+                                                method: "POST", body: body)
+            if status != 200 { NSLog("PeakWeek sync: publish returned %d", status) }
+            return status == 200
+        } catch {
+            NSLog("PeakWeek sync: publish failed — %@", String(describing: error))
+            return false
         }
     }
 

@@ -75,6 +75,20 @@ public enum SendStatus: Codable, Hashable {
         if case .queued = self { return false }
         return true
     }
+
+    /// True when a delivery of this week was actually ATTEMPTED — i.e. the
+    /// coach committed to this being the lifter's current week. Sent and
+    /// failed both count: the decision was the same, only the transport
+    /// differed. Queued (not yet approved) and skipped (retired) never do.
+    ///
+    /// This is what the client-app mirror follows. A text that failed to
+    /// send is still the week she's meant to train.
+    public var wasAttempted: Bool {
+        switch self {
+        case .sent, .failed: return true
+        case .queued, .skipped: return false
+        }
+    }
 }
 
 public struct SendRecord: Codable, Hashable, Identifiable {
@@ -93,13 +107,19 @@ public struct SendRecord: Codable, Hashable, Identifiable {
     /// (deload deleted after sending): the record stays as history but no
     /// longer counts as coverage for the week that inherits its number.
     public var weekRemoved: Bool? = nil
+    /// When the client app's copy of this week was CONFIRMED (HTTP 200).
+    /// nil means never mirrored, or the last attempt didn't land — the
+    /// delivery pass keeps retrying. Publishing is an idempotent upsert, so
+    /// unlike a text it can be retried freely without spamming anyone.
+    public var publishedAt: Date? = nil
 
     public init(id: UUID = UUID(), clientID: UUID, clientName: String, weekNum: Int,
          date: Date, method: DeliveryMethod, status: SendStatus, programStamp: Date? = nil,
-         weekRemoved: Bool? = nil) {
+         weekRemoved: Bool? = nil, publishedAt: Date? = nil) {
         self.id = id; self.clientID = clientID; self.clientName = clientName
         self.weekNum = weekNum; self.date = date; self.method = method
         self.status = status; self.programStamp = programStamp; self.weekRemoved = weekRemoved
+        self.publishedAt = publishedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -113,6 +133,7 @@ public struct SendRecord: Codable, Hashable, Identifiable {
         status = try c.decodeIfPresent(SendStatus.self, forKey: .status) ?? .skipped("unknown")
         programStamp = try c.decodeIfPresent(Date.self, forKey: .programStamp)
         weekRemoved = try c.decodeIfPresent(Bool.self, forKey: .weekRemoved)
+        publishedAt = try c.decodeIfPresent(Date.self, forKey: .publishedAt)
     }
 }
 
@@ -235,5 +256,37 @@ public enum DeliverySchedule {
         return DueSend(weekNum: latest.week, moment: latest.moment,
                        supersededWeeks: superseded,
                        alreadyQueued: queuedWeeks.contains(latest.week))
+    }
+
+    /// The one week that should currently be mirrored to the lifter's phone:
+    /// the highest-numbered week under the CURRENT program whose delivery was
+    /// ATTEMPTED (sent OR failed — see `SendStatus.wasAttempted`).
+    ///
+    /// Deliberately independent of whether the text landed. A failed iMessage
+    /// is a transport problem, not a reversal of the coach's decision about
+    /// which week she trains, and leaving her phone on last week is the worse
+    /// outcome by far.
+    ///
+    /// Three guards keep this inside the week-by-week doctrine:
+    ///  - a QUEUED week never mirrors (unapproved content the coach hasn't
+    ///    committed to),
+    ///  - a week removed from the program never mirrors,
+    ///  - `maxAge` stops abandoned history resurrecting into a fresh publish
+    ///    if the app is opened months later.
+    ///
+    /// It can never run ahead of what was delivered, because deliveries happen
+    /// one week at a time by construction.
+    public static func weekToMirror(now: Date = Date(), program: Program?,
+                                    records: [SendRecord],
+                                    maxAge: TimeInterval = 30 * 86_400) -> Int? {
+        guard let program, !program.weeks.isEmpty else { return nil }
+        let liveWeeks = Set(program.weeks.map(\.num))
+        return records
+            .filter { $0.programStamp == program.createdAt }
+            .filter { $0.status.wasAttempted && $0.weekRemoved != true }
+            .filter { liveWeeks.contains($0.weekNum) }
+            .filter { now.timeIntervalSince($0.date) <= maxAge }
+            .map(\.weekNum)
+            .max()
     }
 }

@@ -29,13 +29,27 @@ final class Session: ObservableObject {
             Task { @MainActor in
                 await self.pair(code: code)
                 if ProcessInfo.processInfo.environment["PW_TEST_SUBMIT"] == "1" {
-                    self.submit(PendingSubmission(
+                    // PW_TEST_VIDEO exercises the background-upload handoff,
+                    // which is the part no unit test can reach.
+                    var videoPath: String?
+                    if ProcessInfo.processInfo.environment["PW_TEST_VIDEO"] == "1" {
+                        let dest = FileManager.default
+                            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                            .appendingPathComponent("pending-e2e-\(UUID().uuidString).mp4")
+                        try? FileManager.default.createDirectory(
+                            at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+                        try? Data(repeating: 0x42, count: 256 * 1024).write(to: dest)
+                        videoPath = dest.path
+                    }
+                    var p = PendingSubmission(
                         performedAt: Date(), lift: "squat", load: 340,
                         unit: "lb", reps: 6, rpe: 7,
                         prescribedPct: 67, prescribedRPE: 7,
                         weekNum: self.week?.weekNum,
                         programStamp: self.week?.programStamp,
-                        note: "sim E2E test"))
+                        note: "sim E2E test")
+                    p.videoLocalPath = videoPath
+                    self.submit(p)
                 }
             }
         }

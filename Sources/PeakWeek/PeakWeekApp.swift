@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
 
 @main
 struct PeakWeekApp: App {
@@ -65,6 +66,9 @@ struct ContentView: View {
         VStack(spacing: 0) {
             if store.loadFailed {
                 frozenBanner
+            }
+            if needsLoginItem {
+                loginItemBanner
             }
             NavigationSplitView {
                 sidebar
@@ -142,10 +146,13 @@ struct ContentView: View {
                 Button { showNewClient = true } label: { Label("New Client", systemImage: "plus") }
                 Button { showDeliveries = true } label: {
                     // .badge() doesn't render on macOS toolbar buttons — draw our own.
+                    // Counts anything the coach must act on: unapproved queue
+                    // entries AND unresolved failures. Notifications can be
+                    // denied at the OS level; this badge can't.
                     Label("Deliveries", systemImage: "paperplane")
                         .overlay(alignment: .topTrailing) {
-                            if !store.queuedSends.isEmpty {
-                                Text("\(store.queuedSends.count)")
+                            if store.attentionCount > 0 {
+                                Text("\(store.attentionCount)")
                                     .font(.system(size: 9, weight: .bold))
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 3).padding(.vertical, 1)
@@ -154,9 +161,7 @@ struct ContentView: View {
                             }
                         }
                 }
-                .help(store.queuedSends.isEmpty
-                      ? "Delivery log"
-                      : "\(store.queuedSends.count) plan(s) waiting for your approval")
+                .help(attentionHelp)
                 Button { showInbox = true } label: {
                     Label("Client Inbox", systemImage: "tray.and.arrow.down")
                         .overlay(alignment: .topTrailing) {
@@ -191,10 +196,54 @@ struct ContentView: View {
                         NSWorkspace.shared.activateFileViewerSelecting([AppStore.dataURL])
                     }
                     Divider()
+                    Button("Run delivery check now") {
+                        store.runDeliveryPass()
+                        store.syncNow()
+                    }
                     Button("Simulate client submission…") { showSimulate = true }
                 } label: { Label("Data", systemImage: "externaldrive") }
             }
         }
+    }
+
+    /// Distinguishes the two things that stall a delivery, because they need
+    /// different actions: approve vs retry.
+    private var attentionHelp: String {
+        let queued = store.queuedSends.count
+        let failed = store.attentionCount - queued
+        switch (queued, failed) {
+        case (0, 0): return "Delivery log"
+        case (let q, 0): return "\(q) plan(s) waiting for your approval"
+        case (0, let f): return "\(f) send(s) FAILED — open to retry"
+        case (let q, let f): return "\(q) waiting for approval, \(f) failed"
+        }
+    }
+
+    /// Automatic sends only happen while this app is RUNNING. If someone is
+    /// relying on auto-send and the app isn't set to launch at login, a reboot
+    /// silently stops their weekly plan. Bundle check keeps `swift run` builds
+    /// (status .notFound) from crying wolf.
+    private var needsLoginItem: Bool {
+        Bundle.main.bundleIdentifier != nil
+            && store.data.clients.contains { $0.delivery.autoSend }
+            && SMAppService.mainApp.status != .enabled
+    }
+
+    private var loginItemBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "power")
+            Text("Auto-send only runs while Peak Week is open. It isn't set to start at login — after a restart, weeks won't go out until you open it.")
+                .font(.system(size: 12, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button("Start at login") {
+                try? SMAppService.mainApp.register()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(Color(nsColor: .systemOrange))
+        .foregroundStyle(.white)
     }
 
     /// Shown whenever the write freeze is active — nothing typed while this is

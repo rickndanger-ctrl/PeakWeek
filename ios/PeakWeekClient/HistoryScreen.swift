@@ -14,11 +14,27 @@ struct HistoryScreen: View {
                 if !queued.isEmpty {
                     Section("On its way") {
                         ForEach(queued) { p in
-                            row(lift: p.lift, load: p.load, unit: p.unit, reps: p.reps,
-                                rpe: p.rpe, date: p.performedAt,
-                                status: p.state == .uploadingVideo
-                                    ? "uploading video…" : "queued — sends when you're online",
-                                icon: "clock", color: .orange)
+                            VStack(alignment: .leading, spacing: 6) {
+                                row(lift: p.lift, load: p.load, unit: p.unit, reps: p.reps,
+                                    rpe: p.rpe, date: p.performedAt,
+                                    status: statusText(p),
+                                    icon: p.looksStuck ? "exclamationmark.triangle.fill" : "clock",
+                                    color: p.looksStuck ? .red : .orange)
+                                // A stuck item used to look exactly like one in
+                                // progress — she'd assume her coach had it.
+                                if p.looksStuck {
+                                    if let why = p.lastError {
+                                        Text(why).font(.caption2).foregroundStyle(.secondary)
+                                    }
+                                    Button("Try again now") {
+                                        Task {
+                                            guard let token = Keychain.token() else { return }
+                                            await session.outbox.retry(p.id, token: token)
+                                        }
+                                    }
+                                    .font(.caption).buttonStyle(.bordered)
+                                }
+                            }
                         }
                     }
                 }
@@ -39,6 +55,15 @@ struct HistoryScreen: View {
             .navigationTitle("My Log")
             .refreshable { await load() }
             .task { await load() }
+        }
+    }
+
+    private func statusText(_ p: PendingSubmission) -> String {
+        if p.looksStuck { return "couldn't send — tap to retry" }
+        switch p.state {
+        case .uploadingVideo: return "sending video…"
+        case .queued: return "queued — sends when you're online"
+        case .delivered: return "delivered"
         }
     }
 

@@ -100,6 +100,29 @@ struct InboxView: View {
         }
     }
 
+    /// The log entry this inbox row created, found by submission id.
+    private func entry(_ rec: IngestRecord) -> LiftLogEntry? {
+        store.data.clients.first { $0.id == rec.clientID }?
+            .logs.first { $0.submissionID == rec.submissionID }
+    }
+
+    private func loggedNote(_ rec: IngestRecord) -> String? {
+        entry(rec)?.note.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// What the program asked for, beside what she actually did. Both values
+    /// ride the wire already; they were simply never shown.
+    private func prescribedLine(_ rec: IngestRecord) -> String? {
+        guard let e = entry(rec) else { return nil }
+        var bits: [String] = []
+        if let pct = e.prescribedPct { bits.append(String(format: "%.0f%%", pct)) }
+        if let rpe = e.prescribedRPE {
+            bits.append("RPE \(rpe == rpe.rounded() ? String(Int(rpe)) : String(rpe))")
+        }
+        guard !bits.isEmpty else { return nil }
+        return "prescribed \(bits.joined(separator: " · "))"
+    }
+
     @ViewBuilder
     private func row(_ rec: IngestRecord, actionable: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -128,6 +151,18 @@ struct InboxView: View {
                         .buttonStyle(.borderless)
                         .help("Watch \(filename)")
                     }
+                }
+                // Read the note off the LOG ENTRY rather than the stored
+                // summary, so rows that landed before notes were surfaced
+                // still show what she actually said.
+                if rec.effectiveKind == .set, let said = loggedNote(rec), !said.isEmpty {
+                    Text("“\(said)”")
+                        .font(.caption).italic()
+                        .foregroundStyle(Theme.plateBlue)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let pres = prescribedLine(rec) {
+                    Text(pres).font(.caption2).foregroundStyle(.secondary)
                 }
                 if !rec.flags.isEmpty {
                     Text(rec.flags.joined(separator: " · "))
