@@ -27,8 +27,12 @@ struct WeekView: View {
                 content
             }
         }
-        .background(Theme.iron2, in: Rectangle())
-        .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
+        .background(isCurrentWeek ? Theme.plateGreen.opacity(0.10) : Theme.iron2, in: Rectangle())
+        .overlay(Rectangle().stroke(isCurrentWeek ? Theme.plateGreen : Theme.line,
+                                    lineWidth: isCurrentWeek ? 2 : 1))
+        .overlay(alignment: .leading) {
+            if isCurrentWeek { Rectangle().fill(Theme.plateGreen).frame(width: 4) }
+        }
     }
 
     private var header: some View {
@@ -38,6 +42,13 @@ struct WeekView: View {
                     Text("WK \(String(format: "%02d", week.num))")
                         .font(.system(size: 17, weight: .black))
                         .frame(minWidth: 66, alignment: .leading)
+                    if isCurrentWeek {
+                        Text("THIS WEEK")
+                            .font(.system(size: 9, weight: .black)).kerning(1)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Theme.plateGreen, in: Rectangle())
+                    }
                     Text(headerMeta)
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
@@ -122,6 +133,16 @@ struct WeekView: View {
     private var weekText: String {
         Engine.weekToText(client: client, program: program, week: week,
                           library: store.data.exerciseLibrary)
+    }
+
+    /// The week the lifter is actually IN today — glanceable, so a coach
+    /// juggling several clients' pages never sends the wrong one by
+    /// scrolling to the wrong row. Same schedule math the delivery pass
+    /// itself uses, so "current" here always agrees with what an auto-send
+    /// or a manual Send Now would actually be sending right now.
+    private var isCurrentWeek: Bool {
+        guard let start = client.startDate else { return false }
+        return DeliverySchedule.currentWeek(now: Date(), startDate: start, program: program) == week.num
     }
 
     private var headerMeta: String {
