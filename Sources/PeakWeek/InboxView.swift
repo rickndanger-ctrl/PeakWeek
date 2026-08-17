@@ -1,5 +1,6 @@
 import SwiftUI
 import AVKit
+import AppKit
 
 /// The inbound side of the delivery story: client-app submissions as they
 /// arrived. Everything already auto-logged — this is the REVIEW surface.
@@ -10,6 +11,7 @@ struct InboxView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmRejectID: UUID?
     @State private var playingVideoURL: URL?
+    @State private var detailRecord: IngestRecord?
 
     private var fresh: [IngestRecord] {
         store.data.inboxLog.filter { $0.state == .new }
@@ -44,24 +46,29 @@ struct InboxView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            if !fresh.isEmpty {
-                Text("NEW — ALREADY LOGGED, AWAITING YOUR EYES")
-                    .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
-                ForEach(fresh) { rec in row(rec, actionable: true) }
-            }
-
-            if !history.isEmpty {
-                Text("HISTORY")
-                    .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
-                ScrollView {
-                    VStack(spacing: 6) {
-                        ForEach(history.prefix(50)) { rec in
-                            row(rec, actionable: false)
+            // Everything lives in ONE scroll, bounded to a fixed height —
+            // with 18 unreviewed rows the old unwrapped "fresh" section grew
+            // taller than the screen with nothing to scroll it, so rows past
+            // the fold were simply unreachable.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if !fresh.isEmpty {
+                        Text("NEW — ALREADY LOGGED, AWAITING YOUR EYES")
+                            .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+                        VStack(spacing: 6) {
+                            ForEach(fresh) { rec in row(rec, actionable: true) }
+                        }
+                    }
+                    if !history.isEmpty {
+                        Text("HISTORY")
+                            .font(.caption2).kerning(1.5).foregroundStyle(.secondary)
+                        VStack(spacing: 6) {
+                            ForEach(history.prefix(50)) { rec in row(rec, actionable: false) }
                         }
                     }
                 }
-                .frame(maxHeight: 240)
             }
+            .frame(maxHeight: 480)
 
             HStack {
                 Spacer()
@@ -69,7 +76,10 @@ struct InboxView: View {
             }
         }
         .padding(24)
-        .frame(width: 540)
+        .frame(width: 560)
+        .sheet(item: $detailRecord) { rec in
+            InboxDetailView(record: rec, onPlayVideo: { playingVideoURL = $0 })
+        }
         .sheet(isPresented: Binding(get: { playingVideoURL != nil },
                                     set: { if !$0 { playingVideoURL = nil } })) {
             if let url = playingVideoURL {
@@ -172,6 +182,13 @@ struct InboxView: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
+            Button {
+                detailRecord = rec
+            } label: {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+            }
+            .buttonStyle(.borderless).font(.caption).foregroundStyle(.secondary)
+            .help("Open — full text, reply, and actions")
             if actionable {
                 Button(rec.effectiveKind == .note ? "Read it" : "Looks right") {
                     store.markIngestReviewed(rec.id)
@@ -207,6 +224,201 @@ struct InboxView: View {
         case .dismissed:
             Image(systemName: "xmark.circle").foregroundStyle(.secondary)
         }
+    }
+}
+
+// MARK: - One item, full text, guaranteed unclipped — and the reply hook
+
+/// Opened from a row's expand button. Shows the complete text (selectable,
+/// wraps instead of truncating) and, if the client has a phone/iMessage
+/// handle on file, a button that jumps straight to that conversation in
+/// Messages — not a reply box built into this app. iMessage already IS the
+/// channel of record for every client, app or no app; a second, in-app
+/// message thread would just be a copy of that conversation the coach has
+/// to remember to keep checking, and it would only ever reach clients who
+/// have the app paired. This keeps replying one tap away without building
+/// a second inbox.
+struct InboxDetailView: View {
+    @EnvironmentObject var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+    let record: IngestRecord
+    var onPlayVideo: (URL) -> Void
+
+    @State private var confirmReject = false
+    @State private var replyContext = ""
+    @State private var justCopied = false
+
+    private var client: Client? {
+        store.data.clients.first { $0.id == record.clientID }
+    }
+    private var entry: LiftLogEntry? {
+        client?.logs.first { $0.submissionID == record.submissionID }
+    }
+    private var note: String? {
+        guard record.effectiveKind == .set else { return nil }
+        let n = entry?.note.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? nil : n
+    }
+    private var prescribedLine: String? {
+        guard let e = entry else { return nil }
+        var bits: [String] = []
+        if let pct = e.prescribedPct { bits.append(String(format: "%.0f%%", pct)) }
+        if let rpe = e.prescribedRPE {
+            bits.append("RPE \(rpe == rpe.rounded() ? String(Int(rpe)) : String(rpe))")
+        }
+        return bits.isEmpty ? nil : "prescribed \(bits.joined(separator: " · "))"
+    }
+    private var recipient: String? {
+        let r = client?.delivery.recipient.trimmingCharacters(in: .whitespaces) ?? ""
+        return r.isEmpty ? nil : r
+    }
+
+    /// What she'll see quoted back at her — the starting point for the reply
+    /// draft, editable before anything touches Messages. Standalone notes
+    /// carry their body IN `summary` (Store.ingestNote sets it directly).
+    /// Logged sets after the note-surfacing fix already have the note BAKED
+    /// into `summary` too (Ingest.summary appends it at ingest time) — only
+    /// append it again for older rows where that hadn't happened yet, or
+    /// this would quote the same line twice.
+    private var defaultReplyContext: String {
+        if record.effectiveKind == .note {
+            return "Re: “\(record.summary)”"
+        }
+        var line = "Re: \(record.summary)"
+        if let note, !record.summary.contains(note) { line += " — “\(note)”" }
+        return line
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(record.clientName).font(.title3).bold()
+                Text(record.effectiveKind == .note ? "NOTE" : "LOGGED SET")
+                    .font(.caption2).kerning(1).foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(record.summary)
+                        .font(.body)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let pres = prescribedLine {
+                        Text(pres).font(.caption).foregroundStyle(.secondary)
+                    }
+
+                    if let note {
+                        Divider()
+                        Text("NOTE").font(.caption2).kerning(1).foregroundStyle(.secondary)
+                        Text(note)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if !record.flags.isEmpty {
+                        Divider()
+                        Text("FLAGGED").font(.caption2).kerning(1).foregroundStyle(.orange)
+                        Text(record.flags.joined(separator: " · "))
+                            .foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 320)
+
+            Text("Logged \(record.performedAt.formatted(date: .abbreviated, time: .shortened)) · arrived \(record.date.formatted(date: .abbreviated, time: .shortened))")
+                .font(.caption2).foregroundStyle(.secondary)
+
+            Divider()
+
+            if recipient != nil {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("REPLY WILL QUOTE").font(.caption2).kerning(1).foregroundStyle(.secondary)
+                    TextField("", text: $replyContext, axis: .vertical)
+                        .lineLimit(1...3)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.caption)
+                    Text(justCopied
+                         ? "Copied — paste with ⌘V once Messages is open."
+                         : "Messages has no way to prefill a draft, so this goes to your clipboard — paste it in, edit it, then send it yourself.")
+                        .font(.caption2).foregroundStyle(justCopied ? Theme.plateGreen : .secondary)
+                }
+                .onAppear { if replyContext.isEmpty { replyContext = defaultReplyContext } }
+            }
+
+            HStack(spacing: 10) {
+                if let recipient {
+                    Button {
+                        openInMessages(recipient)
+                    } label: {
+                        Label("Reply in Messages", systemImage: "message.fill")
+                    }
+                    .buttonStyle(.bordered)
+                }
+                if let filename = record.videoFilename {
+                    Button {
+                        let url = SyncService.localVideoURL(
+                            clientID: record.clientID, submissionID: record.submissionID)
+                        if FileManager.default.fileExists(atPath: url.path) {
+                            onPlayVideo(url)
+                        }
+                    } label: {
+                        Label("Play video", systemImage: "play.rectangle.fill")
+                    }
+                    .buttonStyle(.bordered)
+                    .help(filename)
+                }
+                Spacer()
+                if record.state == .new {
+                    Button(record.effectiveKind == .note ? "Read it" : "Looks right") {
+                        store.markIngestReviewed(record.id)
+                        dismiss()
+                    }
+                    .buttonStyle(.bordered)
+                    if record.effectiveKind == .set {
+                        Button("Remove entry") { confirmReject = true }
+                            .buttonStyle(.borderless).foregroundStyle(.red)
+                    }
+                }
+                Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 480)
+        .confirmationDialog(
+            "Remove this entry from the lifter's log? The submission stays in history as rejected.",
+            isPresented: $confirmReject, titleVisibility: .visible) {
+            Button("Remove entry", role: .destructive) {
+                store.rejectIngest(record.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    /// Opens Messages.app straight to this client's conversation and puts the
+    /// quoted context on the clipboard. Standard URL handoff — no Automation
+    /// permission needed (that's only required for the AppleScript SEND path
+    /// used by scheduled delivery); this never sends anything itself.
+    ///
+    /// There's no supported way to do better than the clipboard here: Messages'
+    /// AppleScript dictionary has a `send` verb (fires immediately — wrong for
+    /// a draft) but nothing to populate the compose field without sending, and
+    /// the `sms:...&body=` URL trick some sites use isn't documented or
+    /// consistently honored by macOS Messages, so it isn't something to
+    /// silently depend on.
+    private func openInMessages(_ recipient: String) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(replyContext.isEmpty ? defaultReplyContext : replyContext, forType: .string)
+        justCopied = true
+
+        guard let encoded = recipient.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "sms:\(encoded)") else { return }
+        NSWorkspace.shared.open(url)
     }
 }
 
