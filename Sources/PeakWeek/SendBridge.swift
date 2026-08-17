@@ -50,8 +50,14 @@ enum SendBridge {
             "  set targetService to 1st account whose service type = iMessage",
             "  set targetBuddy to participant \"\(esc(recipient))\" of targetService",
         ]
-        // Attachment FIRST: if the script fails partway, nothing has been sent
-        // yet (a retry after a failed text would otherwise duplicate the text).
+        // Attachment first, then text — the text is what the lifter reads, so
+        // it is the half worth protecting from duplication on a manual retry.
+        // Be clear-eyed about what that costs: with format .both these are TWO
+        // separate send commands, so a text that fails AFTER the PDF landed
+        // records .failed with the attachment already delivered, and Retry
+        // re-sends the PDF. Duplicate PDF beats duplicate plan, but it is a
+        // trade, not the "nothing has been sent yet" this comment used to
+        // claim. Only a single-command send would make it atomic.
         if let attachment {
             lines.append("  send POSIX file \"\(esc(attachment.path))\" to targetBuddy")
         }

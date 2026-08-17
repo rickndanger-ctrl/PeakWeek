@@ -20,6 +20,11 @@ final class AppStore: ObservableObject {
 
     private var loading = false
     private var deliveryTimer: Timer?
+    private var wakeObserver: NSObjectProtocol?
+    private var activeObserver: NSObjectProtocol?
+    /// Throttle for the event-driven passes — wake and activation routinely
+    /// arrive together (open the lid, click the app) and one pass is enough.
+    private var lastPassAt: Date?
     private var pendingSave: DispatchWorkItem?
     private var terminateObserver: NSObjectProtocol?
 
@@ -60,15 +65,38 @@ final class AppStore: ObservableObject {
 
     init() {
         load()
+        // Launch activation would otherwise trip the observer below within
+        // milliseconds; claim the window so the deliberate settle wins.
+        lastPassAt = Date()
         // Automated delivery: catch up shortly after launch, then check hourly.
         // The inbound sync poll rides the same cadence.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            self?.runDeliveryPass()
-            self?.syncNow()
+            self?.catchUpPass(reason: "launch", force: true)
         }
         deliveryTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
-            self?.runDeliveryPass()
-            self?.syncNow()
+            self?.catchUpPass(reason: "hourly timer")
+        }
+        // A Timer cannot fire while the Mac is asleep, and a laptop lid is
+        // usually shut at exactly the hour a Sunday-evening send comes due —
+        // the send then waits for the next timer tick after wake, which is
+        // how a plan lands Monday morning instead of Sunday night. Waking is
+        // therefore the most important moment to check: go out seconds after
+        // the machine is alive again, not up to an hour later.
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            // A breath for Wi-Fi to come back before the publish/poll calls.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                self?.catchUpPass(reason: "woke from sleep")
+            }
+        }
+        // Same reasoning for coming back to the app after it sat in the
+        // background: the coach looking at Peak Week is a moment it should
+        // already be current, not one where a stale week is on screen.
+        activeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.catchUpPass(reason: "app activated")
         }
         // Flush any debounced save before quitting.
         terminateObserver = NotificationCenter.default.addObserver(
@@ -76,6 +104,26 @@ final class AppStore: ObservableObject {
         ) { [weak self] _ in
             self?.saveNow()
         }
+    }
+
+    deinit {
+        deliveryTimer?.invalidate()
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+        }
+        if let activeObserver { NotificationCenter.default.removeObserver(activeObserver) }
+        if let terminateObserver { NotificationCenter.default.removeObserver(terminateObserver) }
+    }
+
+    /// One delivery + sync pass, de-duplicated across the triggers that can
+    /// coincide. Everything downstream is idempotent, so an extra pass is
+    /// harmless — this only keeps the log readable and the work proportionate.
+    private func catchUpPass(reason: String, force: Bool = false) {
+        if !force, let lastPassAt, Date().timeIntervalSince(lastPassAt) < 60 { return }
+        lastPassAt = Date()
+        NSLog("PeakWeek: delivery pass — %@", reason)
+        runDeliveryPass()
+        syncNow()
     }
 
     func load() {

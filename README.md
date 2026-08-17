@@ -41,6 +41,16 @@ Run the test suite any time with `swift test` (57 tests lock the programming mat
 - Full send log: every delivery recorded; missed weeks never spam (only the latest
   due week goes out after downtime)
 
+## On their phone (PeakWeek client app)
+Lifters install **PeakWeek** from TestFlight, then pair once with the
+8-character code from your pairing sheet — type it or scan the QR. No
+accounts, no passwords. They see exactly the week you sent (and only that
+week), log top sets against the prescription with one tap, add a note, and
+attach a set video that compresses on-device before upload. Results land in
+your Mac inbox — auto-logged with an anomaly check — and their history shows
+what's queued vs. received. Works offline; the gym's dead corner never eats
+a result. (App lives in `ios/`, backend in `supabase/`.)
+
 ## Where your data lives
 `~/Library/Application Support/PeakWeek/data.json` — debounce-saved on every change,
 with an automatic `data.json.bak` safety copy rotated before each write. If the file

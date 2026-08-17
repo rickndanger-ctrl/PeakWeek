@@ -21,6 +21,13 @@ Data persists as JSON at `~/Library/Application Support/PeakWeek/data.json`
    backups must always open.
 
 ## Architecture
+Two targets share one core: `Sources/PeakWeekCore` (pure-Foundation engine +
+models, builds for macOS AND iOS) and `Sources/PeakWeek` (the Mac app, which
+re-exports Core via CoreExport.swift). The iPhone client app lives in
+`ios/PeakWeekClient` (XcodeGen `ios/project.yml`; `ios/release.sh` archives +
+uploads to TestFlight — bump CURRENT_PROJECT_VERSION in project.yml each run).
+Its backend is `supabase/` (pw_* schema migration + peakweek-api edge function,
+RLS-on/zero-policies service-role design, deployed to the lemon-tree project).
 - `Models.swift` — Codable types (Client, Program, Week, DayPlan, Slot, AppData
   with schemaVersion + slot-reference migration)
 - `Engine.swift` — seed exercise catalogue, RTS RPE table, block allocation, day
@@ -41,6 +48,13 @@ Data persists as JSON at `~/Library/Application Support/PeakWeek/data.json`
 - `WeekView.swift` — week/day/slot editing, Send menu, meet card, RPE chart
 - `SettingsView.swift` / `DeliveriesView.swift` — library editor, send log/queue
 - `Styles.swift` — square design language (no rounded corners anywhere)
+- `SyncService.swift` — Mac side of the client pipe: poll inbox → idempotent
+  ingest → video download BEFORE ack; publishes each week on send; mints
+  one-use pairing codes (`PairingSheet.swift` shows code + `peakweek://` QR)
+- `InboxView.swift` + `Notifier.swift` — review client submissions, anomaly
+  notifications; `TrendsView.swift` — e1RM trends with client/flag badges
+- Core pipeline types: `Submission`/`Ingest`/`AnomalyCheck` (wire format +
+  ingest rules), `PublishedWeek` (structured week render the phone displays)
 
 ## Domain rules baked in (do not break)
 - Full prep 10–16 wks: ~40% accumulation / ~40% transmutation / ~24% realization
