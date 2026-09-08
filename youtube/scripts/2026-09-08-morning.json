@@ -1,0 +1,21 @@
+{
+  "slot": "morning",
+  "answer": "human",
+  "title": "98% of people call this AI. It's from 1863.",
+  "hook": "Everyone says this is AI. It was written 163 years ago.",
+  "specimen": "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.",
+  "attribution": "Emily Dickinson, c. 1863",
+  "tell": "The dashes land in the wrong places — after 'Death', after 'me'. A model punctuates for clarity. Dickinson punctuated for breath. That's why it feels off, and that's exactly why it's human.",
+  "caption": "The em-dash is why people think it's AI. It's also the proof it isn't. Which way did you guess?",
+  "cta": "New specimen every morning, afternoon and night.",
+  "tags": [
+    "#realormachine",
+    "#aiorreal",
+    "#poetry",
+    "#emilydickinson",
+    "#aidetection"
+  ],
+  "date": "2026-09-08",
+  "createdAt": "2026-09-08T02:00:00Z",
+  "posted": false
+}

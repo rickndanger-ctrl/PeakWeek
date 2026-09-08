@@ -34,7 +34,25 @@ hook, tell, title, caption, cta, tags[]
 allows `<b>` on the giveaway phrase. Five specimens per day, date-seeded, so
 every player sees the same set.
 
-## Not yet automated
-Uploading to YouTube. That needs a Google Cloud project with the YouTube Data
-API enabled and an OAuth refresh token; until those exist, scripts stack up on
-the desk and get posted by hand.
+## The video pipeline (`pipeline/`)
+Runs on the Mac, not in the cloud, so the YouTube credentials never leave the
+machine. `run.py` pulls the repo, finds any script in `scripts/` that has not
+been posted, renders it to a vertical mp4, uploads it, and records the video id
+in `build/uploaded.json` so it is never posted twice.
+
+| File | Does |
+|---|---|
+| `config.py` | Paths, palette, fonts, timings, privacy setting |
+| `frames.py` | Draws each scene as a 1080x1920 PNG (verse keeps its own line breaks) |
+| `voice.py` | Narration via macOS `say`; durations via ffprobe |
+| `build.py` | Frames + narration into one mp4; each scene lasts as long as its line |
+| `upload.py` | OAuth and resumable upload to YouTube |
+| `run.py` | The orchestrator — `--dry-run` renders without uploading |
+| `auth.py` | One-time browser authorisation |
+| `SETUP.md` | Click-by-click Google Cloud setup |
+
+Needs `brew install ffmpeg` and `pip3 install -r pipeline/requirements.txt`.
+Secrets live in `~/.realormachine/`, outside the repo. `build/` is git-ignored.
+
+Scheduled with launchd (`com.realormachine.pipeline.plist`) half an hour after
+each writing job, so the script has landed before the renderer looks for it.
