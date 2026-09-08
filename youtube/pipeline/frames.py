@@ -104,7 +104,15 @@ def fit_unwrapped(draw, text: str, kind: str, max_w: int, max_h: int,
     return None
 
 
-VERSE_LINE_MAX = 60
+# Verse is set unwrapped, so these three move together: a line short enough to
+# be called verse has to still fit across the card at the smallest type we will
+# set. At 32px, 48 characters of ordinary English measure ~640px against 968px
+# of card, which leaves comfortable headroom — but character width varies, so
+# this is sizing for the common case, not a proof. scene_specimen still raises
+# on the rare line that will not fit, rather than silently rewrapping a poem.
+VERSE_LINE_MAX = 48
+VERSE_FLOOR_PX = 32
+SPECIMEN_MARGIN = 56  # narrower than the page margin: verse needs the width
 
 
 def is_verse(text: str) -> bool:
@@ -157,7 +165,8 @@ def scene_specimen(specimen: str) -> Image.Image:
     img, d = _canvas()
     _eyebrow(d, "Human or machine?", C.KILN)
 
-    inner = C.WIDTH - 2 * C.MARGIN
+    margin = SPECIMEN_MARGIN
+    inner = C.WIDTH - 2 * margin
     avail_h = C.HEIGHT - 560
 
     # Verse must keep every original line. Stop for editorial review if it
@@ -168,9 +177,12 @@ def scene_specimen(specimen: str) -> Image.Image:
     # unwrapped. Verse breaks early, so short source lines are the signal —
     # wrapping a prose paragraph loses nothing a viewer is being asked to judge.
     if is_verse(specimen):
-        got = fit_unwrapped(d, specimen, "serif", inner, avail_h, 68, 48)
+        got = fit_unwrapped(d, specimen, "serif", inner, avail_h, 68, VERSE_FLOOR_PX)
         if got is None:
-            raise ValueError("Specimen lines do not fit legibly without rewrapping; review the script.")
+            raise ValueError(
+                "Specimen lines do not fit legibly without rewrapping; review the script. "
+                f"Verse lines must be at most {VERSE_LINE_MAX} characters."
+            )
         f, lines, lh = got
     else:
         f, lines, lh = fit_block(d, specimen, "serif", inner, avail_h, 60, 30)
@@ -179,9 +191,9 @@ def scene_specimen(specimen: str) -> Image.Image:
     block_h = len(lines) * lh
     card_top = (C.HEIGHT - block_h) / 2 - pad - 40
     card_bottom = card_top + block_h + 2 * pad
-    d.rectangle([C.MARGIN - 34, card_top, C.WIDTH - C.MARGIN + 34, card_bottom], fill=C.SURFACE)
-    d.rectangle([C.MARGIN - 34, card_top, C.MARGIN - 26, card_bottom], fill=C.KILN)
-    draw_block(d, lines, f, lh, C.MARGIN, card_top + pad, C.INK)
+    d.rectangle([margin - 24, card_top, C.WIDTH - margin + 24, card_bottom], fill=C.SURFACE)
+    d.rectangle([margin - 24, card_top, margin - 16, card_bottom], fill=C.KILN)
+    draw_block(d, lines, f, lh, margin, card_top + pad, C.INK)
     _wordmark(d)
     return img
 
