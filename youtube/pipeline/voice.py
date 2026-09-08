@@ -1,5 +1,7 @@
 """Narration via macOS `say`, plus duration probing via ffprobe."""
 
+from __future__ import annotations
+
 import json
 import shutil
 import subprocess

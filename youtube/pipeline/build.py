@@ -1,5 +1,6 @@
 """Assemble a script's frames and narration into a vertical mp4."""
 
+import math
 import subprocess
 from pathlib import Path
 
@@ -27,29 +28,34 @@ def build_video(script: dict, work: Path) -> Path:
         else:
             sc["audio"] = None
             sc["dur"] = sc["min"]
+        # Use whole output frames so the stills and narration share one clock.
+        sc["dur"] = math.ceil(sc["dur"] * C.FPS) / C.FPS
 
     # Video track: a concat list of stills with explicit durations.
     concat = work / "frames.txt"
     lines = []
     for sc in scenes:
         lines.append(f"file '{sc['png'].resolve()}'")
-        lines.append(f"duration {sc['dur']:.3f}")
+        lines.append(f"option framerate {C.FPS}")
+        lines.append(f"duration {sc['dur']:.9f}")
     lines.append(f"file '{scenes[-1]['png'].resolve()}'")  # concat needs the last frame twice
+    lines.append(f"option framerate {C.FPS}")
     concat.write_text("\n".join(lines) + "\n")
 
+    total = sum(sc["dur"] for sc in scenes)
     silent = work / "silent.mp4"
     subprocess.run([
         "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat),
-        # No -vsync here: ffmpeg 7 rejects it alongside -r, and -r alone already
-        # gives a constant-frame-rate track, which is what YouTube wants.
-        "-r", str(C.FPS), "-pix_fmt", "yuv420p",
+        # Expand the sparse stills before encoding; -r with -t can end the
+        # final still early on macOS FFmpeg 9, cutting off the closing speech.
+        "-vf", f"fps={C.FPS}", "-pix_fmt", "yuv420p",
         "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+        "-t", f"{total:.9f}",
         "-movflags", "+faststart",
         str(silent),
     ], check=True, capture_output=True)
 
     # Audio track: narration placed at each scene's start offset, padded to length.
-    total = sum(sc["dur"] for sc in scenes)
     spoken = [(sc, off) for sc, off in _offsets(scenes) if sc["audio"]]
     if not spoken:
         silent.replace(work / "short.mp4")

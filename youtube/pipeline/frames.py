@@ -4,6 +4,8 @@ Every scene is one PNG. build.py holds each one on screen for as long as its
 narration lasts, so nothing here needs to know about timing.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -63,16 +65,13 @@ def wrap(draw, text: str, f, max_w: int) -> list[str]:
 def fit_block(draw, text: str, kind: str, max_w: int, max_h: int,
               start: int, floor: int = 30) -> tuple[ImageFont.FreeTypeFont, list[str], int]:
     """Shrink the type until the wrapped block fits the box. Returns font, lines, line height."""
-    size = start
-    while size > floor:
+    for size in list(range(start, floor, -3)) + [floor]:
         f = font(kind, size)
         lines = wrap(draw, text, f, max_w)
         lh = int(size * 1.42)
-        if len(lines) * lh <= max_h:
+        if len(lines) * lh <= max_h and all(_width(draw, line, f) <= max_w for line in lines):
             return f, lines, lh
-        size -= 3
-    f = font(kind, floor)
-    return f, wrap(draw, text, f, max_w), int(floor * 1.42)
+    raise ValueError("Text does not fit at a readable size; shorten it before rendering.")
 
 
 def draw_block(draw, lines, f, lh, x, y, fill, align="left", max_w=None) -> int:
@@ -146,9 +145,12 @@ def scene_specimen(specimen: str) -> Image.Image:
     inner = C.WIDTH - 2 * C.MARGIN
     avail_h = C.HEIGHT - 560
 
-    # Keep the author's line breaks if they fit; only wrap when they cannot.
-    got = fit_unwrapped(d, specimen, "serif", inner, avail_h, 68, 30)
-    if got:
+    # Verse must keep every original line. Stop for editorial review if it
+    # cannot fit legibly instead of silently changing the poem's line breaks.
+    if "\n" in specimen:
+        got = fit_unwrapped(d, specimen, "serif", inner, avail_h, 68, 48)
+        if got is None:
+            raise ValueError("Specimen lines do not fit legibly without rewrapping; review the script.")
         f, lines, lh = got
     else:
         f, lines, lh = fit_block(d, specimen, "serif", inner, avail_h, 60, 30)
@@ -180,13 +182,13 @@ def scene_answer(answer: str, attribution: str) -> Image.Image:
     color = C.HUMAN if human else C.SYNTH
     label = "HUMAN" if human else "MACHINE"
 
-    f = font("display", 190)
+    inner = C.WIDTH - 2 * C.MARGIN
+    f, _, _ = fit_unwrapped(d, label, "display", inner, 300, 190, 100)
     w = _width(d, label, f)
     y = C.HEIGHT / 2 - 340
     d.text(((C.WIDTH - w) / 2, y), label, font=f, fill=color)
     d.rectangle([(C.WIDTH - w) / 2, y + 250, (C.WIDTH + w) / 2, y + 260], fill=color)
 
-    inner = C.WIDTH - 2 * C.MARGIN
     af, lines, lh = fit_block(d, attribution, "serif", inner, 320, 52, 30)
     draw_block(d, lines, af, lh, C.MARGIN, y + 330, C.INK_SOFT, align="center", max_w=inner)
     _wordmark(d)
