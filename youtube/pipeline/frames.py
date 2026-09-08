@@ -104,6 +104,21 @@ def fit_unwrapped(draw, text: str, kind: str, max_w: int, max_h: int,
     return None
 
 
+VERSE_LINE_MAX = 60
+
+
+def is_verse(text: str) -> bool:
+    """Whether the author's own line breaks carry meaning worth preserving.
+
+    Verse breaks its lines early and deliberately; prose only breaks between
+    sentences or paragraphs, at whatever length the sentence happened to run.
+    A passage counts as verse when it breaks at all and every one of its lines
+    is short enough to have been an intentional break.
+    """
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    return len(lines) > 1 and all(len(ln) <= VERSE_LINE_MAX for ln in lines)
+
+
 def _canvas() -> tuple[Image.Image, ImageDraw.ImageDraw]:
     img = Image.new("RGB", (C.WIDTH, C.HEIGHT), C.BONE)
     return img, ImageDraw.Draw(img)
@@ -147,7 +162,12 @@ def scene_specimen(specimen: str) -> Image.Image:
 
     # Verse must keep every original line. Stop for editorial review if it
     # cannot fit legibly instead of silently changing the poem's line breaks.
-    if "\n" in specimen:
+    #
+    # A newline alone does not make a passage verse: prose specimens carry them
+    # between sentences and paragraphs, and those lines are far too long to set
+    # unwrapped. Verse breaks early, so short source lines are the signal —
+    # wrapping a prose paragraph loses nothing a viewer is being asked to judge.
+    if is_verse(specimen):
         got = fit_unwrapped(d, specimen, "serif", inner, avail_h, 68, 48)
         if got is None:
             raise ValueError("Specimen lines do not fit legibly without rewrapping; review the script.")
@@ -183,7 +203,13 @@ def scene_answer(answer: str, attribution: str) -> Image.Image:
     label = "HUMAN" if human else "MACHINE"
 
     inner = C.WIDTH - 2 * C.MARGIN
-    f, _, _ = fit_unwrapped(d, label, "display", inner, 300, 190, 100)
+    got = fit_unwrapped(d, label, "display", inner, 300, 190, 100)
+    if got is None:
+        raise ValueError(
+            f"'{label}' will not fit the answer card above 100px on this machine's "
+            "display font. Lower the floor in scene_answer or pick a narrower face."
+        )
+    f, _, _ = got
     w = _width(d, label, f)
     y = C.HEIGHT / 2 - 340
     d.text(((C.WIDTH - w) / 2, y), label, font=f, fill=color)
