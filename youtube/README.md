@@ -20,6 +20,14 @@ either one to its URL updates the live page in place.
 | Morning | 7:00am | Writes one Short script to the desk |
 | Afternoon | 1:00pm | Writes one Short script (the argumentative one) |
 | Evening | 7:00pm | Writes one Short script, then adds two new specimens to the game |
+| Sync | 7:20am, 1:20pm, 7:20pm | Mirrors any desk script missing from `scripts/` and pushes it |
+
+The sync job exists because a writing job can save to the desk and still fail to
+commit — which happened on the first live run, leaving a finished script the
+render pipeline could not see. The desk is the queue; `scripts/` is the
+permanent archive and the only thing the Mac reads. The sync job is what keeps
+those two honest, and it is idempotent: when nothing has drifted it does
+nothing.
 
 Each run appends a document to the desk's `scripts` collection. The desk page
 reads that collection live, so new scripts appear without a redeploy.
