@@ -1,21 +1,21 @@
 {
+  "date": "2026-09-08",
   "slot": "morning",
+  "createdAt": "2026-09-08T11:05:00Z",
+  "posted": false,
   "answer": "human",
-  "title": "98% of people call this AI. It's from 1863.",
-  "hook": "Everyone says this is AI. It was written 163 years ago.",
-  "specimen": "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.",
-  "attribution": "Emily Dickinson, c. 1863",
-  "tell": "The dashes land in the wrong places — after 'Death', after 'me'. A model punctuates for clarity. Dickinson punctuated for breath. That's why it feels off, and that's exactly why it's human.",
-  "caption": "The em-dash is why people think it's AI. It's also the proof it isn't. Which way did you guess?",
+  "specimen": "Do I contradict myself?\nVery well then I contradict myself,\n(I am large, I contain multitudes.)",
+  "attribution": "Walt Whitman, Song of Myself, 1855",
+  "hook": "This contradiction has stood unedited for 170 years.",
+  "tell": "Whitman never resolves the contradiction — he just restates it flatly with 'Very well then' and moves on. A model asked to write this would almost always add a justifying clause tying the two claims together logically. Whitman instead drops an unconnected parenthetical as his only follow-up, leaving the contradiction standing on its own.",
+  "title": "He contradicts himself and never fixes it. Real or AI?",
+  "caption": "A model would explain the contradiction away. Whitman just states it and walks off. Did you catch the parenthetical?",
   "cta": "New specimen every morning, afternoon and night.",
   "tags": [
     "#realormachine",
     "#aiorreal",
+    "#waltwhitman",
     "#poetry",
-    "#emilydickinson",
     "#aidetection"
-  ],
-  "date": "2026-09-08",
-  "createdAt": "2026-09-08T02:00:00Z",
-  "posted": false
+  ]
 }
