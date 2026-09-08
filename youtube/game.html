@@ -1,0 +1,468 @@
+<title>Real or Machine</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bone:#E6E8E3; --surface:#FBFBF9; --surface-2:#F1F2ED; --ink:#141917; --ink-soft:#3A423E;
+  --muted:#5E6862; --rule:#CBD0C8;
+  --human:#2A6F4B; --human-soft:#DDEBE2; --synth:#6B3FD4; --synth-soft:#E6DEFA;
+  --kiln:#C2521C; --shadow:rgba(20,25,23,.10);
+  --display:"Bricolage Grotesque",system-ui,sans-serif;
+  --serif:"Source Serif 4",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bone:#0E1211; --surface:#171C1A; --surface-2:#1F2523; --ink:#E9EDE9; --ink-soft:#C3CAC5;
+    --muted:#8B958F; --rule:#2C3431;
+    --human:#5FC48D; --human-soft:#163325; --synth:#A98BFF; --synth-soft:#251A44;
+    --kiln:#E8814B; --shadow:rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bone:#0E1211; --surface:#171C1A; --surface-2:#1F2523; --ink:#E9EDE9; --ink-soft:#C3CAC5;
+  --muted:#8B958F; --rule:#2C3431;
+  --human:#5FC48D; --human-soft:#163325; --synth:#A98BFF; --synth-soft:#251A44;
+  --kiln:#E8814B; --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+body{background:var(--bone);color:var(--ink);font-family:var(--display);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+.wrap{width:100%;max-width:640px;padding:20px 18px 64px;display:flex;flex-direction:column;gap:20px}
+
+/* header */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  border-bottom:1px solid var(--rule);padding-bottom:12px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand h1{font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:-.03em;margin:0;line-height:1}
+.brand h1 em{font-style:normal;color:var(--kiln)}
+.brand .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.streak{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:0 0 auto}
+.streak .n{font-family:var(--display);font-size:26px;font-weight:800;line-height:1;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--kiln)}
+.streak .l{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* progress */
+.pips{display:flex;gap:6px;align-items:center}
+.pip{height:5px;flex:1;background:var(--rule);border-radius:0}
+.pip.on{background:var(--ink-soft)}
+.pip.ok{background:var(--human)}
+.pip.no{background:var(--kiln)}
+
+/* specimen */
+.card{background:var(--surface);border:1px solid var(--rule);box-shadow:0 1px 0 var(--shadow);
+  padding:26px 24px;display:flex;flex-direction:column;gap:18px}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.meta .cat{color:var(--ink-soft)}
+.specimen{font-family:var(--serif);font-size:20px;line-height:1.62;white-space:pre-wrap;margin:0;
+  color:var(--ink);letter-spacing:.002em;max-width:44ch}
+.specimen.short{font-size:23px;line-height:1.55}
+
+/* verdict buttons */
+.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font-family:var(--display);cursor:pointer;border-radius:0}
+.verdict{padding:16px 12px;background:var(--surface);border:1.5px solid var(--rule);
+  color:var(--ink);display:flex;flex-direction:column;gap:3px;align-items:center;transition:.14s}
+.verdict .big{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.verdict .small{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.verdict:hover{transform:translateY(-2px)}
+.verdict.h:hover{border-color:var(--human);color:var(--human)}
+.verdict.a:hover{border-color:var(--synth);color:var(--synth)}
+.verdict:focus-visible{outline:2px solid var(--kiln);outline-offset:2px}
+.verdict[disabled]{cursor:default;transform:none;opacity:.45}
+
+/* reveal */
+.reveal{display:flex;flex-direction:column;gap:14px;border:1px solid var(--rule);
+  background:var(--surface-2);padding:20px 22px}
+.verdictline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.stamp{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.02em}
+.stamp.win{color:var(--human)} .stamp.lose{color:var(--kiln)}
+.truth{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 8px;border:1px solid currentColor}
+.truth.human{color:var(--human);background:var(--human-soft)}
+.truth.ai{color:var(--synth);background:var(--synth-soft)}
+.attrib{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--ink-soft);margin:0}
+.tell{margin:0;font-size:14.5px;line-height:1.6;color:var(--ink-soft);max-width:52ch}
+.tell b{font-weight:700;color:var(--ink);font-family:var(--display)}
+.tell-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);display:block;margin-bottom:5px}
+
+/* crowd bar */
+.crowd{display:flex;flex-direction:column;gap:6px}
+.crowd .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.bar{height:8px;background:var(--rule);position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--kiln);width:0;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.crowd .pct{color:var(--kiln);font-weight:500}
+
+.next{padding:15px;background:var(--ink);color:var(--bone);border:none;font-size:15px;font-weight:700;
+  letter-spacing:-.01em;width:100%}
+.next:hover{background:var(--kiln)}
+.next:focus-visible{outline:2px solid var(--kiln);outline-offset:2px}
+
+/* results */
+.result{background:var(--surface);border:1px solid var(--rule);padding:30px 26px;
+  display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 0 var(--shadow)}
+.score{display:flex;align-items:baseline;gap:12px}
+.score .num{font-family:var(--display);font-size:64px;font-weight:800;line-height:.85;letter-spacing:-.05em;
+  font-variant-numeric:tabular-nums}
+.score .of{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.grid{font-size:24px;letter-spacing:5px;line-height:1}
+.verdicttext{font-family:var(--serif);font-size:17px;line-height:1.55;margin:0;color:var(--ink-soft);max-width:46ch}
+.rowbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ghost{padding:14px;background:transparent;border:1.5px solid var(--rule);color:var(--ink);font-size:14px;font-weight:600}
+.ghost:hover{border-color:var(--ink)}
+.tally{display:flex;gap:22px;border-top:1px solid var(--rule);padding-top:16px;flex-wrap:wrap}
+.tally div{display:flex;flex-direction:column;gap:2px}
+.tally .v{font-family:var(--display);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.tally .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+footer{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:center;line-height:1.7;
+  letter-spacing:.04em;border-top:1px solid var(--rule);padding-top:14px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:var(--bone);padding:11px 20px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;transition:.22s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:430px){
+  .specimen{font-size:18px}.specimen.short{font-size:20px}
+  .card{padding:22px 18px}.score .num{font-size:52px}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Real or <em>Machine</em></h1>
+      <div class="sub" id="daylabel">Daily set</div>
+    </div>
+    <div class="streak">
+      <div class="n" id="streakN">0</div>
+      <div class="l" id="streakL">day streak</div>
+    </div>
+  </header>
+
+  <div class="pips" id="pips"></div>
+  <div id="stage"></div>
+
+  <footer>
+    Human specimens are public-domain writing, credited on reveal.<br>
+    Machine specimens were written for this game by an AI.
+  </footer>
+</div>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+/* ---------- corpus ---------------------------------------------------- */
+/* src:"human" = genuine public-domain text (author + year given).
+   src:"ai"    = pastiche written by an AI model for this game.        */
+const CORPUS = [
+ {c:"Poetry",src:"human",by:"Emily Dickinson, c. 1863",
+  t:"Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.",
+  tell:"The <b>dashes land in the wrong places</b> — after 'Death', after 'me' — breaking the line where a machine would smooth it. Models punctuate for clarity; Dickinson punctuated for breath."},
+ {c:"Poetry",src:"ai",
+  t:"The moon does not apologize for its phases.\nNeither should you,\nwho have been full and empty\nand full again.",
+  tell:"An <b>aphorism wearing line breaks</b>. It states a lesson, then applies it to 'you' — the shape of a caption, not a poem. Real poems rarely explain their own metaphor in the next stanza."},
+ {c:"Prose",src:"human",by:"Herman Melville, Moby-Dick, 1851",
+  t:"Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.",
+  tell:"<b>The interruption is rude.</b> 'never mind how long precisely' snaps at the reader mid-sentence. AI asides are polite and decorative; this one is impatient."},
+ {c:"Poetry",src:"ai",
+  t:"In the cathedral of my ribs\na small bird practices forgiveness.\nIt does not know the word.\nIt only knows the leaving.",
+  tell:"Three tells stacked: <b>body-as-architecture</b> ('cathedral of my ribs'), an abstract noun treated as a physical act ('practices forgiveness'), and a final line that resolves into vagueness. This is the house style of AI verse."},
+ {c:"Prose",src:"human",by:"Henry David Thoreau, Walden, 1854",
+  t:"I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived.",
+  tell:"Count the negatives: <b>'could not', 'not, when', 'had not'</b>. Three in one sentence, and it still tracks. Models avoid stacked negation because it reads as error — humans use it to think."},
+ {c:"Review",src:"ai",
+  t:"I bought this kettle expecting nothing and received everything. It boils water, yes — but it also boils water quietly, quickly, and with a kind of dignity my old kettle never had. Five stars. My mornings are different now.",
+  tell:"<b>The escalation is too tidy.</b> 'quietly, quickly, and with a kind of dignity' is a rule-of-three that builds from concrete to abstract — the single most reliable fingerprint of generated prose."},
+ {c:"Poetry",src:"human",by:"Stephen Crane, 1899",
+  t:"A man said to the universe:\n\"Sir, I exist!\"\n\"However,\" replied the universe,\n\"The fact has not created in me\nA sense of obligation.\"",
+  tell:"<b>The joke is cold.</b> The universe uses bureaucratic language ('a sense of obligation') to dismiss a man. AI poems comfort; this one refuses to."},
+ {c:"Prose",src:"ai",
+  t:"The morning arrived the way mornings do in that part of the country: slowly, and with a kind of insistence, as if it had somewhere else to be and had chosen, generously, to stay.",
+  tell:"<b>'the way X does'</b> plus <b>'a kind of'</b> plus an adverb fenced in commas ('chosen, generously, to stay'). Each is fine alone. All three in one sentence is a machine hedging its way to atmosphere."},
+ {c:"Poetry",src:"human",by:"W. B. Yeats, The Second Coming, 1920",
+  t:"Turning and turning in the widening gyre\nThe falcon cannot hear the falconer;\nThings fall apart; the centre cannot hold;\nMere anarchy is loosed upon the world,",
+  tell:"<b>'Gyre'</b> — a word Yeats needed for a private cosmology, not for the reader. Models pick words their audience knows. Humans import vocabulary from their own obsessions."},
+ {c:"Poetry",src:"ai",
+  t:"Grief is just love with nowhere to go,\nand I have built it a small house\nwith one window\nfacing the sea.",
+  tell:"The first line is a <b>quotable thesis</b>, and everything after literalizes it — a house for the grief, a window for the looking. Human poems tend to complicate their opening. Generated ones illustrate it."},
+ {c:"Prose",src:"human",by:"Jane Austen, Pride and Prejudice, 1813",
+  t:"It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+  tell:"<b>The sentence is lying on purpose.</b> Nothing marks the sarcasm — no wink, no qualifier. AI irony almost always signals itself; this trusts you to catch it alone."},
+ {c:"Letter",src:"ai",
+  t:"Dear Margaret, I hope this letter finds you well. The garden has been generous this year — tomatoes especially — and I find myself thinking of the summers we spent barefoot on your father's porch, back when time moved differently.",
+  tell:"<b>'I hope this letter finds you well'</b> is email boilerplate wearing a costume, and <b>'back when time moved differently'</b> is nostalgia with no specific memory inside it. Real letters name the porch, the year, the argument."},
+ {c:"Poetry",src:"human",by:"Gerard Manley Hopkins, Pied Beauty, 1877",
+  t:"Glory be to God for dappled things –\nFor skies of couple-colour as a brinded cow;\nFor rose-moles all in stipple upon trout that swim;",
+  tell:"<b>'Brinded', 'stipple', 'couple-colour'</b> — invented and dialect words crammed together. The sound is doing the work, not the sense. Models optimize for sense."},
+ {c:"Prose",src:"ai",
+  t:"Autumn does not fight the leaving of its leaves. It simply lets go — and in the letting go, it becomes the most beautiful version of itself.",
+  tell:"The <b>'in the X-ing, becomes Y'</b> construction, plus 'the most beautiful version of itself'. This is a paradox resolved into reassurance, which is what a model does when asked to sound wise."},
+ {c:"Poetry",src:"human",by:"Christina Rossetti, Remember, 1862",
+  t:"Remember me when I am gone away,\nGone far away into the silent land;\nWhen you can no more hold me by the hand,\nNor I half turn to go yet turning stay.",
+  tell:"<b>'Nor I half turn to go yet turning stay.'</b> The syntax buckles under the feeling — it is almost ungrammatical. A model would untangle it and lose the hesitation."},
+ {c:"Recipe",src:"ai",
+  t:"Grandmother's Sunday Bread — Combine warm water, yeast, and a spoonful of honey. Wait until it blooms. Add flour one cup at a time until the dough tells you it is ready. Knead with intention. Bake at 400°F for 30 minutes, or until golden.",
+  tell:"<b>'Knead with intention'</b> and 'until the dough tells you it is ready' — instruction replaced by mood. And an exact 400°F next to a mystical cue. Real family recipes are either precise or vague, rarely both in one breath."},
+ {c:"Prose",src:"human",by:"Charles Dickens, A Tale of Two Cities, 1859",
+  t:"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity,",
+  tell:"The repetition goes on <b>past the point of good taste</b> — six clauses, and the real sentence runs to ten. AI parallelism stops at three, where it still sounds elegant."},
+ {c:"Poetry",src:"ai",
+  t:"I am learning to be a house\nwith the doors left open.\nSome nights the wind comes in.\nSome nights, so does the light.",
+  tell:"<b>The symmetrical last couplet</b> — same construction, opposite valence, ending on the hopeful one. It is a closing chord, engineered. Human poems more often end on the wrong note deliberately."},
+ {c:"Prose",src:"human",by:"Mary Shelley, Frankenstein, 1818",
+  t:"I saw the dull yellow eye of the creature open; it breathed hard, and a convulsive motion agitated its limbs.",
+  tell:"<b>'Dull yellow'</b> — an unglamorous, specific, faintly disgusting colour. Generated horror reaches for black, crimson, void. Real observation reaches for dull yellow."},
+ {c:"Review",src:"ai",
+  t:"Stayed three nights. The staff were lovely, the location was unbeatable, and the breakfast exceeded expectations. My only minor critique would be the thin walls, but honestly, that's a small price to pay for such a memorable stay.",
+  tell:"<b>The complaint is immediately apologized for.</b> 'my only minor critique', 'but honestly', 'a small price to pay'. Models are trained to be agreeable, so their negatives arrive pre-softened."},
+ {c:"Poetry",src:"human",by:"William Blake, The Tyger, 1794",
+  t:"Tyger Tyger, burning bright,\nIn the forests of the night;\nWhat immortal hand or eye,\nCould frame thy fearful symmetry?",
+  tell:"<b>The rhyme is wrong.</b> 'eye' and 'symmetry' do not chime — Blake let it fail rather than change the word. A model would swap in a clean rhyme every time."},
+ {c:"Prose",src:"ai",
+  t:"He had spent his whole life preparing for a moment he could not name, and when it finally came, it looked nothing like preparation and everything like surrender.",
+  tell:"<b>'looked nothing like X and everything like Y'</b> — a balanced antithesis delivering the theme in the last six words. This is a sentence built backwards from its own moral."},
+ {c:"Poetry",src:"human",by:"Emily Brontë, 1846",
+  t:"No coward soul is mine,\nNo trembler in the world's storm-troubled sphere:\nI see Heaven's glories shine,\nAnd faith shines equal, arming me from fear.",
+  tell:"<b>'Storm-troubled sphere'</b> is clumsy, and she kept it. The line scans awkwardly against the ones around it. Machines produce even surfaces; humans leave the burrs on."},
+ {c:"Prose",src:"ai",
+  t:"The city at night is a different animal. Neon bleeds into wet asphalt, steam rises from the grates like breath, and somewhere below all of it, the machinery of the place keeps turning, indifferent to whoever is awake to see it.",
+  tell:"<b>Neon, wet asphalt, steam from grates.</b> Three stock images in twenty words, closing on 'indifferent'. This is the model's default city — assembled from every noir it has read, belonging to no actual street."},
+ {c:"Poetry",src:"human",by:"Walt Whitman, Song of Myself, 1855",
+  t:"I loafe and invite my soul,\nI lean and loafe at my ease observing a spear of summer grass.",
+  tell:"<b>'Loafe'</b> — misspelled on purpose, twice. And 'a spear of summer grass' is aggressively specific where a machine would write 'the grass'. Whitman commits to one blade."},
+ {c:"Prose",src:"ai",
+  t:"What nobody tells you about starting over is that it isn't loud. There's no music. There's just a Tuesday, and a decision, and the quiet understanding that you will not be going back.",
+  tell:"<b>'What nobody tells you about X'</b> is an opener trained on a decade of internet essays. Then the deliberately mundane detail ('a Tuesday') arrives right on cue — mundanity deployed as a technique rather than noticed."},
+ {c:"Poetry",src:"human",by:"Robert Frost, The Road Not Taken, 1916",
+  t:"Two roads diverged in a yellow wood,\nAnd sorry I could not travel both\nAnd be one traveler, long I stood\nAnd looked down one as far as I could\nTo where it bent in the undergrowth;",
+  tell:"<b>'And be one traveler'</b> — the regret is about being a single person, not about the road. It is a strange, half-swallowed idea a model would clarify away."},
+ {c:"Letter",src:"ai",
+  t:"To whom it may concern: I am writing to express my sincere disappointment regarding the delayed shipment of order #44192. While I understand that unforeseen circumstances arise, I had hoped for clearer communication. I trust this matter can be resolved promptly.",
+  tell:"<b>Perfectly calibrated anger.</b> 'sincere disappointment', 'while I understand', 'I trust this matter'. A genuinely annoyed customer breaks form somewhere; this one never does."},
+ {c:"Prose",src:"human",by:"Franz Kafka, The Metamorphosis, 1915 (trans. 1933)",
+  t:"As Gregor Samsa awoke one morning from uneasy dreams he found himself transformed in his bed into a gigantic insect.",
+  tell:"<b>The sentence refuses to react.</b> The most extraordinary event imaginable is reported in the flat tone of a weather notice. Models raise the register when the content escalates; Kafka drops it."},
+ {c:"Poetry",src:"ai",
+  t:"You were never the storm.\nYou were the small window\nthat kept insisting on the light\nwhile everything else shook.",
+  tell:"<b>'You were never X. You were Y.'</b> — the correction-as-compliment structure, aimed at a reader who wants reassurance. Note also 'insisting on the light': an object given a virtue. Both are signatures."},
+ {c:"Prose",src:"human",by:"Charlotte Brontë, Jane Eyre, 1847",
+  t:"I am no bird; and no net ensnares me: I am a free human being with an independent will, which I now exert to leave you.",
+  tell:"<b>The semicolon and colon do different jobs</b> in one short line, and the sentence ends on the coldest possible clause — 'to leave you'. Generated defiance almost always ends on an uplift instead."},
+ {c:"Review",src:"ai",
+  t:"Three weeks in and I genuinely cannot imagine my routine without it. Setup took under five minutes, the app is intuitive, and the build quality feels premium without being flashy. If you're on the fence — don't be.",
+  tell:"<b>'If you're on the fence — don't be.'</b> A closing call to action nobody writing a real review bothers with, plus 'premium without being flashy', a phrase that exists only in marketing copy the model absorbed."},
+ {c:"Poetry",src:"human",by:"Percy Bysshe Shelley, Ozymandias, 1818",
+  t:"And on the pedestal, these words appear:\n'My name is Ozymandias, King of Kings;\nLook on my Works, ye Mighty, and despair!'\nNothing beside remains.",
+  tell:"<b>'Nothing beside remains.'</b> Four words, dropped after a shouting quotation, and the poem does not comment on the irony. Machines explain their punchlines."},
+ {c:"Prose",src:"ai",
+  t:"Memory is not a photograph. It is a room you keep walking back into, rearranging the furniture each time, until eventually you are not remembering the room at all — you are remembering the last time you remembered it.",
+  tell:"<b>'X is not Y. It is Z.'</b> opening, an extended metaphor kept scrupulously consistent, and a recursive twist at the end. Elegant, and entirely frictionless — nothing in it resists the reader."},
+ {c:"Poetry",src:"human",by:"Edgar Allan Poe, The Raven, 1845",
+  t:"Once upon a midnight dreary, while I pondered, weak and weary,\nOver many a quaint and curious volume of forgotten lore—",
+  tell:"<b>Internal rhyme inside the line</b> ('dreary'/'weary'), sustained for eighteen stanzas. The technical cost is enormous and the effect is almost silly. Machines do not commit to a bad idea this hard."},
+ {c:"Prose",src:"ai",
+  t:"The old man fed the birds every morning at 7 a.m. sharp, rain or shine, for forty-two years. When he stopped coming, the birds waited three days before they stopped coming too.",
+  tell:"<b>The numbers are doing emotional work.</b> 7 a.m. sharp, forty-two years, three days — precision borrowed to manufacture poignancy, ending on a neat mirrored reversal. It is a story shaped like a machine's idea of a story."},
+ {c:"Poetry",src:"human",by:"Emily Dickinson, c. 1861",
+  t:"I felt a Funeral, in my Brain,\nAnd Mourners to and fro\nKept treading – treading – till it seemed\nThat Sense was breaking through –",
+  tell:"<b>Capitalized nouns mid-line</b> — Funeral, Brain, Mourners, Sense — as if each were a proper name. It is a private orthography, not a style guide. Models normalize capitalization."},
+ {c:"Prose",src:"ai",
+  t:"There is a particular kind of loneliness that only exists in crowded places, and I have made a home in it. Not because I chose it. Because it was the only room left unlocked.",
+  tell:"<b>'There is a particular kind of X that…'</b> opener, then two fragments used as a rhythm device ('Not because… Because…'). Fragment-stacking for emphasis is a habit models pick up from personal-essay training data."},
+ {c:"Prose",src:"human",by:"Joseph Conrad, Heart of Darkness, 1899",
+  t:"We live, as we dream—alone.",
+  tell:"<b>Six words and a dash.</b> No image, no elaboration, no earned setup inside the line itself. AI aphorisms almost always carry a metaphor as a passenger; this one carries nothing."},
+ {c:"Poetry",src:"ai",
+  t:"Somewhere a door is closing.\nSomewhere a window has always been open.\nWe spend our whole lives\nlearning which room we are standing in.",
+  tell:"<b>Anaphora ('Somewhere… Somewhere…') plus a proverb literalized.</b> The closing line tells you what the poem meant, which a poem confident in its images would not need to do."}
+];
+
+/* ---------- daily selection (date-seeded) ----------------------------- */
+const ROUNDS_PER_DAY = 5;
+const EPOCH = Date.UTC(2026,8,1); // 2026-09-01
+function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function dayNumber(){const d=new Date();const local=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());return Math.max(1,Math.round((local-EPOCH)/864e5)+1);}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function dailySet(){
+  const rng=mulberry(dayNumber()*2654435761%2147483647);
+  const hum=CORPUS.map((r,i)=>({r,i})).filter(o=>o.r.src==="human");
+  const mac=CORPUS.map((r,i)=>({r,i})).filter(o=>o.r.src==="ai");
+  const pick=(arr,n)=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.slice(0,n);};
+  const set=[...pick(hum,3),...pick(mac,2)];
+  for(let i=set.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[set[i],set[j]]=[set[j],set[i]];}
+  return set;
+}
+
+/* ---------- persistence ----------------------------------------------- */
+const KEY="rom.v1";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{};}}
+function save(s){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
+let S=load();
+S.streak=S.streak||0; S.best=S.best||0; S.played=S.played||0; S.correct=S.correct||0;
+
+/* ---------- crowd stats (shared db, optional) -------------------------- */
+let DB=null;
+try{
+  if(window.claude&&typeof claude.use==="function"){
+    claude.use("db").then(d=>{DB=d;}).catch(()=>{DB=null;});
+  }
+}catch(e){DB=null;}
+async function recordVote(idx,wasRight){
+  if(!DB) return null;
+  try{
+    const ref=DB.doc("stats/r"+idx);
+    const snap=await ref.get();
+    const cur=(snap&&snap.data)?snap.data:(snap||{});
+    const right=(cur.right|0)+(wasRight?1:0), wrong=(cur.wrong|0)+(wasRight?0:1);
+    await ref.set({right,wrong});
+    return {right,wrong};
+  }catch(e){return null;}
+}
+
+/* ---------- game state -------------------------------------------------- */
+let set=dailySet(), pos=0, results=[], endless=false, answered=false;
+const stage=document.getElementById("stage"), pipsEl=document.getElementById("pips");
+document.getElementById("daylabel").textContent="Day "+dayNumber()+" · "+ROUNDS_PER_DAY+" specimens";
+function paintStreak(){
+  document.getElementById("streakN").textContent=S.streak;
+  document.getElementById("streakL").textContent=S.streak===1?"day streak":"day streak";
+}
+paintStreak();
+function paintPips(){
+  pipsEl.innerHTML="";
+  for(let i=0;i<set.length;i++){
+    const p=document.createElement("div");p.className="pip";
+    if(results[i]!==undefined) p.classList.add(results[i]?"ok":"no");
+    else if(i===pos) p.classList.add("on");
+    pipsEl.appendChild(p);
+  }
+}
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function renderRound(){
+  answered=false; paintPips();
+  const {r}=set[pos];
+  const short=r.t.length<120;
+  stage.innerHTML=`
+   <div class="card">
+     <div class="meta"><span class="cat">${esc(r.c)}</span><span>Specimen ${pos+1} / ${set.length}</span></div>
+     <p class="specimen${short?" short":""}">${esc(r.t)}</p>
+   </div>
+   <div class="verdicts" style="margin-top:14px">
+     <button class="verdict h" data-v="human"><span class="big">Human</span><span class="small">Written by a person</span></button>
+     <button class="verdict a" data-v="ai"><span class="big">Machine</span><span class="small">Written by AI</span></button>
+   </div>`;
+  stage.querySelectorAll(".verdict").forEach(b=>b.addEventListener("click",()=>answer(b.dataset.v)));
+}
+
+async function answer(v){
+  if(answered) return; answered=true;
+  const {r,i}=set[pos];
+  const right=(v===r.src);
+  results[pos]=right;
+  S.played++; if(right)S.correct++;
+  save(S); paintPips();
+  stage.querySelectorAll(".verdict").forEach(b=>b.disabled=true);
+
+  const short=r.t.length<120;
+  const truthLabel=r.src==="human"?"Human":"Machine";
+  stage.innerHTML=`
+   <div class="card">
+     <div class="meta"><span class="cat">${esc(r.c)}</span><span>Specimen ${pos+1} / ${set.length}</span></div>
+     <p class="specimen${short?" short":""}">${esc(r.t)}</p>
+   </div>
+   <div class="reveal" style="margin-top:14px">
+     <div class="verdictline">
+       <span class="stamp ${right?"win":"lose"}">${right?"Correct":"Fooled you"}</span>
+       <span class="truth ${r.src==="human"?"human":"ai"}">${truthLabel}</span>
+     </div>
+     ${r.by?`<p class="attrib">${esc(r.by)}</p>`:""}
+     <p class="tell"><span class="tell-label">The tell</span>${r.tell}</p>
+     <div class="crowd" id="crowd" hidden>
+       <div class="row"><span>Players who got this right</span><span class="pct" id="crowdPct">–</span></div>
+       <div class="bar"><i id="crowdBar"></i></div>
+     </div>
+   </div>
+   <button class="next" id="next">${pos+1<set.length?"Next specimen":"See your result"}</button>`;
+  document.getElementById("next").addEventListener("click",advance);
+  document.getElementById("next").focus();
+
+  const st=await recordVote(i,right);
+  if(st){
+    const tot=st.right+st.wrong;
+    if(tot>=3){
+      const pct=Math.round(st.right/tot*100);
+      const c=document.getElementById("crowd");
+      if(c){c.hidden=false;
+        document.getElementById("crowdPct").textContent=pct+"% of "+tot.toLocaleString();
+        requestAnimationFrame(()=>{const b=document.getElementById("crowdBar");if(b)b.style.width=pct+"%";});}
+    }
+  }
+}
+
+function advance(){
+  pos++;
+  if(pos<set.length){renderRound();return;}
+  if(endless){set=[...set,...moreRounds(5)];renderRound();return;}
+  finish();
+}
+
+function moreRounds(n){
+  const seen=new Set(set.map(o=>o.i));
+  const pool=CORPUS.map((r,i)=>({r,i})).filter(o=>!seen.has(o.i));
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  return pool.slice(0,n);
+}
+
+function finish(){
+  const score=results.filter(Boolean).length;
+  const done=todayKey();
+  if(S.lastDay!==done){
+    const y=new Date();y.setDate(y.getDate()-1);
+    const yk=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0");
+    S.streak=(S.lastDay===yk)?S.streak+1:1;
+    S.best=Math.max(S.best,S.streak); S.lastDay=done; save(S); paintStreak();
+  }
+  const grid=results.map(r=>r?"🟩":"🟥").join("");
+  const acc=S.played?Math.round(S.correct/S.played*100):0;
+  const verdicts=["You are reading the words, not the writer. Slow down — the tells are in the punctuation.",
+    "Roughly a coin flip. That is the honest baseline, and most people never get past it.",
+    "Better than the crowd. You are catching structure, not vocabulary.",
+    "Sharp. You spotted the rhythm tricks — the rule of three, the balanced ending.",
+    "Near perfect. You read like an editor.",
+    "Clean sweep. Come back tomorrow; the specimens get harder."][score];
+  stage.innerHTML=`
+   <div class="result">
+     <div class="score"><span class="num">${score}</span><span class="of">of ${set.length}<br>Day ${dayNumber()}</span></div>
+     <div class="grid">${grid}</div>
+     <p class="verdicttext">${verdicts}</p>
+     <div class="rowbtns">
+       <button class="next" id="share">Copy result</button>
+       <button class="ghost" id="more">Keep playing</button>
+     </div>
+     <div class="tally">
+       <div><span class="v">${S.streak}</span><span class="k">streak</span></div>
+       <div><span class="v">${S.best}</span><span class="k">best</span></div>
+       <div><span class="v">${acc}%</span><span class="k">lifetime accuracy</span></div>
+       <div><span class="v">${S.played}</span><span class="k">specimens judged</span></div>
+     </div>
+   </div>`;
+  document.getElementById("share").addEventListener("click",()=>{
+    const txt="Real or Machine — Day "+dayNumber()+"\n"+grid+" "+score+"/"+set.length+
+      "\nStreak: "+S.streak+"\n"+location.href;
+    const t=document.getElementById("toast");
+    const ok=()=>{t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,ok);}else ok();
+  });
+  document.getElementById("more").addEventListener("click",()=>{
+    endless=true;const extra=moreRounds(5);
+    if(!extra.length){document.getElementById("more").textContent="No specimens left today";return;}
+    set=[...set,...extra];pos=set.length-extra.length;renderRound();
+  });
+}
+
+renderRound();
+</script>

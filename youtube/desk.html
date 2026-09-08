@@ -1,0 +1,229 @@
+<title>Real or Machine Desk</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bone:#E6E8E3;--surface:#FBFBF9;--surface-2:#F1F2ED;--ink:#141917;--ink-soft:#3A423E;
+  --muted:#5E6862;--rule:#CBD0C8;--human:#2A6F4B;--human-soft:#DDEBE2;--synth:#6B3FD4;
+  --synth-soft:#E6DEFA;--kiln:#C2521C;--shadow:rgba(20,25,23,.10);
+  --display:"Bricolage Grotesque",system-ui,sans-serif;--serif:"Source Serif 4",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bone:#0E1211;--surface:#171C1A;--surface-2:#1F2523;--ink:#E9EDE9;--ink-soft:#C3CAC5;
+  --muted:#8B958F;--rule:#2C3431;--human:#5FC48D;--human-soft:#163325;--synth:#A98BFF;
+  --synth-soft:#251A44;--kiln:#E8814B;--shadow:rgba(0,0,0,.45);}}
+:root[data-theme="dark"]{
+  --bone:#0E1211;--surface:#171C1A;--surface-2:#1F2523;--ink:#E9EDE9;--ink-soft:#C3CAC5;
+  --muted:#8B958F;--rule:#2C3431;--human:#5FC48D;--human-soft:#163325;--synth:#A98BFF;
+  --synth-soft:#251A44;--kiln:#E8814B;--shadow:rgba(0,0,0,.45);}
+*{box-sizing:border-box}
+body{background:var(--bone);color:var(--ink);font-family:var(--display);-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:22px 18px 70px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);padding-bottom:12px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.03em;margin:0;line-height:1}
+h1 em{font-style:normal;color:var(--kiln)}
+.sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.kpis{display:flex;gap:20px;flex-wrap:wrap}
+.kpi{display:flex;flex-direction:column;gap:1px}
+.kpi .v{font-size:22px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:6px 11px;
+  border:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer;border-radius:0}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bone);border-color:var(--ink)}
+.chip:focus-visible{outline:2px solid var(--kiln);outline-offset:2px}
+
+.list{display:flex;flex-direction:column;gap:14px}
+.script{background:var(--surface);border:1px solid var(--rule);box-shadow:0 1px 0 var(--shadow);
+  display:grid;grid-template-columns:6px 1fr;overflow:hidden}
+.stripe{background:var(--rule)}
+.script.pending .stripe{background:var(--kiln)}
+.script.posted .stripe{background:var(--human)}
+.body{padding:18px 20px;display:flex;flex-direction:column;gap:13px;min-width:0}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.slot{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.state{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border:1px solid currentColor}
+.state.pending{color:var(--kiln)} .state.posted{color:var(--human);background:var(--human-soft)}
+.hook{font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.25;margin:0;text-wrap:balance}
+.spec{font-family:var(--serif);font-size:16px;line-height:1.6;white-space:pre-wrap;margin:0;
+  border-left:2px solid var(--rule);padding-left:14px;color:var(--ink-soft);max-width:56ch}
+.beats{display:grid;gap:0;border:1px solid var(--rule)}
+.beat{display:grid;grid-template-columns:78px 1fr;gap:12px;padding:9px 12px;border-bottom:1px solid var(--rule);
+  font-size:13.5px;line-height:1.5;align-items:baseline}
+.beat:last-child{border-bottom:none}
+.beat .t{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.beat .c{color:var(--ink-soft);min-width:0;overflow-wrap:anywhere}
+.answer{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 7px;border:1px solid currentColor;margin-right:8px}
+.answer.human{color:var(--human);background:var(--human-soft)}
+.answer.ai{color:var(--synth);background:var(--synth-soft)}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--rule);padding:3px 7px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button.act{font-family:var(--display);font-size:13px;font-weight:600;padding:9px 14px;border-radius:0;cursor:pointer;
+  border:1.5px solid var(--rule);background:transparent;color:var(--ink)}
+button.act:hover{border-color:var(--ink)}
+button.act.solid{background:var(--ink);color:var(--bone);border-color:var(--ink)}
+button.act.solid:hover{background:var(--kiln);border-color:var(--kiln)}
+button.act:focus-visible{outline:2px solid var(--kiln);outline-offset:2px}
+.empty{background:var(--surface-2);border:1px dashed var(--rule);padding:34px 26px;text-align:center;
+  display:flex;flex-direction:column;gap:9px;align-items:center}
+.empty p{margin:0;color:var(--muted);font-size:14px;line-height:1.6;max-width:44ch}
+.empty .h{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+footer{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:center;line-height:1.8;
+  letter-spacing:.04em;border-top:1px solid var(--rule);padding-top:14px}
+footer a{color:var(--kiln)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(18px);opacity:0;background:var(--ink);
+  color:var(--bone);padding:11px 20px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  transition:.2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:520px){.beat{grid-template-columns:1fr;gap:3px}.hook{font-size:17px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Real or <em>Machine</em> Desk</h1>
+      <div class="sub" id="sub">Loading production queue…</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span class="v" id="kQueue">–</span><span class="k">ready to post</span></div>
+      <div class="kpi"><span class="v" id="kPosted">–</span><span class="k">posted</span></div>
+      <div class="kpi"><span class="v" id="kTotal">–</span><span class="k">total written</span></div>
+    </div>
+  </header>
+
+  <div class="filters">
+    <button class="chip" id="fAll" aria-pressed="true">All</button>
+    <button class="chip" id="fPending" aria-pressed="false">Ready</button>
+    <button class="chip" id="fPosted" aria-pressed="false">Posted</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <footer>
+    Three scripts a day — morning, afternoon, evening.<br>
+    Each one is a 30-second Short: hook, specimen, timer, reveal, tell.
+  </footer>
+</div>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+const listEl=document.getElementById("list"), subEl=document.getElementById("sub");
+let DB=null, SCRIPTS=[], filter="all";
+
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),1600);}
+function copy(txt,msg){const ok=()=>toast(msg||"Copied");
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,ok);else ok();}
+
+function plain(s){
+  return [
+    "TITLE: "+s.title,
+    "",
+    "HOOK (0:00–0:02): "+s.hook,
+    "",
+    "SPECIMEN ON SCREEN (0:02–0:12):",
+    s.specimen,
+    "",
+    "TIMER (0:12–0:15): 3-2-1 countdown, no voice",
+    "",
+    "ANSWER: "+(s.answer==="human"?"HUMAN":"MACHINE")+(s.attribution?" — "+s.attribution:""),
+    "",
+    "THE TELL (0:15–0:28): "+s.tell,
+    "",
+    "CTA (0:28–0:30): "+(s.cta||"Play the daily set — link in bio."),
+    "",
+    "CAPTION: "+s.caption,
+    "TAGS: "+(s.tags||[]).join(" ")
+  ].join("\n");
+}
+
+function card(s){
+  const posted=!!s.posted;
+  const el=document.createElement("article");
+  el.className="script "+(posted?"posted":"pending");
+  el.innerHTML=`<div class="stripe"></div><div class="body">
+    <div class="top">
+      <span class="slot">${esc(s.date||"")} · ${esc(s.slot||"slot")}</span>
+      <span class="state ${posted?"posted":"pending"}">${posted?"Posted":"Ready"}</span>
+    </div>
+    <p class="hook">${esc(s.hook)}</p>
+    <p class="spec">${esc(s.specimen)}</p>
+    <div class="beats">
+      <div class="beat"><span class="t">Answer</span><span class="c">
+        <span class="answer ${s.answer==="human"?"human":"ai"}">${s.answer==="human"?"Human":"Machine"}</span>
+        ${esc(s.attribution||"Written by an AI for this game")}</span></div>
+      <div class="beat"><span class="t">The tell</span><span class="c">${esc(s.tell)}</span></div>
+      <div class="beat"><span class="t">Caption</span><span class="c">${esc(s.caption)}</span></div>
+      <div class="beat"><span class="t">Title</span><span class="c">${esc(s.title)}</span></div>
+    </div>
+    <div class="meta-row">${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+    <div class="actions">
+      <button class="act solid" data-a="copy">Copy full script</button>
+      <button class="act" data-a="caption">Copy caption + tags</button>
+      <button class="act" data-a="toggle">${posted?"Mark as not posted":"Mark as posted"}</button>
+    </div></div>`;
+  el.querySelector('[data-a="copy"]').onclick=()=>copy(plain(s),"Script copied");
+  el.querySelector('[data-a="caption"]').onclick=()=>copy(s.caption+"\n\n"+(s.tags||[]).join(" "),"Caption copied");
+  el.querySelector('[data-a="toggle"]').onclick=async()=>{
+    s.posted=!s.posted; render();
+    if(DB){try{await DB.doc("scripts/"+s.id).update({posted:s.posted});}catch(e){toast("Saved locally only");}}
+  };
+  return el;
+}
+
+function render(){
+  const shown=SCRIPTS.filter(s=>filter==="all"||(filter==="posted"?s.posted:!s.posted));
+  const posted=SCRIPTS.filter(s=>s.posted).length;
+  document.getElementById("kTotal").textContent=SCRIPTS.length;
+  document.getElementById("kPosted").textContent=posted;
+  document.getElementById("kQueue").textContent=SCRIPTS.length-posted;
+  listEl.innerHTML="";
+  if(!shown.length){
+    const e=document.createElement("div");e.className="empty";
+    e.innerHTML=`<span class="h">${SCRIPTS.length?"Nothing in this view":"The queue is empty"}</span>
+      <p>${SCRIPTS.length?"Switch the filter to see the rest of the queue."
+        :"Scripts appear here automatically three times a day — morning, afternoon and evening. If this stays empty past the next scheduled run, the job did not fire."}</p>`;
+    listEl.appendChild(e);return;
+  }
+  shown.forEach(s=>listEl.appendChild(card(s)));
+}
+
+async function boot(){
+  try{
+    if(window.claude&&typeof claude.use==="function") DB=await claude.use("db");
+  }catch(e){DB=null;}
+  if(!DB){subEl.textContent="Offline — queue unavailable in this view";render();return;}
+  try{
+    const snap=await DB.collection("scripts").get();
+    const rows=(snap&&snap.docs)?snap.docs:(Array.isArray(snap)?snap:[]);
+    SCRIPTS=rows.map(d=>Object.assign({id:d.id||d.docId},d.data||d))
+      .sort((a,b)=>String(b.createdAt||b.date||"").localeCompare(String(a.createdAt||a.date||"")));
+    subEl.textContent=SCRIPTS.length?("Production queue · updated "+(SCRIPTS[0].date||"")):"Production queue · empty";
+  }catch(e){subEl.textContent="Production queue unavailable";}
+  render();
+  try{
+    DB.collection("scripts").onSnapshot(snap=>{
+      const rows=(snap&&snap.docs)?snap.docs:(Array.isArray(snap)?snap:[]);
+      if(!rows.length)return;
+      SCRIPTS=rows.map(d=>Object.assign({id:d.id||d.docId},d.data||d))
+        .sort((a,b)=>String(b.createdAt||b.date||"").localeCompare(String(a.createdAt||a.date||"")));
+      render();
+    });
+  }catch(e){}
+}
+document.getElementById("fAll").onclick=()=>setF("all");
+document.getElementById("fPending").onclick=()=>setF("pending");
+document.getElementById("fPosted").onclick=()=>setF("posted");
+function setF(f){filter=f;
+  document.getElementById("fAll").setAttribute("aria-pressed",f==="all");
+  document.getElementById("fPending").setAttribute("aria-pressed",f==="pending");
+  document.getElementById("fPosted").setAttribute("aria-pressed",f==="posted");
+  render();}
+render();boot();
+</script>

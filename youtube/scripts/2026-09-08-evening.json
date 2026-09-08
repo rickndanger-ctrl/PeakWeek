@@ -1,0 +1,21 @@
+{
+  "slot": "evening",
+  "answer": "human",
+  "title": "The rhyme is broken. That's how you know it's human.",
+  "hook": "There's a mistake in this poem. It's been there for 232 years.",
+  "specimen": "Tyger Tyger, burning bright,\nIn the forests of the night;\nWhat immortal hand or eye,\nCould frame thy fearful symmetry?",
+  "attribution": "William Blake, The Tyger, 1794",
+  "tell": "'Eye' and 'symmetry' don't rhyme. Blake let it fail rather than change the word. An AI swaps in a clean rhyme every single time — it cannot tolerate a broken one. The flaw is the fingerprint.",
+  "caption": "AI never leaves a broken rhyme. Humans do it on purpose. 232 years and nobody fixed it.",
+  "cta": "One specimen a day. Link in bio.",
+  "tags": [
+    "#realormachine",
+    "#aiorreal",
+    "#williamblake",
+    "#poetry",
+    "#aidetection"
+  ],
+  "date": "2026-09-08",
+  "createdAt": "2026-09-08T02:00:00Z",
+  "posted": false
+}

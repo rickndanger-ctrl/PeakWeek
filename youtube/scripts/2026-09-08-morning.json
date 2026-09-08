@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-08",
+  "slot": "morning",
+  "createdAt": "2026-09-08T12:05:00Z",
+  "posted": false,
+  "answer": "human",
+  "specimen": "Remember me when I am gone away,\nGone far away into the silent land;\nWhen you can no more hold me by the hand,\nNor I half turn to go, yet turning stay.",
+  "attribution": "Christina Rossetti, \"Remember,\" 1862",
+  "hook": "The word 'away' shows up twice in her first two lines.",
+  "tell": "Line one ends on 'gone away' and line two opens by repeating it: 'Gone far away.' A model trained to avoid redundancy almost always swaps the repeat for a synonym — 'gone far off,' 'gone from sight' — because near-immediate word repetition reads as a mistake to it. Rossetti repeats the word on purpose, using the echo to make the parting feel incantatory rather than accidental.",
+  "title": "One word, twice, two lines — that's the human giveaway",
+  "caption": "A model would swap the second 'away' for a synonym. Rossetti repeats it on purpose — did you catch it before the reveal?",
+  "cta": "New specimen every morning, afternoon and night.",
+  "tags": [
+    "#realormachine",
+    "#aiorreal",
+    "#aidetection",
+    "#christinarossetti",
+    "#poetry",
+    "#writing"
+  ]
+}

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.realormachine.pipeline</string>
+
+  <!-- REPLACE /Users/YOURNAME with your home directory before installing. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/Users/YOURNAME/PeakWeek/youtube/pipeline/run.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/YOURNAME/PeakWeek/youtube/pipeline</string>
+
+  <!-- Half an hour after each scheduled job writes its script. -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+
+  <!-- Catches up if the Mac was asleep at the scheduled time. -->
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/YOURNAME/PeakWeek/youtube/build/pipeline.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOURNAME/PeakWeek/youtube/build/pipeline.log</string>
+</dict>
+</plist>
