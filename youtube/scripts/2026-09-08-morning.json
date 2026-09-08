@@ -1,21 +1,22 @@
 {
   "date": "2026-09-08",
   "slot": "morning",
-  "createdAt": "2026-09-08T11:05:00Z",
+  "createdAt": "2026-09-08T12:05:00Z",
   "posted": false,
   "answer": "human",
-  "specimen": "Do I contradict myself?\nVery well then I contradict myself,\n(I am large, I contain multitudes.)",
-  "attribution": "Walt Whitman, Song of Myself, 1855",
-  "hook": "This contradiction has stood unedited for 170 years.",
-  "tell": "Whitman never resolves the contradiction — he just restates it flatly with 'Very well then' and moves on. A model asked to write this would almost always add a justifying clause tying the two claims together logically. Whitman instead drops an unconnected parenthetical as his only follow-up, leaving the contradiction standing on its own.",
-  "title": "He contradicts himself and never fixes it. Real or AI?",
-  "caption": "A model would explain the contradiction away. Whitman just states it and walks off. Did you catch the parenthetical?",
+  "specimen": "Remember me when I am gone away,\nGone far away into the silent land;\nWhen you can no more hold me by the hand,\nNor I half turn to go, yet turning stay.",
+  "attribution": "Christina Rossetti, \"Remember,\" 1862",
+  "hook": "The word 'away' shows up twice in her first two lines.",
+  "tell": "Line one ends on 'gone away' and line two opens by repeating it: 'Gone far away.' A model trained to avoid redundancy almost always swaps the repeat for a synonym — 'gone far off,' 'gone from sight' — because near-immediate word repetition reads as a mistake to it. Rossetti repeats the word on purpose, using the echo to make the parting feel incantatory rather than accidental.",
+  "title": "One word, twice, two lines — that's the human giveaway",
+  "caption": "A model would swap the second 'away' for a synonym. Rossetti repeats it on purpose — did you catch it before the reveal?",
   "cta": "New specimen every morning, afternoon and night.",
   "tags": [
     "#realormachine",
     "#aiorreal",
-    "#waltwhitman",
+    "#aidetection",
+    "#christinarossetti",
     "#poetry",
-    "#aidetection"
+    "#writing"
   ]
 }
