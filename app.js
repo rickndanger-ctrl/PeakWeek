@@ -28,7 +28,8 @@ function render(){
  showPending();
 }
 function showPending(){const n=state?.queue?.length||0;$('saved').hidden=!n;$('pending').textContent=n+' result'+(n===1?'':'s')+' saved here. Keep this device’s browser data; results will send when your connection returns.';}
-function openLog(slot){selected=slot;$('exercise').textContent=slot.exerciseName;$('unit').textContent='('+state.client.unit+')';$('load').value=slot.load??'';$('reps').value=slot.reps;$('rpe').value='';$('note').value='';$('video').value='';$('log-error').textContent='';$('log').showModal();}
+function openLog(slot){selected=slot;$('exercise').textContent=slot.exerciseName;$('unit').textContent='('+state.client.unit+')';$('load').value=slot.load??'';$('reps').value=slot.reps;$('rpe').value='';$('note').value='';$('video').value='';$('video-selected').textContent='';$('log-error').textContent='';$('log').showModal();}
+$('video').onchange=()=>{$('video-selected').textContent=$('video').files[0]?.name||'';};
 $('cancel').onclick=()=>$('log').close();
 $('log-form').onsubmit=async event=>{
  event.preventDefault();if($('submit').disabled)return;$('submit').disabled=true;
