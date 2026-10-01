@@ -6,6 +6,8 @@ try{state=JSON.parse(localStorage.getItem(STATE));}catch{}
 const status=(text,error=false)=>{$('status').textContent=text;$('status').classList.toggle('error',error);};
 function persist(){localStorage.setItem(STATE,JSON.stringify(state));}
 function element(tag,text,className){const el=document.createElement(tag);if(text!=null)el.textContent=text;if(className)el.className=className;return el;}
+function videoDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('peakweek-videos',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(new Error('This browser cannot save the video. Try Safari.'));});}
+async function videoFile(id,value){const db=await videoDB();return new Promise((resolve,reject)=>{const tx=db.transaction('files',value===undefined?'readonly':'readwrite');const store=tx.objectStore('files');const request=value===undefined?store.get(id):value===null?store.delete(id):store.put(value,id);let result;request.onsuccess=()=>{result=request.result;};tx.oncomplete=()=>{db.close();resolve(result);};tx.onerror=()=>{db.close();reject(new Error('Could not save your video on this device.'));};});}
 function randomSecret(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');}
 async function api(route,body,token=state?.token){
  const headers={Authorization:'Bearer '+ANON_KEY,'Content-Type':'application/json'};if(token)headers['X-PW-Token']=token;
@@ -26,20 +28,23 @@ function render(){
  showPending();
 }
 function showPending(){const n=state?.queue?.length||0;$('saved').hidden=!n;$('pending').textContent=n+' result'+(n===1?'':'s')+' saved here. Keep this device’s browser data; results will send when your connection returns.';}
-function openLog(slot){selected=slot;$('exercise').textContent=slot.exerciseName;$('unit').textContent='('+state.client.unit+')';$('load').value=slot.load??'';$('reps').value=slot.reps;$('rpe').value='';$('note').value='';$('log-error').textContent='';$('log').showModal();}
+function openLog(slot){selected=slot;$('exercise').textContent=slot.exerciseName;$('unit').textContent='('+state.client.unit+')';$('load').value=slot.load??'';$('reps').value=slot.reps;$('rpe').value='';$('note').value='';$('video').value='';$('log-error').textContent='';$('log').showModal();}
 $('cancel').onclick=()=>$('log').close();
 $('log-form').onsubmit=async event=>{
  event.preventDefault();if($('submit').disabled)return;$('submit').disabled=true;
  try{
   const w=state.week.payload;const body={id:crypto.randomUUID(),performed_at:new Date().toISOString(),lift:selected.lift,exercise_name:selected.exerciseName,load:Number($('load').value),unit:state.client.unit,reps:Number($('reps').value),week_num:w.weekNum,program_stamp:w.programStamp,note:$('note').value.trim(),has_video:false};
   if($('rpe').value)body.rpe=Number($('rpe').value);if(selected.pct!=null)body.prescribed_pct=selected.pct;if(selected.rpe!=null)body.prescribed_rpe=selected.rpe;
+  const file=$('video').files[0];if(file){if(file.size>200*1024*1024)throw new Error('Choose a video under 200 MB.');await videoFile(body.id,file);body.has_video=true;}
   state.queue.push(body);try{persist();}catch{state.queue.pop();throw new Error('This browser cannot save your result. Please allow browser storage or try Safari.');}
   $('log').close();showPending();status('Result saved on this device. Sending to your coach…');await flush();await loadHistory();
  }catch(error){$('log-error').textContent=error.message;}finally{$('submit').disabled=false;}
 };
 async function flush(){
  if(flushing||!state)return;flushing=true;
- try{while(state.queue.length){await api('submissions',state.queue[0]);state.queue.shift();persist();}showPending();status('Connected to your coach. Your results are up to date.');}
+ try{while(state.queue.length){const body=state.queue[0];const result=await api('submissions',body);
+   if(body.has_video){const file=await videoFile(body.id);if(!file)throw new Error('The saved video is missing. Keep this result on this device and contact your coach.');if(!result.upload)throw new Error('Video upload is unavailable. Your result and video remain saved.');status('Uploading your video. Keep Peak Week open…');const response=await fetch(result.upload.url,{method:'PUT',headers:{'Content-Type':file.type||'video/mp4'},body:file});if(!response.ok)throw new Error('Video upload did not finish.');await api('submissions/video-done',{id:body.id});await videoFile(body.id,null);}
+   state.queue.shift();persist();}showPending();status('Connected to your coach. Your results are up to date.');}
  catch(error){showPending();status(error.status===401?error.message:'Offline or unable to connect. Your result is saved and will retry.',true);}finally{flushing=false;}
 }
 async function loadHistory(){
