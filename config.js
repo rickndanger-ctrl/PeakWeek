@@ -1,0 +1,2 @@
+export const API_BASE = "https://otgsdsvswiehymubkyki.supabase.co/functions/v1/peakweek-api";
+export const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90Z3Nkc3Zzd2llaHltdWJreWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxODE4MzIsImV4cCI6MjEwNDc1NzgzMn0.qO0Fd4utx_nkHtLYqxtGL3qMkwxeoQlJxYW9VB-WxkA";
