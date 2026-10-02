@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Connect to Peak Week</title>
+<style>
+:root{font-family:system-ui;color-scheme:light dark}body{margin:0;background:Canvas;color:CanvasText}main{max-width:28rem;margin:8vh auto;padding:1.5rem}h1{font-size:2rem;line-height:1.15}p{line-height:1.6}.label{letter-spacing:.14em;font-size:.8rem;font-weight:700}.action{display:block;padding:1rem;border-radius:.8rem;background:#235bb7;color:white;text-align:center;font-weight:650;text-decoration:none;margin:1rem 0}.secondary{background:transparent;color:CanvasText;border:1px solid GrayText}.notice{padding:1rem;border-radius:.8rem;background:color-mix(in srgb,#dc9c28 18%,Canvas)}button{font:inherit;width:100%;cursor:pointer}.muted{color:GrayText;font-size:.9rem}[hidden]{display:none!important}
+</style>
+</head>
+<body><main>
+<div class="label">PEAK WEEK</div><h1>Your training, from your coach.</h1>
+<p id="description">This personal invitation connects the free lifter app to your program.</p>
+<p class="notice" id="releaseNotice">App Store release is pending. If your lifter app is already installed, tap Connect below. Public downloading becomes available after Apple approval and release.</p>
+<a class="action" id="download" hidden>1. Download the free lifter app</a>
+<a class="action secondary" id="connect" hidden>2. Connect to your coach</a>
+<button class="action secondary" id="copy" hidden>Copy invitation</button>
+<p class="muted" id="status" role="status"></p>
+<p class="muted">After installing the app, return to this invitation and tap Connect. No lifter password is needed. Keep this link private; it is for one lifter and one connection.</p>
+<p class="muted"><a href="support.html">Help</a> · <a href="privacy.html">Privacy</a></p></main>
+<script>
+// Set true only after public App Store availability is verified.
+const appStoreReleased = false;
+const params = new URLSearchParams(location.hash.slice(1));
+const values = params.getAll('invite');
+const valid = values.length === 1 && /^[a-f\d]{64}$/i.test(values[0]);
+const status = document.querySelector('#status');
+if (valid) {
+ const invitation = values[0].toUpperCase();
+ const versions = params.getAll('api');
+ const api = versions.length === 1 && versions[0] === '1' ? 1 : 2;
+ const appURL = `peakweek://pair?invite=${encodeURIComponent(invitation)}&api=${api}`;
+ const connect = document.querySelector('#connect');
+ connect.href = appURL;
+ connect.hidden = false;
+ document.querySelector('#copy').hidden = false;
+ if (appStoreReleased) {
+  document.querySelector('#releaseNotice').hidden = true;
+  const download = document.querySelector('#download');
+  download.href = 'https://apps.apple.com/app/id6797750329';
+  download.rel = 'noreferrer'; download.hidden = false;
+  connect.hidden = false;
+  document.querySelector('#copy').hidden = false;
+ }
+ document.querySelector('#copy').onclick = async () => {
+  try { await navigator.clipboard.writeText(location.href); status.textContent = 'Invitation copied. Paste it into the lifter app if needed.'; }
+  catch { status.textContent = 'Select and copy this page’s address, then paste it into the lifter app.'; }
+ };
+} else {
+ document.querySelector('#description').textContent = 'Open the complete personal invitation from your coach. If it has expired or was already used, ask for a new one.';
+}
+</script></body></html>
