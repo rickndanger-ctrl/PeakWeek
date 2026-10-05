@@ -13,7 +13,7 @@
 <div class="label">PEAK WEEK</div><h1>Your training, from your coach.</h1>
 <p id="description">This personal invitation connects the free lifter app to your program.</p>
 <p class="notice" id="releaseNotice">App Store release is pending. If your lifter app is already installed, tap Connect below. Public downloading becomes available after Apple approval and release.</p>
-<a class="action" id="download" hidden>1. Download the free lifter app</a>
+<a class="action" id="download" hidden>1. Install or update Peak Week Lifter</a>
 <a class="action secondary" id="connect" hidden>2. Connect to your coach</a>
 <button class="action secondary" id="copy" hidden>Copy invitation</button>
 <p class="muted" id="status" role="status"></p>
@@ -22,6 +22,9 @@
 <script>
 // Set true only after public App Store availability is verified.
 const appStoreReleased = false;
+// Enable only after the current build is approved and external testing is activated.
+const externalTestingAvailable = true;
+const betaInstallURL = 'https://testflight.apple.com/join/RNTD9qPu';
 const params = new URLSearchParams(location.hash.slice(1));
 const values = params.getAll('invite');
 const valid = values.length === 1 && /^[a-f\d]{64}$/i.test(values[0]);
@@ -35,6 +38,11 @@ if (valid) {
  connect.href = appURL;
  connect.hidden = false;
  document.querySelector('#copy').hidden = false;
+ if (externalTestingAvailable && !appStoreReleased) {
+  document.querySelector('#releaseNotice').textContent = 'Install or update Peak Week Lifter through TestFlight, then return to this link and tap Connect. No code to type. The public App Store release is still pending.';
+  const download = document.querySelector('#download');
+  download.href = betaInstallURL; download.rel = 'noreferrer'; download.hidden = false;
+ }
  if (appStoreReleased) {
   document.querySelector('#releaseNotice').hidden = true;
   const download = document.querySelector('#download');
