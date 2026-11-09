@@ -11,10 +11,10 @@
 </head>
 <body><main>
 <div class="label">PEAK WEEK</div><h1>Connect to your coach</h1>
-<p id="description">This is your personal invitation. It connects Peak Week Lifter to the program your coach sent you.</p>
-<p class="notice" id="releaseNotice">Already have Peak Week Lifter? Tap “Connect to your coach” below. New here? Install the free app first, then return to this invitation.</p>
-<div class="step" id="installStep" hidden><h2>1. Install the free lifter app</h2><p>After installing, come back to this same text message and open this invitation again. The app may ask you to connect until you do.</p><a class="action secondary" id="download">Download Peak Week Lifter on the App Store</a></div>
-<div class="step" id="connectStep" hidden><h2>2. Connect from this invitation</h2><p>Already installed? Start here. Tap below to connect the app to your coach. No pairing code or password is needed.</p><a class="action" id="connect">Connect to your coach</a></div>
+<p id="description">Install once, connect once. Future workouts arrive in the app.</p>
+<p class="notice" id="releaseNotice">Already installed? Tap “Connect to your coach.”</p>
+<div class="step" id="installStep" hidden><h2>1. Get the free app</h2><a class="action secondary" id="download">Download Peak Week Lifter</a><p class="muted">Then return to this invitation for step 2.</p></div>
+<div class="step" id="connectStep" hidden><h2>2. Open your training</h2><a class="action" id="connect">Connect to your coach</a></div>
 <p class="muted">Keep this invitation private. It is for one lifter and one connection.</p>
 <p class="muted"><a href="support.html">Help</a> · <a href="privacy.html">Privacy</a></p></main>
 <script>
@@ -41,7 +41,7 @@ document.querySelector('#connectStep').hidden = !appURL;
 document.querySelector('#releaseNotice').hidden = !appURL;
 document.querySelector('#connect').removeAttribute('href');
 if (appURL) {
- document.querySelector('#description').textContent = 'This is your personal invitation. It connects Peak Week Lifter to the program your coach sent you.';
+ document.querySelector('#description').textContent = 'Install once, connect once. Future workouts arrive in the app.';
  document.querySelector('#connect').href = appURL;
  document.querySelector('#connectStep').hidden = false;
 } else {
