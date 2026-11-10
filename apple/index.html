@@ -1,54 +1,31 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
-<title>Connect to Peak Week</title>
-<style>
-:root{font-family:system-ui;color-scheme:light dark}body{margin:0;background:Canvas;color:CanvasText}main{max-width:28rem;margin:5vh auto;padding:1.5rem}h1{font-size:2rem;line-height:1.15}p{line-height:1.5}.label{letter-spacing:.14em;font-size:.8rem;font-weight:700}.action{display:block;padding:1rem;border-radius:.8rem;background:#235bb7;color:white;text-align:center;font-weight:650;text-decoration:none;margin:.75rem 0}.secondary{background:transparent;color:CanvasText;border:1px solid GrayText}.notice{padding:1rem;border-radius:.8rem;background:color-mix(in srgb,#dc9c28 18%,Canvas)}.step{margin:1.5rem 0}.step h2{font-size:1.1rem;margin:0}.step p{margin:.4rem 0}.muted{color:GrayText;font-size:.9rem}[hidden]{display:none!important}
-</style>
-</head>
-<body><main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://otgsdsvswiehymubkyki.supabase.co; base-uri 'none'; form-action 'none'"><title>Peak Week · Your training</title><link rel="stylesheet" href="/PeakWeek/apple/style.css?v=public-1"></head><body><main id="apple-onboarding" hidden>
+<p class="brand">PEAK WEEK</p>
+<section id="welcome"><h1 id="welcome-title">Open your training.</h1>
+<p id="intro">Save your coach connection with Apple. Then open Peak Week and sign in with the same Apple account.</p>
+<div id="retry-confirmation" hidden><p>Deleting your Lifter account permanently removes all your linked training, including your coach’s copies. This cannot be undone.</p><label><input id="retry-delete-confirm" type="checkbox"> Delete all my Lifter data everywhere.</label></div>
+<button id="apple" disabled>Continue with Apple</button>
+<button id="check-status" class="secondary" hidden>Check setup status</button>
+<details id="legacy-fallback"><summary>Use the invitation without Apple</summary><p>Already using an older app, or prefer connecting this device directly? Open this invitation in Peak Week. You can link your Apple account in the app later.</p><a id="legacy-connect" class="secondary primary">Connect to your coach</a><p class="quiet">If you need the app first, <a href="https://apps.apple.com/app/id6797750329" rel="noreferrer">download it</a>, then return here and tap Connect to your coach.</p></details>
+</section>
+<p id="status" role="status" aria-live="polite" tabindex="-1"></p>
+<section id="ready" hidden><span class="check" aria-hidden="true">✓</span><h1>Your coach connection is saved.</h1>
+<p>Open Peak Week and continue with the same Apple account to see your training.</p>
+<a id="open-peak-week" class="primary" href="peakweek://open">Open Peak Week</a>
+<a id="download-peak-week" class="secondary primary" href="https://apps.apple.com/app/id6797750329" rel="noreferrer">Download or update the free app</a>
+<p class="quiet">After downloading, open Peak Week and continue with the same Apple account. Your coach connection is saved—you do not need to return to this invitation.</p>
+<p class="quiet">Your program appears when your coach publishes it. If it is waiting for you, tap Start Program when you’re ready.</p></section>
+<section id="account" hidden><h1>Your Apple connection</h1><p id="account-summary"></p><ul id="profiles"></ul>
+<details><summary>Delete Lifter account</summary><p>This permanently removes all lifter profiles linked to your Apple account, including programs, logs, notes, videos and your coach’s copies. Connected devices clear saved copies when online. A separate Coach workspace is kept. Exported copies are not controlled by Peak Week. This cannot be undone.</p>
+<label><input type="checkbox" id="confirm"> Delete all my Lifter data everywhere.</label><button id="delete" disabled>Verify with Apple and delete</button></details></section>
+<section id="deleted" hidden><h1>Your Lifter account is deleted.</h1><p>Your training records have been removed. Video cleanup finishes automatically. Your separate Coach workspace is kept.</p></section>
+<footer class="quiet"><a href="/PeakWeek/apple/">Setup</a> · <a href="/PeakWeek/apple/account.html">Apple account help</a> · <a href="/PeakWeek/apple/privacy.html">Privacy</a></footer>
+</main><main id="legacy-onboarding" hidden>
 <div class="label">PEAK WEEK</div><h1>Connect to your coach</h1>
-<p id="description">Install once, connect once. Future workouts arrive in the app.</p>
+<p id="description">Your coach’s invitation connects the app to your training.</p>
 <p class="notice" id="releaseNotice">Already installed? Tap “Connect to your coach.”</p>
-<div class="step" id="installStep" hidden><h2>1. Get the free app</h2><a class="action secondary" id="download">Download Peak Week Lifter</a><p class="muted">Then return to this invitation for step 2.</p></div>
-<div class="step" id="connectStep" hidden><h2>2. Open your training</h2><a class="action" id="connect">Connect to your coach</a></div>
+<div class="step" id="installStep" hidden><h2>1. Get the free app</h2><a class="action secondary" id="download">Download Peak Week Lifter</a><p class="muted">After installing, return to this invitation for step 2. Downloading alone does not connect your program.</p></div>
+<div class="step" id="connectStep" hidden><h2>2. Open your training</h2><a class="action" id="connect">Connect to your coach</a><p id="connectStatus" role="status" aria-live="polite"></p>
+<details><summary>The app didn’t open?</summary><p>Open this invitation in Safari and tap Connect again. If that still doesn’t work, copy this page’s address, open Peak Week Lifter, and tap Paste to connect. Your coach can send a fresh invitation if it expired.</p></details></div>
 <p class="muted">Keep this invitation private. It is for one lifter and one connection.</p>
-<p class="muted"><a href="support.html">Help</a> · <a href="privacy.html">Privacy</a></p></main>
-<script>
-// This page never redeems an invitation. Only the native app can connect.
-// Keep the download free of invitation data: the App Store does not preserve it.
-function invitationFromFragment(fragment) {
- const params = new URLSearchParams(fragment.replace(/^#/, ''));
- const invites = params.getAll('invite'), codes = params.getAll('code'), versions = params.getAll('api');
- if (invites.length + codes.length !== 1 || versions.length > 1 ||
-     (versions.length && !['1','2'].includes(versions[0]))) return null;
- const value = (invites[0] || codes[0] || '').toUpperCase();
- const legacy = /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/.test(value);
- if (!legacy && !/^[A-F\d]{64}$/.test(value)) return null;
- const api = legacy ? 1 : Number(versions[0] || 2);
- return `peakweek://pair?${legacy ? 'code' : 'invite'}=${encodeURIComponent(value)}&api=${api}`;
-}
-function renderInvitation() {
-const appURL = invitationFromFragment(location.hash);
-const download = document.querySelector('#download');
-download.href = 'https://apps.apple.com/app/id6797750329';
-download.rel = 'noreferrer';
-document.querySelector('#installStep').hidden = false;
-document.querySelector('#connectStep').hidden = !appURL;
-document.querySelector('#releaseNotice').hidden = !appURL;
-document.querySelector('#connect').removeAttribute('href');
-if (appURL) {
- document.querySelector('#description').textContent = 'Install once, connect once. Future workouts arrive in the app.';
- document.querySelector('#connect').href = appURL;
- document.querySelector('#connectStep').hidden = false;
-} else {
- document.querySelector('#description').textContent = 'Download Peak Week Lifter below. To see your own training, open the complete personal invitation from your coach. If this invitation is incomplete, ask your coach for a new one.';
- document.querySelector('#releaseNotice').hidden = true;
-}
-}
-window.addEventListener('hashchange', renderInvitation);
-renderInvitation();
-</script></body></html>
+<p class="muted"><a href="/PeakWeek/apple/support.html">Help</a> · <a href="/PeakWeek/apple/privacy.html">Privacy</a></p></main>
+<script src="/PeakWeek/apple/flow.js?v=public-1"></script><script src="/PeakWeek/apple/onboarding-config.js?v=public-1"></script><script src="/PeakWeek/apple/redirect-flow.js?v=public-1"></script><script src="/PeakWeek/apple/legacy-page.js?v=public-1"></script><script src="/PeakWeek/apple/public-entry.js?v=public-1"></script><script src="/PeakWeek/apple/redirect-page.js?v=public-1"></script></body></html>
