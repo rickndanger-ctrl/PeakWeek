@@ -1,31 +1,18 @@
-<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://appleid.cdn-apple.com; style-src 'self'; connect-src https://otgsdsvswiehymubkyki.supabase.co; frame-src https://appleid.apple.com; base-uri 'none'; form-action 'none'">
-<title>Peak Week · Private setup preview</title><link rel="stylesheet" href="style.css">
-</head><body><main>
-<p class="preview" id="preview-label">PRIVATE SETUP TEST</p>
-<p class="brand">PEAK WEEK</p>
-<section id="welcome">
-<p class="eyebrow">YOUR COACH’S INVITATION</p>
-<h1>Your training.<br>Ready when you are.</h1>
-<p>Save your coach connection with Apple. Then download Peak Week and sign in with the same Apple account.</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://otgsdsvswiehymubkyki.supabase.co; base-uri 'none'; form-action 'none'"><title>Peak Week · Private setup</title><link rel="stylesheet" href="style.css?v=redirect-1"></head><body><main>
+<p class="preview">PRIVATE SETUP TEST</p><p class="brand">PEAK WEEK</p>
+<section id="welcome"><h1 id="welcome-title">Open your training.</h1>
+<p id="intro">Save your coach connection with Apple. Then open Peak Week and sign in with the same Apple account.</p>
+<div id="retry-confirmation" hidden><p>Deleting your Lifter account permanently removes all your linked training, including your coach’s copies. This cannot be undone.</p><label><input id="retry-delete-confirm" type="checkbox"> Delete all my Lifter data everywhere.</label></div>
 <button id="apple" disabled>Continue with Apple</button>
-<p id="status" role="status" aria-live="polite"></p>
-<p class="quiet">Already connected? Open Peak Week to see your training.</p>
+<button id="check-status" class="secondary" hidden>Check setup status</button>
 </section>
-<section id="ready" hidden>
-<span class="check" aria-hidden="true">✓</span>
-<h1>Your coach connection is saved.</h1>
+<p id="status" role="status" aria-live="polite" tabindex="-1"></p>
+<section id="ready" hidden><span class="check" aria-hidden="true">✓</span><h1>Your coach connection is saved.</h1>
 <p>For this private test, open Peak Week Lifter 1.0.2 (26) from TestFlight and continue with the same Apple account. There’s no need to return to this message.</p>
-<p class="quiet">Your private build must be installed from TestFlight. The public download flow has not changed yet.</p>
-<p class="quiet">Your program appears when your coach publishes it. If it is waiting for you, tap Start Program when you’re ready.</p>
-</section>
-<details class="demo" id="fictional-demo"><summary>Try the fictional preview</summary>
-<p>This only previews the screens. It does not sign in, claim an invitation, or change any training.</p>
-<label for="scenario">Preview outcome</label><select id="scenario"><option value="success">Connection confirmed</option><option value="cancelled">Apple sign-in cancelled</option><option value="invitation_unavailable">Expired invitation</option><option value="other_account">Different Apple account</option><option value="network">Offline / connection interrupted</option></select>
-<button id="simulate" class="secondary">Start fictional preview</button>
-</details>
-<footer class="quiet"><a href="account.html">Manage Apple connection</a> · <a href="../apple/privacy.html">Privacy</a></footer>
-</main><script src="flow.js"></script><script src="apple-auth.js"></script><script src="private-config.js"></script><script src="page.js"></script></body></html>
+<p class="quiet">Your program appears when your coach publishes it. If it is waiting for you, tap Start Program when you’re ready.</p></section>
+<section id="account" hidden><h1>Your Apple connection</h1><p id="account-summary"></p><ul id="profiles"></ul>
+<details><summary>Delete Lifter account</summary><p>This permanently removes all lifter profiles linked to your Apple account, including programs, logs, notes, videos and your coach’s copies. Connected devices clear saved copies when online. A separate Coach workspace is kept. Exported copies are not controlled by Peak Week. This cannot be undone.</p>
+<label><input type="checkbox" id="confirm"> Delete all my Lifter data everywhere.</label><button id="delete" disabled>Verify with Apple and delete</button></details></section>
+<section id="deleted" hidden><h1>Your Lifter account is deleted.</h1><p>Your training records have been removed. Video cleanup finishes automatically. Your separate Coach workspace is kept.</p></section>
+<footer class="quiet"><a href="index.html">Setup</a> · <a href="account.html">Apple account help</a> · <a href="../apple/privacy.html">Privacy</a></footer>
+</main><script src="flow.js?v=redirect-1"></script><script src="private-config.js?v=redirect-1"></script><script src="redirect-flow.js?v=redirect-1"></script><script src="redirect-page.js?v=redirect-1"></script></body></html>
