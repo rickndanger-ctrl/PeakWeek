@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://appleid.cdn-apple.com; style-src 'self'; connect-src https://otgsdsvswiehymubkyki.supabase.co; frame-src https://appleid.apple.com; base-uri 'none'; form-action 'none'">
+<title>Peak Week · Apple account</title><link rel="stylesheet" href="style.css"></head><body><main>
+<p class="preview">PRIVATE SETUP TEST</p><p class="brand">PEAK WEEK</p><h1>Your Apple connection</h1>
+<p>Use the Apple account connected to your coach. You can manage it here even if you haven’t installed the app.</p>
+<button id="signIn" disabled>Continue with Apple</button><p id="status" role="status" aria-live="polite">Apple setup is not configured in this preview.</p>
+<section id="account" hidden><h2>Connected training</h2><ul id="profiles"></ul>
+<details id="deleteDetails"><summary>Delete Lifter account</summary>
+<p>This permanently removes all lifter profiles linked to this Apple account, including programs, logs, notes, videos and the coach’s copies. Connected devices clear their saved copies when online. A separate Coach workspace is kept. Exported copies are not controlled by Peak Week. This cannot be undone.</p>
+<label><input type="checkbox" id="confirm"> Delete all my Lifter data everywhere.</label>
+<button id="delete" disabled>Verify with Apple and delete</button>
+</details></section>
+<p class="quiet"><a href="index.html">Back to setup</a> · <a href="../apple/privacy.html">Privacy</a></p>
+</main><script src="apple-auth.js"></script><script src="account.js"></script><script src="private-config.js"></script><script src="account-page.js"></script></body></html>
