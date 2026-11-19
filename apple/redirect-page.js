@@ -25,10 +25,23 @@ function controls(){
 function visible(name){
  for(const id of ['welcome','ready','account','deleted'])$(id).hidden=id!==name;
 }
+// Nov 19: remember this tab's invitation for one hour so "Open Peak Week"
+// connects the app directly after Apple sign-in, with no second sign-in.
+const OPEN_KEY='peakweek.openInvitation';
+function rememberInvitation(code){try{sessionStorage.setItem(OPEN_KEY,JSON.stringify({code,at:Date.now()}));}catch(_){}}
+function savedInvitation(){
+ try{const v=JSON.parse(sessionStorage.getItem(OPEN_KEY)||'null');
+  if(v&&/^[A-Fa-f0-9]{64}$/.test(v.code)&&Date.now()-v.at<55*60*1000)return v.code;}catch(_){}
+ return null;
+}
+function openLinkForReady(){
+ const code=savedInvitation();
+ if(code)$('open-peak-week').href='peakweek://pair?invite='+code.toUpperCase()+'&api=2';
+}
 function show(result){
  if(result.phase==='redirecting'||result.phase==='busy')return;
  if(result.phase==='complete'){
-  if(result.operation==='claim')visible('ready');
+  if(result.operation==='claim'){visible('ready');openLinkForReady();}
   else if(result.operation==='manage'){
    visible('account');$('profiles').replaceChildren();
    for(const p of result.receipt.profiles){const li=document.createElement('li');li.textContent=p.name;$('profiles').appendChild(li);}
@@ -51,6 +64,7 @@ async function run(work){
 }
 $('apple').addEventListener('click',()=>run(async()=>{
  refreshContext();
+ if(invitation&&!isAccount)rememberInvitation(invitation);
  if(isAccount&&context?.operation==='claim')return client.startManage();
  if(context)return client.restart($('retry-delete-confirm').checked);
  return isAccount?client.startManage():client.startClaim(invitation);
