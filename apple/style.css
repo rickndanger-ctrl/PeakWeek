@@ -3,3 +3,4 @@
 footer{margin-top:32px}a{color:inherit}
 
 .action{display:block;padding:1rem;border-radius:.8rem;background:#172219;color:white;text-align:center;font-weight:650;text-decoration:none;margin:.75rem 0}.action.secondary{background:#e3e9dc;color:#172219}.step{margin:1.5rem 0}.step h2{font-size:1.1rem}.muted{color:#586956;font-size:.9rem}.notice{padding:1rem;border-radius:.8rem;background:#e3e9dc}details{margin:24px 0}summary{cursor:pointer}
+.team-code{font-size:2em;font-weight:700;letter-spacing:.08em;text-align:center}
