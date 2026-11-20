@@ -11,7 +11,7 @@ function mode(config, page, fragment, preview=false){
 }
 return {mode};
 });
-if(typeof document!=='undefined'&&!window.PeakWeekTeamPage){
+if(typeof document!=='undefined'){
  const data=document.body.dataset;
  const selected=PeakWeekPublicSetup.mode(window.PeakWeekAppleConfig,data.callback==='true'?'callback':data.operation==='manage'?'manage':'invitation',location.hash,data.setupPreview==='true');
  window.PeakWeekUseAppleSetup=selected==='apple';
