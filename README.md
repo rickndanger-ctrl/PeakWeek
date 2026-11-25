@@ -1,48 +1,53 @@
-# Peak Week — powerlifting coaching console for Mac
+<p align="center">
+  <img src="assets/peakweek-brand-mark-full.png" alt="Peak Week: powerlifting training app for coaches" width="360">
+</p>
 
-A native SwiftUI app for coaching powerlifters with block periodization:
-build each lifter's meet prep, customize everything, and send every week's
-plan straight to their phone.
+<h1 align="center">Peak Week</h1>
 
-## Build it (one time, ~2 minutes)
-Open Terminal, drag this folder onto the window after typing `cd `, press Enter, then:
+<p align="center">
+  <b>Powerlifting coaching, built for Apple devices.</b><br>
+  Coaches build the program. Lifters get their week. Results come straight back.
+</p>
 
-    ./build.sh
+<p align="center">
+  <a href="https://apps.apple.com/app/id6797750329"><b>Get Peak Week Lifter on the App Store</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://rickndanger-ctrl.github.io/PeakWeek/apple/support.html">Support</a>
+  &nbsp;·&nbsp;
+  <a href="https://rickndanger-ctrl.github.io/PeakWeek/apple/privacy.html">Privacy</a>
+</p>
 
-Or simpler — open this folder in Claude Code and say: **"Read CLAUDE.md and build this."**
+---
 
-If Terminal says Swift is missing, run `xcode-select --install`, accept the popup,
-then run `./build.sh` again.
+## Two apps, one coaching relationship
 
-Run the test suite any time with `swift test` (57 tests lock the programming math).
+**Peak Week Coach** (Mac, iPhone and iPad)
+Plan each lifter's meet prep, customize every set, and publish one week at a time. You review every week before it goes out.
 
-## Program
-- Client roster in the sidebar — lifters with maxes (lb/kg with true conversion), meet date, and countdown
-- Pick phase (full prep / accumulation / strength / peaking / off-season), length, **4-day or 5-day** weeks
-- Generate → block-periodized program with linear weekly progression; every week shows its weeks-out
-- Every exercise swappable, every set/rep/%/RPE editable, loads recalc live
+**Peak Week Lifter** (iPhone and iPad, free)
+Open your coach's invitation, sign in with Apple, and your training is there. Log your sets, add an optional video, and send notes back to your coach.
 
-## Customize (Coaching Options + ⌘,)
-- **Exercise library** (Settings, ⌘,): rename anything, tune load modifiers, archive
-  what you don't use, add your own exercises — saved programs follow along by identity,
-  never by position
-- **Attempt profiles** per client: Conservative / Standard / Aggressive risk presets
-  (Standard = the classic 91 / 97 / 101.5) plus explicit per-attempt overrides
-- **Per-lift programming**: training-max %, intensity offset (e.g. −2.5% for a deadlift
-  that runs hot)
-- **Exclusions**: injury/equipment bans swapped out at generation
-- Client notes: federation, equipment, cues
+## What it does
 
-## Deliver
-- **Send menu on every week**: share as text or PDF (Messages / Mail / AirDrop), save PDF, copy
-- **Auto-send**: pick a day + time per client (e.g. Sunday 6 PM) and each week's plan
-  goes out via Messages or Mail — with *review before sending* on by default, deliveries
-  queue behind the paperplane toolbar icon for one-click approval
-- Full send log: every delivery recorded; missed weeks never spam (only the latest
-  due week goes out after downtime)
+- **Program:** block-periodized meet prep built on established strength-training principles, fully customizable per lifter.
+- **Deliver:** publish a training week and it appears directly in the lifter's app.
+- **Track:** lifters log weight, reps and effort (RPE). Results sync back to the coach even after the phone has been offline.
+- **Coach:** lifters can send lift videos, and coaches can send video reviews back, all private to the coaching relationship.
 
-## Where your data lives
-`~/Library/Application Support/PeakWeek/data.json` — debounce-saved on every change,
-with an automatic `data.json.bak` safety copy rotated before each write. If the file
-is ever unreadable the app freezes writes and offers one-click restore — it will
-never overwrite data it couldn't read. Manual Backup/Restore lives in the Data menu.
+## Private by design
+
+- Sign in with Apple. Peak Week never sees your Apple password.
+- No ads and no cross-app tracking.
+- Lifters can delete their account and all linked training at any time.
+
+Read the full [privacy policy](https://rickndanger-ctrl.github.io/PeakWeek/apple/privacy.html).
+
+## Need help?
+
+- Setup guides and answers: [Peak Week Support](https://rickndanger-ctrl.github.io/PeakWeek/apple/support.html)
+- Report a problem: [open an issue](https://github.com/rickndanger-ctrl/PeakWeek/issues). Please include your app version, your device, and what happened.
+- For a private account or data request, open an issue asking for a private contact channel. Please don't post personal details publicly.
+
+---
+
+<sub>Peak Week's source code is private. This repository hosts the public support site, privacy policy and issue tracker.</sub>
